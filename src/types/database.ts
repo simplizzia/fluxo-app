@@ -119,12 +119,13 @@ export interface TipoDemanda {
 }
 
 export interface CampoFormulario {
-  nome: string
+  nome: string           // chave de armazenamento (snake_case) — usada em campos_publicos/campos_internos
+  rotulo: string         // label exibida ao usuário
   tipo: 'text' | 'textarea' | 'number' | 'select' | 'files' | 'date' | 'month' | 'boolean'
   obrigatorio: boolean
   visivel_para_cliente: boolean
   placeholder?: string
-  opcoes?: string[]  // para tipo 'select'
+  opcoes?: string[]      // para tipo 'select'
 }
 
 export interface Organizacao {
