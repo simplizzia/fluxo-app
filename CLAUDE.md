@@ -71,7 +71,7 @@ src/
 │   │   ├── server.ts     # Server client + service client
 │   │   └── middleware.ts # helpers de auth
 │   └── utils.ts          # cn(), formatDate(), etc.
-├── middleware.ts          # Auth guard global
+├── proxy.ts               # Auth guard global (Next.js 16: "middleware" → "proxy")
 └── types/
     └── database.ts       # Gerado por: npm run db:types
 ```

@@ -2,14 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Middleware de autenticação e renovação de sessão.
+ * Proxy de autenticação e renovação de sessão.
+ * (Next.js 16 renomeou "middleware" para "proxy" — mesma funcionalidade)
  *
  * Responsabilidades:
  * 1. Renovar o access token expirado (via refresh token no cookie)
  * 2. Redirecionar usuários não autenticados para /login
  * 3. Redirecionar usuários autenticados que acessam /login para o dashboard
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -66,7 +67,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Aplica o middleware em todas as rotas exceto:
+     * Aplica o proxy em todas as rotas exceto:
      * - _next/static (arquivos estáticos)
      * - _next/image (otimização de imagens)
      * - favicon.ico
