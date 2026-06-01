@@ -36,5 +36,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/definir-senha`)
   }
 
+  // Recuperação de senha: redireciona para página de redefinição
+  if (type === 'recovery') {
+    return NextResponse.redirect(`${origin}/redefinir-senha`)
+  }
+
   return NextResponse.redirect(`${origin}${next}`)
 }

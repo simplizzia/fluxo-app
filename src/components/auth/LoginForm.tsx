@@ -61,6 +61,16 @@ export function LoginForm() {
         )}
       </div>
 
+      {/* Esqueci a senha */}
+      <div className="flex justify-end">
+        <a
+          href="/esqueci-senha"
+          className="text-xs text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
+        >
+          Esqueci a senha
+        </a>
+      </div>
+
       {/* Botão */}
       <button
         type="submit"
