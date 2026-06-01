@@ -18,7 +18,7 @@ export default function SidebarLinkClient({ href, label, children }: Props) {
       href={href}
       className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
         isActive
-          ? 'bg-zinc-900 text-white'
+          ? 'bg-brand text-white shadow-sm'
           : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
       }`}
     >

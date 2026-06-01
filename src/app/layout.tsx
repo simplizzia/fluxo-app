@@ -1,10 +1,17 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Baloo_2, DM_Sans } from 'next/font/google'
 import './globals.css'
 
-const geist = Geist({
-  variable: '--font-geist-sans',
+const baloo2 = Baloo_2({
+  variable: '--font-baloo2',
   subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
+})
+
+const dmSans = DM_Sans({
+  variable: '--font-dm-sans',
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
 })
 
 export const metadata: Metadata = {
@@ -18,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={`${geist.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${baloo2.variable} ${dmSans.variable} h-full antialiased`}>
       <body className="min-h-full bg-zinc-50 font-sans text-zinc-900">
         {children}
       </body>

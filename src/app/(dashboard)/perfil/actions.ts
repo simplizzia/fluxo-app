@@ -3,7 +3,8 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { verifySession } from '@/lib/dal'
+import { verifySession, getCurrentProfile } from '@/lib/dal'
+import { desconectarGoogleCalendar } from '@/lib/google/calendar'
 
 // ---------------------------------------------------------------------------
 // Atualizar nome do perfil
@@ -103,4 +104,14 @@ export async function actionChangePassword(
   }
 
   return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// Desconectar Google Calendar
+// ---------------------------------------------------------------------------
+
+export async function actionDesconectarGoogle(): Promise<void> {
+  const profile = await getCurrentProfile()
+  await desconectarGoogleCalendar(profile.id)
+  revalidatePath('/perfil')
 }

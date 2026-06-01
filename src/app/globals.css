@@ -2,25 +2,43 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1E1E1E;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand: #A046C6;
+  --color-brand-dark: #8B35AD;
+  --color-brand-light: #F3E8FF;
+  --color-brand-pink: #F9267C;
+  --color-brand-blue: #2285FC;
+  --color-ink: #1E1E1E;
+  --color-neutral: #F4F4F4;
+  --font-display: var(--font-baloo2);
+  --font-body: var(--font-dm-sans);
+  --font-sans: var(--font-dm-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Gradiente institucional Lilás → Rosa (único aprovado pelo brand system) */
+.bg-gradient-brand {
+  background: linear-gradient(135deg, #A046C6 0%, #F9267C 100%);
+}
+.bg-gradient-brand-subtle {
+  background: linear-gradient(135deg, #F3E8FF 0%, #FFF0F7 100%);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Utilitários de formulário reutilizáveis ───────────────── */
+.input-form {
+  @apply w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-800 placeholder-zinc-400
+         focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition;
+}
+
+.label-form {
+  @apply block text-[11px] font-medium text-zinc-500 mb-1;
 }

@@ -3,7 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useTransition } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
-import type { PrioridadeCard } from '@/types/database'
+import type { PrioridadeCard, PapelUsuario } from '@/types/database'
 
 interface FilterOption {
   id: string
@@ -14,6 +14,7 @@ interface CardFiltersProps {
   clientes: FilterOption[]
   tipos: FilterOption[]
   executores: FilterOption[]
+  papelAtual: PapelUsuario
 }
 
 const PRIORIDADES: { value: PrioridadeCard; label: string }[] = [
@@ -23,7 +24,8 @@ const PRIORIDADES: { value: PrioridadeCard; label: string }[] = [
   { value: 'baixa', label: 'Baixa' },
 ]
 
-export function CardFilters({ clientes, tipos, executores }: CardFiltersProps) {
+export function CardFilters({ clientes, tipos, executores, papelAtual }: CardFiltersProps) {
+  const ehEquipe = papelAtual !== 'cliente'
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -97,17 +99,19 @@ export function CardFilters({ clientes, tipos, executores }: CardFiltersProps) {
         ))}
       </select>
 
-      {/* Responsável */}
-      <select
-        value={responsavelAtual}
-        onChange={(e) => setFilter('responsavel', e.target.value)}
-        className={selectClass}
-      >
-        <option value="">Todos os responsáveis</option>
-        {executores.map((e) => (
-          <option key={e.id} value={e.id}>{e.nome}</option>
-        ))}
-      </select>
+      {/* Responsável — visível apenas para equipe */}
+      {ehEquipe && (
+        <select
+          value={responsavelAtual}
+          onChange={(e) => setFilter('responsavel', e.target.value)}
+          className={selectClass}
+        >
+          <option value="">Todos os responsáveis</option>
+          {executores.map((e) => (
+            <option key={e.id} value={e.id}>{e.nome}</option>
+          ))}
+        </select>
+      )}
 
       {/* Limpar filtros */}
       {temFiltros && (

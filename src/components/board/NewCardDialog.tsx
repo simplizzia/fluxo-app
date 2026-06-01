@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { actionCriarCard, actionBuscarTipo } from '@/app/(dashboard)/board/actions'
-import type { BoardCard } from '@/app/(dashboard)/board/actions'
+import type { BoardCard, CriarCardInput } from '@/app/(dashboard)/board/actions'
 import type { CampoFormulario, PapelUsuario } from '@/types/database'
 
 interface TipoBasico {
@@ -70,7 +70,8 @@ export function NewCardDialog({
   const [camposDinamicosInt, setCamposDinamicosInt] = useState<Record<string, string>>({})
   const [loadingTipo, setLoadingTipo] = useState(false)
 
-  // Estado do select de tipo
+  // Estado dos selects controlados
+  const [clienteSelecionado, setClienteSelecionado] = useState('')
   const [tipoSelecionado, setTipoSelecionado] = useState('')
 
   // Agrupar tipos por categoria para o optgroup
@@ -82,29 +83,28 @@ export function NewCardDialog({
   }, {})
 
   // Quando o tipo muda, busca os campos_formulario
+  // Todo o setState está dentro do .then() — nunca no corpo síncrono do effect
   useEffect(() => {
-    if (!tipoSelecionado) {
-      setCamposDinamicos([])
-      setCamposDinamicosPub({})
-      setCamposDinamicosInt({})
-      return
-    }
-    setLoadingTipo(true)
-    actionBuscarTipo(tipoSelecionado).then((result) => {
-      setLoadingTipo(false)
-      if (result.campos) {
-        setCamposDinamicos(result.campos)
-        // Resetar valores
-        const pub: Record<string, string> = {}
-        const int: Record<string, string> = {}
-        result.campos.forEach((c) => {
-          if (c.visivel_para_cliente) pub[c.nome] = ''
-          else int[c.nome] = ''
-        })
-        setCamposDinamicosPub(pub)
-        setCamposDinamicosInt(int)
-      }
-    })
+    if (!tipoSelecionado) return
+    actionBuscarTipo(tipoSelecionado)
+      .then((result) => {
+        setLoadingTipo(false)
+        if (result.campos) {
+          setCamposDinamicos(result.campos)
+          const pub: Record<string, string> = {}
+          const int: Record<string, string> = {}
+          result.campos.forEach((c) => {
+            if (c.visivel_para_cliente) pub[c.nome] = ''
+            else int[c.nome] = ''
+          })
+          setCamposDinamicosPub(pub)
+          setCamposDinamicosInt(int)
+        }
+      })
+      .catch(() => {
+        // Erro de rede ou action — sai do loading para não travar a UI
+        setLoadingTipo(false)
+      })
   }, [tipoSelecionado])
 
   function handleDinamicoChange(campo: CampoFormulario, value: string) {
@@ -115,15 +115,32 @@ export function NewCardDialog({
     }
   }
 
+  // Campos simples controlados
+  const [titulo, setTitulo] = useState('')
+  const [prioridade, setPrioridade] = useState<CriarCardInput['prioridade']>('normal')
+  const [prazoCliente, setPrazoCliente] = useState('')
+  const [entregaProgramada, setEntregaProgramada] = useState('')
+  const [responsavelId, setResponsavelId] = useState('')
+  const [confidencial, setConfidencial] = useState(false)
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     setFieldErrors({})
 
-    const formData = new FormData(e.currentTarget)
+    const input: CriarCardInput = {
+      titulo,
+      cliente_id: clienteSelecionado,
+      tipo_id: tipoSelecionado,
+      prioridade,
+      prazo_cliente: prazoCliente || undefined,
+      data_entrega_programada: entregaProgramada || undefined,
+      responsavel_id: responsavelId || undefined,
+      confidencial,
+    }
 
     startTransition(async () => {
-      const result = await actionCriarCard(formData, camposDinamicosPub, camposDinamicosInt)
+      const result = await actionCriarCard(input, camposDinamicosPub, camposDinamicosInt)
 
       if (result.error) {
         setError(result.error)
@@ -167,7 +184,7 @@ export function NewCardDialog({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5 p-6">
+          <form onSubmit={handleSubmit} noValidate className="space-y-5 p-6">
             {/* Erro global */}
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -184,12 +201,12 @@ export function NewCardDialog({
                 <select
                   id="cliente_id"
                   name="cliente_id"
-                  required
                   disabled={isPending}
-                  defaultValue=""
+                  value={clienteSelecionado}
+                  onChange={(e) => setClienteSelecionado(e.target.value)}
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
                 >
-                  <option value="" disabled>Selecione…</option>
+                  <option value="">Selecione…</option>
                   {clientes.map((c) => (
                     <option key={c.id} value={c.id}>{c.nome}</option>
                   ))}
@@ -209,7 +226,19 @@ export function NewCardDialog({
                   required
                   disabled={isPending}
                   value={tipoSelecionado}
-                  onChange={(e) => setTipoSelecionado(e.target.value)}
+                  onChange={(e) => {
+                    const novoTipo = e.target.value
+                    setTipoSelecionado(novoTipo)
+                    if (!novoTipo) {
+                      // Reset no event handler (permitido pelo linter)
+                      setCamposDinamicos([])
+                      setCamposDinamicosPub({})
+                      setCamposDinamicosInt({})
+                      setLoadingTipo(false)
+                    } else {
+                      setLoadingTipo(true)
+                    }
+                  }}
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
                 >
                   <option value="" disabled>Selecione…</option>
@@ -234,10 +263,10 @@ export function NewCardDialog({
               </label>
               <input
                 id="titulo"
-                name="titulo"
                 type="text"
-                required
                 disabled={isPending}
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
                 className="w-full rounded-lg border border-zinc-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
                 placeholder="Descreva brevemente a demanda"
               />
@@ -297,9 +326,9 @@ export function NewCardDialog({
                 </label>
                 <select
                   id="prioridade"
-                  name="prioridade"
                   disabled={isPending}
-                  defaultValue="normal"
+                  value={prioridade}
+                  onChange={(e) => setPrioridade(e.target.value as CriarCardInput['prioridade'])}
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
                 >
                   {PRIORIDADES.map((p) => (
@@ -314,9 +343,10 @@ export function NewCardDialog({
                 </label>
                 <input
                   id="prazo_cliente"
-                  name="prazo_cliente"
                   type="date"
                   disabled={isPending}
+                  value={prazoCliente}
+                  onChange={(e) => setPrazoCliente(e.target.value)}
                   className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
                 />
               </div>
@@ -328,9 +358,9 @@ export function NewCardDialog({
                   </label>
                   <select
                     id="responsavel_id"
-                    name="responsavel_id"
                     disabled={isPending}
-                    defaultValue=""
+                    value={responsavelId}
+                    onChange={(e) => setResponsavelId(e.target.value)}
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
                   >
                     <option value="">— Sem responsável</option>
@@ -342,14 +372,35 @@ export function NewCardDialog({
               )}
             </div>
 
+            {/* Entrega programada — só equipe (sócia/gestao/atendimento) */}
+            {ehEquipe && (
+              <div className="space-y-1.5">
+                <label htmlFor="entrega_programada" className="block text-sm font-medium text-zinc-700">
+                  Previsão de entrega ao cliente
+                  <span className="ml-1.5 text-xs font-normal text-zinc-400">(opcional — agenda envio automático)</span>
+                </label>
+                <input
+                  id="entrega_programada"
+                  type="datetime-local"
+                  disabled={isPending}
+                  value={entregaProgramada}
+                  onChange={(e) => setEntregaProgramada(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
+                />
+                <p className="text-[11px] text-zinc-400">
+                  Visível ao cliente como &quot;Previsão de entrega&quot;. Quando a data chegar, o card move automaticamente para Aprovação.
+                </p>
+              </div>
+            )}
+
             {/* Confidencial — só equipe sócia/gestao */}
             {(papelAtual === 'socia' || papelAtual === 'gestao') && (
               <label className="flex cursor-pointer items-center gap-3">
                 <input
                   type="checkbox"
-                  name="confidencial"
-                  value="true"
                   disabled={isPending}
+                  checked={confidencial}
+                  onChange={(e) => setConfidencial(e.target.checked)}
                   className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
                 />
                 <span className="text-sm text-zinc-700">
@@ -373,8 +424,8 @@ export function NewCardDialog({
               </button>
               <button
                 type="submit"
-                disabled={isPending || !tipoSelecionado}
-                className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isPending || !tipoSelecionado || !clienteSelecionado}
+                className="rounded-lg bg-gradient-brand px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isPending ? 'Criando…' : 'Criar demanda'}
               </button>

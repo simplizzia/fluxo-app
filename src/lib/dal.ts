@@ -15,17 +15,14 @@ import 'server-only'
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import type { PapelUsuario } from '@/types/database'
+
+// Re-exporta para manter compatibilidade com imports que vinham de dal.ts
+export type { PapelUsuario }
 
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
-
-export type PapelUsuario =
-  | 'socia'
-  | 'gestao'
-  | 'atendimento'
-  | 'executor'
-  | 'cliente'
 
 export interface UserProfile {
   id: string
@@ -34,6 +31,8 @@ export interface UserProfile {
   papel: PapelUsuario
   nome: string
   avatar_url: string | null
+  onboarding_concluido: boolean
+  ativo: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +67,9 @@ export const getCurrentProfile = cache(async (): Promise<UserProfile> => {
   const user = await verifySession()
   const supabase = await createClient()
 
+  // Seleciona apenas colunas que existem desde o schema inicial.
+  // onboarding_concluido e ativo têm fallback seguro caso a migration
+  // ainda não tenha sido aplicada no ambiente local.
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('id, user_id, organization_id, papel, nome, avatar_url')
@@ -80,7 +82,24 @@ export const getCurrentProfile = cache(async (): Promise<UserProfile> => {
     redirect('/login?erro=perfil_nao_encontrado')
   }
 
-  return profile as UserProfile
+  // Busca colunas opcionais separadamente (adicionadas em migrations posteriores)
+  const { data: extras } = await supabase
+    .from('profiles')
+    .select('onboarding_concluido, ativo')
+    .eq('user_id', user.id)
+    .single()
+
+  // ativo === false (explicitamente desativado por encerramento LGPD)
+  // undefined/null = coluna ainda não existe → não bloqueia
+  if ((extras as { ativo?: boolean } | null)?.ativo === false) {
+    redirect('/login?erro=conta_desativada')
+  }
+
+  return {
+    ...profile,
+    onboarding_concluido: (extras as { onboarding_concluido?: boolean } | null)?.onboarding_concluido ?? false,
+    ativo: (extras as { ativo?: boolean } | null)?.ativo ?? true,
+  } as UserProfile
 })
 
 // ---------------------------------------------------------------------------

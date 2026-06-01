@@ -17,6 +17,7 @@ export default async function BoardPage({
     tipo?: string
     prioridade?: string
     responsavel?: string
+    card?: string
   }>
 }) {
   const filtros = await searchParams
@@ -32,12 +33,41 @@ export default async function BoardPage({
     .select(`
       id, titulo, status, prioridade, prazo_cliente, confidencial, created_at,
       cliente:clientes!cliente_id(id, nome),
-      tipo:tipos_demanda!tipo_id(id, nome, categoria),
+      tipo:tipos_demanda!tipo_id(
+        id, nome, categoria,
+        sla_ativo, sla_prazo_inicio_horas, sla_prazo_resposta_horas
+      ),
       responsavel:profiles!responsavel_id(id, nome)
     `)
     .order('created_at', { ascending: false })
 
-  const cards = (rawCards ?? []) as unknown as BoardCard[]
+  // Busca campos adicionados em migrações posteriores separadamente para
+  // evitar erro caso o schema ainda não tenha sido atualizado no ambiente.
+  const cardIds = (rawCards ?? []).map((c) => c.id)
+  const { data: extraData } = cardIds.length > 0
+    ? await supabase
+        .from('cards')
+        .select('id, data_entrega_programada, sla_iniciado_em')
+        .in('id', cardIds)
+    : { data: [] as { id: string; data_entrega_programada?: string | null; sla_iniciado_em?: string | null }[] }
+
+  type ExtraRow = { id: string; data_entrega_programada?: string | null; sla_iniciado_em?: string | null }
+  const extraMap = new Map((extraData ?? []).map((c) => [c.id, c as ExtraRow]))
+
+  const cards = (rawCards ?? []).map((c) => {
+    const extra = extraMap.get(c.id)
+    return {
+      ...c,
+      data_entrega_programada: extra?.data_entrega_programada ?? null,
+      sla_iniciado_em: extra?.sla_iniciado_em ?? null,
+      tipo: {
+        ...c.tipo,
+        sla_ativo: (c.tipo as unknown as { sla_ativo?: boolean })?.sla_ativo ?? false,
+        sla_prazo_inicio_horas: (c.tipo as unknown as { sla_prazo_inicio_horas?: number | null })?.sla_prazo_inicio_horas ?? null,
+        sla_prazo_resposta_horas: (c.tipo as unknown as { sla_prazo_resposta_horas?: number | null })?.sla_prazo_resposta_horas ?? null,
+      },
+    }
+  }) as unknown as BoardCard[]
 
   // ---------------------------------------------------------------------------
   // Clientes para filtro e formulário de novo card
@@ -87,6 +117,7 @@ export default async function BoardPage({
         organizationId={profile.organization_id}
         papelAtual={profile.papel}
         filtrosIniciais={filtros}
+        initialCardId={filtros.card}
       />
     </div>
   )

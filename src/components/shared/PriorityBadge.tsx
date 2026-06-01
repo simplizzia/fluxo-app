@@ -37,11 +37,11 @@ export function PriorityBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-medium ${
         size === 'xs' ? 'text-[10px]' : 'text-xs'
       } ${className}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+      <span className={`h-2 w-2 flex-none rounded-full ${dot}`} />
       {label}
     </span>
   )

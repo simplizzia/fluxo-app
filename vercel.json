@@ -1,0 +1,64 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/lembrete-aguardando",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/em-andamento-parado",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/necessita-ajustes",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/plano-alerta",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/contrato-expirando",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/health-score",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/nps-disparo",
+      "schedule": "0 8 5 * *"
+    },
+    {
+      "path": "/api/cron/relatorio-mensal",
+      "schedule": "0 8 25 * *"
+    },
+    {
+      "path": "/api/cron/radar-tendencias",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/monitor-virais",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/sla-monitor",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/financeiro-alerta",
+      "schedule": "0 9 5 * *"
+    },
+    {
+      "path": "/api/cron/publicar-agendados",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/coletar-metricas",
+      "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/cron/avaliar-badges",
+      "schedule": "0 23 * * *"
+    }
+  ]
+}

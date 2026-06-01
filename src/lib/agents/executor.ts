@@ -1,0 +1,254 @@
+import 'server-only'
+import Anthropic from '@anthropic-ai/sdk'
+import { createServiceClient } from '@/lib/supabase/server'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface ExecucaoOpts {
+  organizationId: string
+  agenteChave: string         // e.g. 'criativo.carrossel'
+  clienteId?: string
+  cardId?: string
+  triggeredBy?: string        // profile.id
+  input: Record<string, unknown>
+}
+
+export interface ExecucaoResult {
+  runId?: string
+  output?: string
+  error?: string
+  tokensInput?: number
+  tokensOutput?: number
+  duracaoMs?: number
+}
+
+// ---------------------------------------------------------------------------
+// Context builder — fetches client brand data to include in every agent call
+// ---------------------------------------------------------------------------
+
+async function buildContextoCliente(
+  clienteId: string,
+  organizationId: string,
+): Promise<string> {
+  try {
+    const service = createServiceClient()
+
+    // Cliente básico
+    const { data: cliente } = await service
+      .from('clientes')
+      .select('nome, status')
+      .eq('id', clienteId)
+      .eq('organization_id', organizationId)
+      .single()
+
+    if (!cliente) return ''
+
+    const partes: string[] = [
+      `## Dados do Cliente\nNome: ${cliente.nome}\nStatus: ${cliente.status}`,
+    ]
+
+    // Seções do universo de marca (estratégia)
+    const { data: secoes } = await service
+      .from('universo_marca')
+      .select('categoria, titulo, conteudo')
+      .eq('cliente_id', clienteId)
+      .eq('organization_id', organizationId)
+      .order('categoria')
+
+    if (secoes && secoes.length > 0) {
+      partes.push('\n## Universo de Marca')
+      for (const s of secoes) {
+        const texto = (s.conteudo as { texto?: string })?.texto ?? ''
+        if (texto) {
+          partes.push(`\n### ${s.titulo}\n${texto}`)
+        }
+      }
+    }
+
+    return partes.join('\n')
+  } catch {
+    return ''
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Feedback context enrichment (Sprint 3.3)
+// Fetches the 5 most recent feedbacks for this agent+client combination
+// and formats them as calibration instructions for Claude.
+// ---------------------------------------------------------------------------
+
+async function buildFeedbackContext(
+  agentId: string,
+  organizationId: string,
+  clienteId?: string,
+): Promise<string> {
+  try {
+    const service = createServiceClient()
+
+    let query = service
+      .from('agent_feedback')
+      .select('avaliacao, comentario, criado_em')
+      .eq('organization_id', organizationId)
+      .eq('agent_id', agentId)
+      .order('criado_em', { ascending: false })
+      .limit(5)
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
+
+    const { data: feedbacks } = await query
+
+    if (!feedbacks || feedbacks.length === 0) return ''
+
+    const linhas = feedbacks.map((f) => {
+      const icone = f.avaliacao === 'bom' ? '✅' : '❌'
+      const comentario = f.comentario ? ` — "${f.comentario}"` : ''
+      return `${icone}${comentario}`
+    })
+
+    return (
+      '\n\n## Histórico de Feedback (calibre seu output com base nisto)' +
+      '\nAs últimas avaliações deste agente para este cliente foram:\n' +
+      linhas.join('\n') +
+      '\nUse estes feedbacks para ajustar o estilo, tom e estrutura do output atual.'
+    )
+  } catch {
+    return ''
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main executor
+// ---------------------------------------------------------------------------
+
+export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult> {
+  const { organizationId, agenteChave, clienteId, cardId, triggeredBy, input } = opts
+  const inicio = Date.now()
+  const service = createServiceClient()
+
+  // 1. Fetch agent from catalog
+  const { data: agente, error: errAgente } = await service
+    .from('agent_catalog')
+    .select('id, nome, prompt_sistema')
+    .eq('chave', agenteChave)
+    .eq('ativo', true)
+    .single()
+
+  if (errAgente || !agente) {
+    return { error: `Agente "${agenteChave}" não encontrado no catálogo.` }
+  }
+
+  // 2. Create run record with status 'rodando'
+  const { data: run, error: errRun } = await service
+    .from('agent_runs')
+    .insert({
+      organization_id: organizationId,
+      agent_id: agente.id,
+      card_id: cardId ?? null,
+      cliente_id: clienteId ?? null,
+      triggered_by: triggeredBy ?? null,
+      status: 'rodando',
+      input: input as unknown as import('@/types/database').Json,
+    })
+    .select('id')
+    .single()
+
+  if (errRun || !run) {
+    return { error: 'Falha ao registrar execução.' }
+  }
+
+  const runId = run.id as string
+
+  try {
+    // 3. Build context in parallel: client brand data + feedback history
+    const [contextoCliente, contextoFeedback] = await Promise.all([
+      clienteId ? buildContextoCliente(clienteId, organizationId) : Promise.resolve(''),
+      buildFeedbackContext(agente.id as string, organizationId, clienteId),
+    ])
+
+    // 4. Build user message from inputs
+    const inputTexts = Object.entries(input)
+      .filter(([, v]) => v !== null && v !== undefined && v !== '')
+      .map(([k, v]) => `**${k}:** ${v}`)
+      .join('\n')
+
+    const contextoParts = [contextoCliente, contextoFeedback].filter(Boolean).join('')
+    const userMessage = contextoParts
+      ? `${contextoParts}\n\n## Input do Usuário\n${inputTexts}`
+      : inputTexts || 'Inicie com base no contexto do cliente disponível.'
+
+    // 5. Call Claude API
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 4096,
+      system: agente.prompt_sistema as string,
+      messages: [{ role: 'user', content: userMessage }],
+    })
+
+    const outputText = response.content
+      .filter((b) => b.type === 'text')
+      .map((b) => (b as { type: 'text'; text: string }).text)
+      .join('\n')
+
+    const tokensInput = response.usage.input_tokens
+    const tokensOutput = response.usage.output_tokens
+    const duracaoMs = Date.now() - inicio
+
+    // 6. Update run record with success
+    await service
+      .from('agent_runs')
+      .update({
+        status: 'concluido',
+        output: { texto: outputText },
+        tokens_input: tokensInput,
+        tokens_output: tokensOutput,
+        duracao_ms: duracaoMs,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', runId)
+
+    // 7. If Pattern A (card-triggered), save output to card's campos_internos
+    if (cardId) {
+      const { data: card } = await service
+        .from('cards')
+        .select('campos_internos')
+        .eq('id', cardId)
+        .single()
+
+      const camposAtuais = (card?.campos_internos as Record<string, unknown>) ?? {}
+      await service
+        .from('cards')
+        .update({
+          campos_internos: {
+            ...camposAtuais,
+            ia_output: outputText,
+            ia_agente: agenteChave,
+            ia_gerado_em: new Date().toISOString(),
+          },
+        })
+        .eq('id', cardId)
+    }
+
+    return { runId, output: outputText, tokensInput, tokensOutput, duracaoMs }
+  } catch (err) {
+    const mensagem = err instanceof Error ? err.message : 'Erro desconhecido'
+
+    // Update run with failure
+    await service
+      .from('agent_runs')
+      .update({
+        status: 'falhou',
+        erro: mensagem,
+        duracao_ms: Date.now() - inicio,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', runId)
+
+    return { runId, error: mensagem }
+  }
+}
