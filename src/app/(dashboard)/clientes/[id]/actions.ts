@@ -56,6 +56,38 @@ export interface MoodboardItem {
 }
 
 // ---------------------------------------------------------------------------
+// actionRenomearCliente
+// ---------------------------------------------------------------------------
+
+export async function actionRenomearCliente(
+  clienteId: string,
+  novoNome: string,
+): Promise<{ error?: string }> {
+  await requirePapel('socia', 'gestao')
+  const supabase = await createClient()
+
+  const slug = novoNome
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  const { error } = await supabase
+    .from('clientes')
+    .update({ nome: novoNome.trim(), slug })
+    .eq('id', clienteId)
+
+  if (error) {
+    if (error.code === '23505') return { error: 'Já existe um cliente com esse nome.' }
+    return { error: 'Erro ao renomear cliente.' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}`)
+  revalidatePath('/clientes')
+  return {}
+}
+
+// ---------------------------------------------------------------------------
 // buscarClienteDetalhe
 // ---------------------------------------------------------------------------
 

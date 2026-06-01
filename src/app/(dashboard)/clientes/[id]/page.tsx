@@ -14,6 +14,7 @@ import {
 import MarcaTab from './MarcaTab'
 import OnboardingConfig from './OnboardingConfig'
 import { buscarOnboardingConfig } from './onboarding-actions'
+import { ClienteNomeEditor } from './ClienteNomeEditor'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -74,10 +75,18 @@ export default async function ClienteDetalhePage({ params }: Props) {
         <div className="flex h-14 w-14 flex-none items-center justify-center rounded-2xl bg-gradient-brand text-xl font-bold text-white">
           {cliente.nome[0].toUpperCase()}
         </div>
-        <div className="min-w-0">
-          <h1 className="font-display text-2xl font-bold text-ink">{cliente.nome}</h1>
-          <p className="text-sm text-zinc-500 capitalize">{cliente.status}</p>
-        </div>
+        {podeEditar ? (
+          <ClienteNomeEditor
+            clienteId={id}
+            nomeInicial={cliente.nome}
+            status={cliente.status}
+          />
+        ) : (
+          <div className="min-w-0">
+            <h1 className="font-display text-2xl font-bold text-ink">{cliente.nome}</h1>
+            <p className="text-sm text-zinc-500 capitalize">{cliente.status}</p>
+          </div>
+        )}
         <div className="ml-auto flex items-center gap-3">
           <ScoreChip score={cliente.scoreAtual} />
           <Link
