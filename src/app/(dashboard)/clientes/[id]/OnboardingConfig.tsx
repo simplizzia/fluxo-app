@@ -5,6 +5,7 @@ import { Plus, Trash2, Send, ExternalLink, CheckCircle2, Clock, ChevronDown, Che
 import {
   actionSalvarOnboardingConfig,
   actionAdicionarMarca,
+  actionEditarMarca,
   actionRemoverMarca,
   actionEnviarLinkOnboarding,
   type OnboardingConfig,
@@ -58,6 +59,7 @@ function DadosClienteForm({
       })
       if (res?.error) { setSaveError(res.error); return }
       setSaved(true)
+      setOpen(false)
       setTimeout(() => setSaved(false), 2000)
     })
   }
@@ -202,8 +204,68 @@ function MarcasSection({
 }
 
 function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: string }) {
-  const [, start] = useTransition()
-  const [open, setOpen] = useState(false)
+  const [removePending, startRemove] = useTransition()
+  const [editPending, startEdit]     = useTransition()
+  const [open, setOpen]     = useState(false)
+  const [editando, setEditando] = useState(false)
+  const [erro, setErro]     = useState('')
+  const [form, setForm]     = useState({
+    nome:                marca.nome,
+    publico:             marca.publico ?? '',
+    site:                marca.site ?? '',
+    instagram:           marca.instagram ?? '',
+    linkedin:            marca.linkedin ?? '',
+    posicionamento_atual: marca.posicionamento_atual ?? '',
+    concorrentes:        marca.concorrentes ?? '',
+    contexto_estrategico: marca.contexto_estrategico ?? '',
+    cenario_atual:       marca.cenario_atual ?? '',
+  })
+
+  function handleSalvarEdicao() {
+    if (!form.nome.trim()) return
+    setErro('')
+    startEdit(async () => {
+      const res = await actionEditarMarca(clienteId, marca.id, {
+        nome:                form.nome,
+        publico:             form.publico || null,
+        site:                form.site || null,
+        instagram:           form.instagram || null,
+        linkedin:            form.linkedin || null,
+        posicionamento_atual: form.posicionamento_atual || null,
+        concorrentes:        form.concorrentes || null,
+        contexto_estrategico: form.contexto_estrategico || null,
+        cenario_atual:       form.cenario_atual || null,
+      })
+      if (res.error) { setErro(res.error); return }
+      setEditando(false)
+    })
+  }
+
+  if (editando) {
+    return (
+      <div className="border-t border-zinc-100 px-5 py-4 space-y-3">
+        <p className="text-xs font-semibold text-zinc-700">Editando: {marca.nome}</p>
+        <Campo label="Nome da marca *" value={form.nome} onChange={(v) => setForm(f => ({ ...f, nome: v }))} placeholder="ex: Trevo Lácteos" />
+        <Campo label="Público-alvo" value={form.publico} onChange={(v) => setForm(f => ({ ...f, publico: v }))} placeholder="ex: Supermercados do Sudeste" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Campo label="Site" value={form.site} onChange={(v) => setForm(f => ({ ...f, site: v }))} placeholder="site.com.br" />
+          <Campo label="Instagram" value={form.instagram} onChange={(v) => setForm(f => ({ ...f, instagram: v }))} placeholder="@marca" />
+          <Campo label="LinkedIn" value={form.linkedin} onChange={(v) => setForm(f => ({ ...f, linkedin: v }))} placeholder="linkedin.com/company/..." />
+        </div>
+        <CampoTexto label="Posicionamento atual" value={form.posicionamento_atual} onChange={(v) => setForm(f => ({ ...f, posicionamento_atual: v }))} rows={2} />
+        <CampoTexto label="Concorrentes" value={form.concorrentes} onChange={(v) => setForm(f => ({ ...f, concorrentes: v }))} rows={2} />
+        <CampoTexto label="Contexto estratégico" value={form.contexto_estrategico} onChange={(v) => setForm(f => ({ ...f, contexto_estrategico: v }))} rows={3} />
+        <CampoTexto label="Cenário atual" value={form.cenario_atual} onChange={(v) => setForm(f => ({ ...f, cenario_atual: v }))} rows={2} />
+        {erro && <p className="text-xs text-red-600">{erro}</p>}
+        <div className="flex justify-end gap-2">
+          <button onClick={() => setEditando(false)} className="rounded-xl border border-zinc-200 px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-50">Cancelar</button>
+          <button onClick={handleSalvarEdicao} disabled={editPending || !form.nome.trim()} className="rounded-xl bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+            {editPending ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="px-5 py-3">
@@ -222,18 +284,46 @@ function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: str
           <button onClick={() => setOpen((o) => !o)} className="text-xs text-zinc-400 hover:text-zinc-600">
             {open ? 'Fechar' : 'Ver detalhes'}
           </button>
+          <button onClick={() => { setEditando(true); setOpen(false) }} className="text-xs text-zinc-400 hover:text-zinc-600">
+            Editar
+          </button>
           <button
-            onClick={() => start(async () => { await actionRemoverMarca(clienteId, marca.id) })}
-            className="rounded-lg p-1 text-zinc-300 hover:bg-red-50 hover:text-red-500"
+            onClick={() => startRemove(async () => { await actionRemoverMarca(clienteId, marca.id) })}
+            disabled={removePending}
+            className="rounded-lg p-1 text-zinc-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
             title="Remover marca"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
-      {open && marca.briefing_output && (
-        <div className="mt-3 rounded-xl bg-zinc-50 p-3 text-xs text-zinc-600 whitespace-pre-wrap leading-relaxed">
-          {marca.briefing_output}
+
+      {open && (
+        <div className="mt-3 space-y-2">
+          {marca.briefing_output ? (
+            <div className="rounded-xl bg-zinc-50 p-3 text-xs text-zinc-600 whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
+              {marca.briefing_output}
+            </div>
+          ) : (
+            <div className="rounded-xl bg-zinc-50 p-3 space-y-1.5">
+              {[
+                ['Público-alvo', marca.publico],
+                ['Posicionamento', marca.posicionamento_atual],
+                ['Concorrentes', marca.concorrentes],
+                ['Contexto estratégico', marca.contexto_estrategico],
+                ['Cenário atual', marca.cenario_atual],
+              ].filter(([, v]) => v).map(([label, value]) => (
+                <div key={label as string}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">{label}</p>
+                  <p className="text-xs text-zinc-600">{value}</p>
+                </div>
+              ))}
+              {!marca.publico && !marca.posicionamento_atual && !marca.contexto_estrategico && (
+                <p className="text-xs italic text-zinc-400">Nenhum contexto preenchido ainda.</p>
+              )}
+              <p className="text-[10px] text-zinc-400 pt-1">Briefing pendente — aguardando chat do cliente</p>
+            </div>
+          )}
         </div>
       )}
     </div>

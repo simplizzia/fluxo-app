@@ -231,6 +231,38 @@ export async function actionAdicionarMarca(
 }
 
 // ---------------------------------------------------------------------------
+// actionEditarMarca
+// ---------------------------------------------------------------------------
+
+export async function actionEditarMarca(
+  clienteId: string,
+  marcaId: string,
+  dados: Partial<Omit<OnboardingMarca, 'id' | 'ordem' | 'status' | 'briefing_output' | 'briefing_salvo_em'>>,
+): Promise<{ error?: string }> {
+  await requirePapel('socia', 'gestao')
+  const service = createServiceClient()
+
+  const { error } = await service
+    .from('onboarding_marcas')
+    .update({
+      nome:                dados.nome ?? undefined,
+      publico:             dados.publico ?? null,
+      site:                dados.site ?? null,
+      instagram:           dados.instagram ?? null,
+      linkedin:            dados.linkedin ?? null,
+      posicionamento_atual: dados.posicionamento_atual ?? null,
+      concorrentes:        dados.concorrentes ?? null,
+      contexto_estrategico: dados.contexto_estrategico ?? null,
+      cenario_atual:       dados.cenario_atual ?? null,
+    })
+    .eq('id', marcaId)
+
+  if (error) return { error: 'Erro ao editar marca.' }
+  revalidatePath(`/clientes/${clienteId}`)
+  return {}
+}
+
+// ---------------------------------------------------------------------------
 // actionRemoverMarca
 // ---------------------------------------------------------------------------
 

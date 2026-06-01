@@ -349,6 +349,9 @@ export default function ChatOnboarding({ token, cliente, initialMessages }: Prop
         setConcluido(true)
         return
       }
+      // Remove a última mensagem da Izzi (que contém o marcador) para evitar
+      // repetição de contexto quando o trigger da marca for exibido
+      setDisplay((prev) => prev.filter((m) => m.id !== msgId))
       setFase('briefing')
       faseRef.current = 'briefing'
       setMarcaIndex(0)
@@ -424,14 +427,19 @@ export default function ChatOnboarding({ token, cliente, initialMessages }: Prop
         <form onSubmit={handleSubmit} className="mx-auto flex max-w-2xl gap-3">
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value)
+              e.target.style.height = 'auto'
+              e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e as unknown as React.FormEvent) }
             }}
-            placeholder="Escreva sua resposta…"
+            placeholder="Escreva sua resposta… (Enter para enviar, Shift+Enter para nova linha)"
             disabled={carregando || concluido}
             rows={1}
-            className="flex-1 resize-none rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-purple-200 disabled:opacity-50"
+            style={{ minHeight: '48px' }}
+            className="flex-1 resize-none rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-purple-200 disabled:opacity-50 overflow-y-auto"
           />
           <button
             type="submit"
