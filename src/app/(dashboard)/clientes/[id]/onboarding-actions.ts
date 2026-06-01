@@ -120,36 +120,41 @@ export async function actionSalvarOnboardingConfig(
     cenario_atual?: string
   },
 ): Promise<{ error?: string }> {
-  const profile = await requirePapel('socia', 'gestao')
-  const service = createServiceClient()
+  try {
+    const profile = await requirePapel('socia', 'gestao')
+    const service = createServiceClient()
 
-  // Cria sessão se não existir (idempotente)
-  const { data: clienteRow } = await service
-    .from('clientes')
-    .select('nome')
-    .eq('id', clienteId)
-    .single()
+    const { data: clienteRow } = await service
+      .from('clientes')
+      .select('nome')
+      .eq('id', clienteId)
+      .single()
 
-  const { error } = await service
-    .from('onboarding_clientes')
-    .upsert(
-      {
-        organization_id: profile.organization_id,
-        cliente_id:      clienteId,
-        client_name:     clienteRow?.nome ?? '',
-        ...config,
-        servicos_contratados: config.servicos_contratados ?? [],
-      },
-      { onConflict: 'cliente_id' },
-    )
+    const { error } = await service
+      .from('onboarding_clientes')
+      .upsert(
+        {
+          organization_id:      profile.organization_id,
+          cliente_id:           clienteId,
+          client_name:          clienteRow?.nome ?? '',
+          ...config,
+          servicos_contratados: config.servicos_contratados ?? [],
+        },
+        { onConflict: 'cliente_id' },
+      )
 
-  if (error) {
-    console.error('[actionSalvarOnboardingConfig]', error)
-    return { error: 'Erro ao salvar: ' + error.message }
+    if (error) {
+      console.error('[actionSalvarOnboardingConfig] upsert error:', error)
+      return { error: 'Erro ao salvar: ' + error.message }
+    }
+
+    revalidatePath(`/clientes/${clienteId}`)
+    return {}
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[actionSalvarOnboardingConfig] exception:', msg)
+    return { error: 'Exceção: ' + msg }
   }
-
-  revalidatePath(`/clientes/${clienteId}`)
-  return {}
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +182,7 @@ export async function actionAdicionarMarca(
       .eq('id', clienteId)
       .single()
 
-    const { data: nova } = await service
+    const { data: nova, error: errInit } = await service
       .from('onboarding_clientes')
       .upsert(
         {
@@ -190,7 +195,7 @@ export async function actionAdicionarMarca(
       .select('token')
       .single()
 
-    if (!nova) return { error: 'Erro ao inicializar onboarding.' }
+    if (errInit || !nova) return { error: `Erro ao inicializar: ${errInit?.message ?? 'sem dados'}` }
     session = nova
   }
 
