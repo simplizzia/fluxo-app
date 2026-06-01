@@ -32,6 +32,7 @@ function DadosClienteForm({
   const [open, setOpen] = useState(!config?.nome_contato)
   const [pending, start] = useTransition()
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const [form, setForm] = useState({
     nome_contato:         config?.nome_contato ?? '',
@@ -44,8 +45,9 @@ function DadosClienteForm({
   })
 
   function handleSave() {
+    setSaveError('')
     start(async () => {
-      await actionSalvarOnboardingConfig(clienteId, {
+      const res = await actionSalvarOnboardingConfig(clienteId, {
         nome_contato:         form.nome_contato || undefined,
         cargo_contato:        form.cargo_contato || undefined,
         setor:                form.setor || undefined,
@@ -54,6 +56,7 @@ function DadosClienteForm({
         dores_identificadas:  form.dores_identificadas || undefined,
         cenario_atual:        form.cenario_atual || undefined,
       })
+      if (res?.error) { setSaveError(res.error); return }
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     })
@@ -86,6 +89,7 @@ function DadosClienteForm({
           <CampoTexto label="Dores identificadas" value={form.dores_identificadas} onChange={(v) => setForm((f) => ({ ...f, dores_identificadas: v }))} placeholder="O que o cliente está sentindo dificuldade, o que não funciona hoje..." />
           <CampoTexto label="Cenário atual (o que está mudando)" value={form.cenario_atual} onChange={(v) => setForm((f) => ({ ...f, cenario_atual: v }))} placeholder="Por que o cliente chegou até nós agora? Qual é a situação que gerou essa contratação?" />
 
+          {saveError && <p className="text-xs text-red-600">{saveError}</p>}
           <div className="flex justify-end">
             <button
               onClick={handleSave}

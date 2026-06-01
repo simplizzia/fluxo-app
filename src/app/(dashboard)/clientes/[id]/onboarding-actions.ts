@@ -130,7 +130,7 @@ export async function actionSalvarOnboardingConfig(
     .eq('id', clienteId)
     .single()
 
-  await service
+  const { error } = await service
     .from('onboarding_clientes')
     .upsert(
       {
@@ -142,6 +142,11 @@ export async function actionSalvarOnboardingConfig(
       },
       { onConflict: 'cliente_id' },
     )
+
+  if (error) {
+    console.error('[actionSalvarOnboardingConfig]', error)
+    return { error: 'Erro ao salvar: ' + error.message }
+  }
 
   revalidatePath(`/clientes/${clienteId}`)
   return {}

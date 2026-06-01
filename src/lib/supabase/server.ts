@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/database'
 
@@ -33,17 +34,17 @@ export async function createClient() {
 }
 
 /**
- * Cliente com service role — SOMENTE para Edge Functions e operações server-side
- * que precisam bypassar RLS (ex: automações, relatórios, audit log).
+ * Cliente com service role — SOMENTE para operações server-side
+ * que precisam bypassar RLS (ex: onboarding, automações, relatórios).
+ * Usa @supabase/supabase-js diretamente para garantir bypass de RLS.
  * NUNCA expor no frontend.
  */
 export function createServiceClient() {
-  return createServerClient<Database>(
+  return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      cookies: { getAll: () => [], setAll: () => {} },
-      auth: { persistSession: false },
+      auth: { autoRefreshToken: false, persistSession: false },
     },
   )
 }
