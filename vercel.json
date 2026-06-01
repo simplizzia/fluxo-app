@@ -2,19 +2,19 @@
   "crons": [
     {
       "path": "/api/cron/lembrete-aguardando",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/em-andamento-parado",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/necessita-ajustes",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 10 * * *"
     },
     {
       "path": "/api/cron/plano-alerta",
-      "schedule": "0 9 * * *"
+      "schedule": "0 11 * * *"
     },
     {
       "path": "/api/cron/contrato-expirando",
@@ -38,11 +38,11 @@
     },
     {
       "path": "/api/cron/monitor-virais",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/sla-monitor",
-      "schedule": "0 * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/financeiro-alerta",
@@ -50,7 +50,7 @@
     },
     {
       "path": "/api/cron/publicar-agendados",
-      "schedule": "0 * * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/coletar-metricas",
