@@ -306,6 +306,18 @@ export default function ChatOnboarding({ token, cliente, initialMessages }: Prop
     // ─── Detecta marcadores ───────────────────────────────────────────────────
 
     if (acumulado.includes(MARKER_FIM)) {
+      // Salva briefing da marca atual antes de encerrar (caso Izzi emita
+      // [ONBOARDING_COMPLETO] diretamente sem passar por [MARCA_CONCLUIDA])
+      if (marcaId && faseRef.current === 'briefing') {
+        const outputFinal = acumulado.replace(MARKER_FIM, '').replace(MARKER_MARCA, '').trim()
+        if (outputFinal) {
+          await fetch('/api/onboarding/save-briefing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, marcaId, output: outputFinal }),
+          }).catch(() => {})
+        }
+      }
       await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
