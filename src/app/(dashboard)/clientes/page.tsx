@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Users, ChevronRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { buscarClientes } from './actions'
 import { UsageBarra } from '@/components/plano/UsageBarra'
+import { NovoClienteDialog } from './NovoClienteDialog'
 
 export const metadata: Metadata = {
   title: 'Clientes — Simplizzia',
@@ -42,6 +43,7 @@ export default async function ClientesPage() {
             {ativos.length} ativo{ativos.length !== 1 ? 's' : ''} de {lista.length} no total
           </p>
         </div>
+        <NovoClienteDialog />
       </div>
 
       {/* Lista */}

@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { requirePapel } from '@/lib/dal'
 import { createClient } from '@/lib/supabase/server'
 
@@ -14,6 +15,41 @@ export interface ClienteListItem {
   plano: { usados: number; limite: number; porcentagem: number } | null
   scoreAtual: number | null
   responsavelNome: string | null
+}
+
+// ---------------------------------------------------------------------------
+// actionCriarCliente
+// ---------------------------------------------------------------------------
+
+export async function actionCriarCliente(
+  nome: string,
+): Promise<{ id?: string; error?: string }> {
+  const profile = await requirePapel('socia', 'gestao')
+  const supabase = await createClient()
+
+  const slug = nome
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  const { data, error } = await supabase
+    .from('clientes')
+    .insert({
+      organization_id: profile.organization_id,
+      nome: nome.trim(),
+      slug,
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    if (error.code === '23505') return { error: 'Já existe um cliente com esse nome.' }
+    return { error: 'Erro ao criar cliente.' }
+  }
+
+  revalidatePath('/clientes')
+  return { id: data.id }
 }
 
 // ---------------------------------------------------------------------------
