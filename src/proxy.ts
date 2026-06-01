@@ -43,7 +43,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Rotas públicas que não precisam de autenticação
-  const publicRoutes = ['/login', '/auth/callback', '/avaliacoes', '/onboarding', '/esqueci-senha', '/redefinir-senha']
+  const publicRoutes = ['/login', '/auth/callback', '/avaliacoes', '/onboarding', '/esqueci-senha', '/redefinir-senha', '/api/onboarding/']
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   // Usuário não autenticado tentando acessar rota protegida
