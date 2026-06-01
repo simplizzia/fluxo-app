@@ -115,11 +115,13 @@ function MarcasSection({
   const [adicionando, setAdicionando] = useState(false)
   const [pending, start] = useTransition()
   const [novaForm, setNovaForm] = useState<Partial<OnboardingMarca>>({})
+  const [erro, setErro] = useState('')
 
   function handleAdicionar() {
     if (!novaForm.nome?.trim()) return
+    setErro('')
     start(async () => {
-      await actionAdicionarMarca(clienteId, {
+      const res = await actionAdicionarMarca(clienteId, {
         nome:                novaForm.nome ?? '',
         publico:             novaForm.publico ?? null,
         site:                novaForm.site ?? null,
@@ -130,6 +132,7 @@ function MarcasSection({
         contexto_estrategico: novaForm.contexto_estrategico ?? null,
         cenario_atual:       novaForm.cenario_atual ?? null,
       })
+      if (res.error) { setErro(res.error); return }
       setNovaForm({})
       setAdicionando(false)
     })
@@ -175,8 +178,9 @@ function MarcasSection({
           <CampoTexto label="Contexto estratégico" value={novaForm.contexto_estrategico ?? ''} onChange={(v) => setNovaForm((f) => ({ ...f, contexto_estrategico: v }))} placeholder="O que a Simplizzia precisa saber para conduzir o briefing desta marca com inteligência?" rows={3} />
           <CampoTexto label="Cenário atual (o que muda)" value={novaForm.cenario_atual ?? ''} onChange={(v) => setNovaForm((f) => ({ ...f, cenario_atual: v }))} placeholder="O que está acontecendo com esta marca agora que motivou a contratação?" rows={2} />
 
+          {erro && <p className="text-xs text-red-600">{erro}</p>}
           <div className="flex justify-end gap-2">
-            <button onClick={() => setAdicionando(false)} className="rounded-xl border border-zinc-200 px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-50">
+            <button onClick={() => { setAdicionando(false); setErro('') }} className="rounded-xl border border-zinc-200 px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-50">
               Cancelar
             </button>
             <button

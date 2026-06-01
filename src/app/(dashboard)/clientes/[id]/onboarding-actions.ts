@@ -158,13 +158,36 @@ export async function actionAdicionarMarca(
   const profile = await requirePapel('socia', 'gestao')
   const service = createServiceClient()
 
-  const { data: session } = await service
+  let { data: session } = await service
     .from('onboarding_clientes')
     .select('token')
     .eq('cliente_id', clienteId)
-    .single()
+    .maybeSingle()
 
-  if (!session) return { error: 'Onboarding não configurado. Salve os dados do cliente primeiro.' }
+  // Auto-inicializa a sessão se ainda não existir
+  if (!session) {
+    const { data: clienteRow } = await service
+      .from('clientes')
+      .select('nome')
+      .eq('id', clienteId)
+      .single()
+
+    const { data: nova } = await service
+      .from('onboarding_clientes')
+      .upsert(
+        {
+          organization_id: profile.organization_id,
+          cliente_id:      clienteId,
+          client_name:     clienteRow?.nome ?? '',
+        },
+        { onConflict: 'cliente_id' },
+      )
+      .select('token')
+      .single()
+
+    if (!nova) return { error: 'Erro ao inicializar onboarding.' }
+    session = nova
+  }
 
   // Próxima ordem
   const { data: ultima } = await service
