@@ -32,7 +32,6 @@ export default async function OnboardingClientePage({ params }: PageProps) {
     .single()
 
   if (error || !session) return <TelaErro />
-  if (session.status === 'done') return <TelaConcluido />
 
   // Busca marcas configuradas
   const { data: marcas } = await service
@@ -40,6 +39,10 @@ export default async function OnboardingClientePage({ params }: PageProps) {
     .select('id, nome, publico, instagram, linkedin, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, status')
     .eq('token', token)
     .order('ordem', { ascending: true })
+
+  // Só mostra tela de conclusão se TODAS as marcas tiverem briefing salvo
+  const temMarcasPendentes = (marcas ?? []).some((m) => m.status !== 'done')
+  if (session.status === 'done' && !temMarcasPendentes) return <TelaConcluido />
 
   // Busca histórico de mensagens para retomada
   const { data: mensagens } = await service
