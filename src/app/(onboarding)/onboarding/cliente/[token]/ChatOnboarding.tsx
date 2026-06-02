@@ -200,13 +200,18 @@ interface Props {
 export default function ChatOnboarding({ token, cliente, initialMessages }: Props) {
   const marcas = cliente.marcas
 
-  // Carrega estado do localStorage (para retomada) ou inicializa
-  const estadoSalvo = typeof window !== 'undefined' ? carregarEstado(token) : null
-
   // Índice da primeira marca ainda pendente — usa briefingOutput como fonte de verdade
   // (status pode estar desatualizado se o update falhou anteriormente)
   const primeiraIndexPendente = marcas.findIndex((m) => m.status !== 'done' && !m.briefingOutput)
-  const indexInicial = estadoSalvo?.marcaIndex ?? (primeiraIndexPendente > 0 ? primeiraIndexPendente : 0)
+
+  // Carrega estado do localStorage — descarta se o índice salvo aponta para marca já concluída
+  const estadoSalvoRaw = typeof window !== 'undefined' ? carregarEstado(token) : null
+  const indexSalvo = estadoSalvoRaw?.marcaIndex ?? 0
+  const marcaSalvaJaConcluida = marcas[indexSalvo]?.briefingOutput || marcas[indexSalvo]?.status === 'done'
+  const estadoSalvo = marcaSalvaJaConcluida ? null : estadoSalvoRaw
+  if (marcaSalvaJaConcluida && typeof window !== 'undefined') limparEstado(token)
+
+  const indexInicial = estadoSalvo?.marcaIndex ?? (primeiraIndexPendente >= 0 ? primeiraIndexPendente : 0)
   const faseInicial: Fase = estadoSalvo?.fase ?? (primeiraIndexPendente > 0 ? 'briefing' : 'boas-vindas')
 
   const [fase, setFase]               = useState<Fase>(faseInicial)
