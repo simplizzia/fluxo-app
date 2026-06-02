@@ -1,11 +1,14 @@
 /**
  * POST /api/onboarding/reprocessar-modo2
  * Regera o Modo 2 (Prep de Reunião) para um onboarding já concluído.
- * Uso: quando o [ONBOARDING_COMPLETO] foi detectado mas gerarModo2 falhou.
+ * Roda de forma SÍNCRONA para garantir conclusão dentro do timeout do Vercel.
  */
 import { NextRequest } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { gerarModo2 } from '@/lib/onboarding/geradores'
+
+// Estende o timeout máximo para esta rota (requer Vercel Pro para >10s)
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   const { token } = await request.json() as { token: string }
@@ -25,9 +28,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Onboarding não encontrado' }, { status: 404 })
   }
 
-  void gerarModo2({ token, organizationId: session.organization_id }).catch(
-    (err) => console.error('[reprocessar-modo2]', err)
-  )
-
-  return Response.json({ ok: true, message: 'Gerando Modo 2 em background...' })
+  try {
+    await gerarModo2({ token, organizationId: session.organization_id })
+    return Response.json({ ok: true, message: 'Modo 2 gerado com sucesso.' })
+  } catch (err) {
+    console.error('[reprocessar-modo2]', err)
+    return Response.json({ error: String(err) }, { status: 500 })
+  }
 }
