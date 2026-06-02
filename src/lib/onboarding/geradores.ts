@@ -135,11 +135,20 @@ export async function gerarModo2(opts: {
 // gerarModo3 — Briefing Completo (auto-gerado após importar notas Gemini do kickoff)
 // ---------------------------------------------------------------------------
 
+export interface GerarModo3Result {
+  etapa: string
+  briefingsUsados: number
+  agenteErro?: string
+  outputLen?: number
+  insertErro?: string
+  ok: boolean
+}
+
 export async function gerarModo3(opts: {
   clienteId: string
   organizationId: string
   transcricao: string
-}): Promise<void> {
+}): Promise<GerarModo3Result> {
   const { clienteId, organizationId, transcricao } = opts
   const service = createServiceClient()
 
@@ -150,7 +159,9 @@ export async function gerarModo3(opts: {
     .eq('id', clienteId)
     .single()
 
-  if (!cliente) return
+  if (!cliente) {
+    return { etapa: 'cliente_nao_encontrado', briefingsUsados: 0, ok: false }
+  }
 
   // Buscar briefings do onboarding (modo 1) salvos em universo_marca
   const { data: briefingRows } = await service
@@ -188,25 +199,29 @@ export async function gerarModo3(opts: {
     ].filter(Boolean).join('\n')
 
     if (!briefingRows?.length) {
-      // Buscar direto das onboarding_marcas
+      // Fallback: buscar direto das onboarding_marcas usando briefing_output
       const { data: marcas } = await service
         .from('onboarding_marcas')
         .select('nome, briefing_output')
         .eq('token', onboardingSession.token)
-        .eq('status', 'done')
         .order('ordem', { ascending: true })
 
-      briefingsTexto = (marcas ?? []).map((m) =>
-        `## ${m.nome}\n${m.briefing_output ?? '(sem briefing)'}`
-      ).join('\n\n')
+      briefingsTexto = (marcas ?? [])
+        .filter((m) => m.briefing_output)
+        .map((m) => `## ${m.nome}\n${m.briefing_output}`)
+        .join('\n\n')
     }
   }
 
+  let briefingsCount = 0
   if (briefingRows?.length) {
     briefingsTexto = briefingRows.map((r) => {
       const texto = (r.conteudo as { texto?: string })?.texto ?? ''
       return `## ${r.titulo}\n${texto}`
     }).join('\n\n')
+    briefingsCount = briefingRows.length
+  } else {
+    briefingsCount = briefingsTexto ? briefingsTexto.split('\n\n## ').length : 0
   }
 
   const result = await executarAgente({
@@ -220,16 +235,49 @@ export async function gerarModo3(opts: {
     },
   })
 
-  if (!result.output) return
+  if (!result.output) {
+    return { etapa: 'agente_falhou', briefingsUsados: briefingsCount, agenteErro: result.error, ok: false }
+  }
 
-  await service.from('universo_marca').insert({
-    organization_id:      organizationId,
-    cliente_id:           clienteId,
-    categoria:            'brand_system',
-    subcategoria:         'briefing_completo',
-    titulo:               `Briefing Completo — ${cliente.nome}`,
-    conteudo:             { texto: result.output },
-    visivel_para_cliente: false,
-    gerado_por_agente:    'onboarding.modo3',
-  })
+  // Insert ou update da linha de briefing_completo
+  const { data: existente } = await service
+    .from('universo_marca')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .eq('cliente_id', clienteId)
+    .eq('subcategoria', 'briefing_completo')
+    .maybeSingle()
+
+  let insertError
+  if (existente) {
+    const { error } = await service
+      .from('universo_marca')
+      .update({
+        titulo:            `Briefing Completo — ${cliente.nome}`,
+        conteudo:          { texto: result.output },
+        gerado_por_agente: 'onboarding.modo3',
+      })
+      .eq('id', existente.id)
+    insertError = error
+  } else {
+    const { error } = await service.from('universo_marca').insert({
+      organization_id:      organizationId,
+      cliente_id:           clienteId,
+      categoria:            'brand_system',
+      subcategoria:         'briefing_completo',
+      titulo:               `Briefing Completo — ${cliente.nome}`,
+      conteudo:             { texto: result.output },
+      visivel_para_cliente: false,
+      gerado_por_agente:    'onboarding.modo3',
+    })
+    insertError = error
+  }
+
+  return {
+    etapa: insertError ? 'insert_falhou' : 'concluido',
+    briefingsUsados: briefingsCount,
+    outputLen: result.output.length,
+    insertErro: insertError?.message,
+    ok: !insertError,
+  }
 }

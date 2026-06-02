@@ -715,14 +715,16 @@ export async function actionImportarMeetNotes(
       })
       .eq('id', reuniaoId)
 
-    // Gera Briefing Completo (Modo 3) se for reunião de kickoff de onboarding
+    // Gera Briefing Completo (Modo 3) se for reunião de kickoff de onboarding.
+    // Aguarda a conclusão — em serverless o processo morre após o retorno.
     const reuniaoRow = row as { tipo?: string; cliente_id?: string | null; organization_id: string }
     if (reuniaoRow.tipo === 'onboarding' && reuniaoRow.cliente_id) {
-      void gerarModo3({
+      await gerarModo3({
         clienteId: reuniaoRow.cliente_id,
         organizationId: reuniaoRow.organization_id,
         transcricao: texto,
       }).catch((err) => console.error('[actionImportarMeetNotes] gerarModo3', err))
+      revalidatePath(`/clientes/${reuniaoRow.cliente_id}`)
     }
 
     revalidatePath(`/reunioes/${reuniaoId}`)

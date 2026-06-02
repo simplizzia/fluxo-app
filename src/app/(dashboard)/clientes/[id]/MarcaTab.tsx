@@ -69,8 +69,24 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
       {/* Estratégia */}
       {subTab === 'estrategia' && (
         <div className="space-y-4">
+          {/* Documentos gerados pela Izzi no onboarding (read-only) */}
+          {(() => {
+            const docsIzzi = secoes.filter(
+              (s) => s.subcategoria === 'prep_reuniao' || s.subcategoria === 'briefing_completo',
+            )
+            if (docsIzzi.length === 0) return null
+            return docsIzzi.map((doc) => (
+              <DocumentoIzzi key={doc.id} secao={doc} />
+            ))
+          })()}
+
+          {/* Campos editáveis manualmente — ignoram as linhas de documento da Izzi */}
           {CATEGORIAS_TEXTO.map((cat) => {
-            const secao = secoes.find((s) => s.categoria === cat.value) ?? null
+            const secao = secoes.find(
+              (s) => s.categoria === cat.value
+                && s.subcategoria !== 'prep_reuniao'
+                && s.subcategoria !== 'briefing_completo',
+            ) ?? null
             return (
               <SecaoEditor
                 key={cat.value}
@@ -315,6 +331,52 @@ function AprendizadosSection({
 }
 
 // ---------------------------------------------------------------------------
+// DocumentoIzzi — documento read-only gerado pela Izzi no onboarding
+// (Modo 2 = Prep de Reunião · Modo 3 = Briefing Completo)
+// ---------------------------------------------------------------------------
+
+const MD_COMPONENTS = {
+  h1: ({ children }: { children?: React.ReactNode }) => <h1 className="mb-3 mt-1 font-display text-xl font-bold text-zinc-900">{children}</h1>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="mb-2 mt-5 font-display text-base font-bold text-zinc-900">{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="mb-1.5 mt-4 text-sm font-semibold text-zinc-800">{children}</h3>,
+  p: ({ children }: { children?: React.ReactNode }) => <p className="mb-2.5 last:mb-0">{children}</p>,
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-semibold text-zinc-900">{children}</strong>,
+  ul: ({ children }: { children?: React.ReactNode }) => <ul className="mb-2.5 list-disc space-y-0.5 pl-5">{children}</ul>,
+  ol: ({ children }: { children?: React.ReactNode }) => <ol className="mb-2.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
+  li: ({ children }: { children?: React.ReactNode }) => <li className="leading-relaxed">{children}</li>,
+  hr: () => <hr className="my-4 border-zinc-100" />,
+}
+
+function DocumentoIzzi({ secao }: { secao: SecaoMarca }) {
+  const [aberto, setAberto] = useState(false)
+  const texto = (secao.conteudo?.texto as string) ?? ''
+  const isPrep = secao.subcategoria === 'prep_reuniao'
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-violet-200 bg-violet-50/40">
+      <button
+        onClick={() => setAberto((a) => !a)}
+        className="flex w-full items-center justify-between px-5 py-3.5 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <Brain className="h-4 w-4 text-violet-500" />
+          <span className="text-sm font-semibold text-zinc-800">{secao.titulo}</span>
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+            {isPrep ? 'Modo 2 · Prep de Reunião' : 'Modo 3 · Briefing Completo'}
+          </span>
+        </div>
+        <span className="text-xs text-zinc-400">{aberto ? 'Recolher' : 'Abrir'}</span>
+      </button>
+      {aberto && (
+        <div className="border-t border-violet-100 bg-white px-5 py-4 text-sm leading-relaxed text-zinc-700">
+          <ReactMarkdown components={MD_COMPONENTS}>{texto}</ReactMarkdown>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // SecaoEditor — edição inline de uma seção de texto
 // ---------------------------------------------------------------------------
 
@@ -432,21 +494,7 @@ function SecaoEditor({
           </div>
         ) : textoAtual ? (
           <div className="text-sm leading-relaxed text-zinc-700">
-            <ReactMarkdown
-              components={{
-                h1: ({ children }) => <h1 className="mb-3 mt-1 font-display text-xl font-bold text-zinc-900">{children}</h1>,
-                h2: ({ children }) => <h2 className="mb-2 mt-5 font-display text-base font-bold text-zinc-900">{children}</h2>,
-                h3: ({ children }) => <h3 className="mb-1.5 mt-4 text-sm font-semibold text-zinc-800">{children}</h3>,
-                p: ({ children }) => <p className="mb-2.5 last:mb-0">{children}</p>,
-                strong: ({ children }) => <strong className="font-semibold text-zinc-900">{children}</strong>,
-                ul: ({ children }) => <ul className="mb-2.5 list-disc space-y-0.5 pl-5">{children}</ul>,
-                ol: ({ children }) => <ol className="mb-2.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
-                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                hr: () => <hr className="my-4 border-zinc-100" />,
-              }}
-            >
-              {textoAtual}
-            </ReactMarkdown>
+            <ReactMarkdown components={MD_COMPONENTS}>{textoAtual}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm italic text-zinc-400">{placeholder}</p>
