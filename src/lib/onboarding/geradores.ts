@@ -25,14 +25,15 @@ export async function gerarModo2(opts: {
 
   if (!session?.cliente_id) return
 
-  const { data: marcas } = await service
+  const { data: marcasAll } = await service
     .from('onboarding_marcas')
     .select('nome, publico, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, briefing_output')
     .eq('token', token)
-    .eq('status', 'done')
     .order('ordem', { ascending: true })
 
-  if (!marcas || marcas.length === 0) return
+  // Usa briefing_output como fonte de verdade (status pode estar desatualizado)
+  const marcas = (marcasAll ?? []).filter((m) => m.briefing_output)
+  if (marcas.length === 0) return
 
   const clienteTexto = [
     `Nome: ${session.client_name}`,
