@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import ReactMarkdown from 'react-markdown'
 import {
   Edit2, Check, X, ExternalLink,
   Brain, Loader2, TrendingUp, TrendingDown, Lightbulb,
@@ -430,7 +431,23 @@ function SecaoEditor({
             {erro && <p className="text-xs text-red-600">{erro}</p>}
           </div>
         ) : textoAtual ? (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">{textoAtual}</p>
+          <div className="text-sm leading-relaxed text-zinc-700">
+            <ReactMarkdown
+              components={{
+                h1: ({ children }) => <h1 className="mb-3 mt-1 font-display text-xl font-bold text-zinc-900">{children}</h1>,
+                h2: ({ children }) => <h2 className="mb-2 mt-5 font-display text-base font-bold text-zinc-900">{children}</h2>,
+                h3: ({ children }) => <h3 className="mb-1.5 mt-4 text-sm font-semibold text-zinc-800">{children}</h3>,
+                p: ({ children }) => <p className="mb-2.5 last:mb-0">{children}</p>,
+                strong: ({ children }) => <strong className="font-semibold text-zinc-900">{children}</strong>,
+                ul: ({ children }) => <ul className="mb-2.5 list-disc space-y-0.5 pl-5">{children}</ul>,
+                ol: ({ children }) => <ol className="mb-2.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
+                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                hr: () => <hr className="my-4 border-zinc-100" />,
+              }}
+            >
+              {textoAtual}
+            </ReactMarkdown>
+          </div>
         ) : (
           <p className="text-sm italic text-zinc-400">{placeholder}</p>
         )}
