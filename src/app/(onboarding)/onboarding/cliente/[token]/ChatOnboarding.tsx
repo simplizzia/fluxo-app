@@ -202,8 +202,13 @@ export default function ChatOnboarding({ token, cliente, initialMessages }: Prop
   // Carrega estado do localStorage (para retomada) ou inicializa
   const estadoSalvo = typeof window !== 'undefined' ? carregarEstado(token) : null
 
-  const [fase, setFase]               = useState<Fase>(estadoSalvo?.fase ?? 'boas-vindas')
-  const [marcaIndex, setMarcaIndex]   = useState(estadoSalvo?.marcaIndex ?? 0)
+  // Índice da primeira marca ainda pendente (sem briefing salvo)
+  const primeiraIndexPendente = marcas.findIndex((m) => m.status !== 'done')
+  const indexInicial = estadoSalvo?.marcaIndex ?? (primeiraIndexPendente > 0 ? primeiraIndexPendente : 0)
+  const faseInicial: Fase = estadoSalvo?.fase ?? (primeiraIndexPendente > 0 ? 'briefing' : 'boas-vindas')
+
+  const [fase, setFase]               = useState<Fase>(faseInicial)
+  const [marcaIndex, setMarcaIndex]   = useState(indexInicial)
   const [displayMessages, setDisplay] = useState<MensagemUI[]>(
     estadoSalvo?.displayMessages ?? initialMessages.map((m) => ({ id: crypto.randomUUID(), ...m }))
   )
@@ -378,7 +383,13 @@ export default function ChatOnboarding({ token, cliente, initialMessages }: Prop
   // Inicia automaticamente na primeira visita (sem mensagens)
   useEffect(() => {
     if (displayMessages.length === 0 && !carregando) {
-      executarStreamRef.current?.([], 'boas-vindas', undefined, true)
+      if (primeiraIndexPendente > 0) {
+        // Algumas marcas já foram concluídas — pula direto para a pendente
+        const marcaPendente = marcas[primeiraIndexPendente]
+        executarStreamRef.current?.([], 'briefing', marcaPendente.id, true)
+      } else {
+        executarStreamRef.current?.([], 'boas-vindas', undefined, true)
+      }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
