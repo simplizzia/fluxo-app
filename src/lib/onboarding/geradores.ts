@@ -23,16 +23,23 @@ export async function gerarModo2(opts: {
     .eq('token', token)
     .single()
 
-  if (!session?.cliente_id) return
+  if (!session?.cliente_id) {
+    console.error('[gerarModo2] session não encontrada para token:', token)
+    return
+  }
+  console.log('[gerarModo2] cliente:', session.client_name, '| id:', session.cliente_id)
 
-  const { data: marcasAll } = await service
+  const { data: marcasAll, error: errMarcas } = await service
     .from('onboarding_marcas')
     .select('nome, publico, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, briefing_output')
     .eq('token', token)
     .order('ordem', { ascending: true })
 
+  if (errMarcas) console.error('[gerarModo2] erro ao buscar marcas:', errMarcas)
+
   // Usa briefing_output como fonte de verdade (status pode estar desatualizado)
   const marcas = (marcasAll ?? []).filter((m) => m.briefing_output)
+  console.log('[gerarModo2] marcas com briefing:', marcas.length, '/', (marcasAll ?? []).length)
   if (marcas.length === 0) return
 
   const clienteTexto = [
@@ -50,6 +57,7 @@ export async function gerarModo2(opts: {
     `## ${m.nome}\n${m.briefing_output ?? '(sem briefing)'}`
   ).join('\n\n')
 
+  console.log('[gerarModo2] chamando executarAgente...')
   const result = await executarAgente({
     organizationId,
     agenteChave: 'onboarding.modo2',
@@ -60,9 +68,14 @@ export async function gerarModo2(opts: {
     },
   })
 
-  if (!result.output) return
+  console.log('[gerarModo2] result:', { error: result.error, hasOutput: !!result.output, outputLen: result.output?.length })
 
-  await service.from('universo_marca').insert({
+  if (!result.output) {
+    console.error('[gerarModo2] sem output. Erro do agente:', result.error)
+    return
+  }
+
+  const { error: insertError } = await service.from('universo_marca').upsert({
     organization_id:      organizationId,
     cliente_id:           session.cliente_id,
     categoria:            'diagnostico',
@@ -71,7 +84,13 @@ export async function gerarModo2(opts: {
     conteudo:             { texto: result.output },
     visivel_para_cliente: false,
     gerado_por_agente:    'onboarding.modo2',
-  })
+  }, { onConflict: 'organization_id,cliente_id,categoria' })
+
+  if (insertError) {
+    console.error('[gerarModo2] erro ao salvar em universo_marca:', insertError)
+  } else {
+    console.log('[gerarModo2] ✅ Prep de Reunião salva com sucesso')
+  }
 }
 
 // ---------------------------------------------------------------------------
