@@ -311,19 +311,29 @@ export async function actionCriarReuniao(formData: FormData): Promise<string> {
         .filter((e) => e.email)
         .map((e) => ({ email: e.email!, displayName: e.nome }))
 
-      const googleEventId = await criarEventoCalendar(accessToken, {
-        summary:       `[Simplizzia] Reunião ${TIPO_LABELS[tipo]} — ${contextLabel}`,
-        description:   notas_brutas ?? '',
-        startDateTime: startDt,
-        endDateTime:   endDt,
-        attendees,
-      })
+      // Se nenhum link de Meet foi colado manualmente, pede ao Google para gerar um
+      const gerarMeet = !meet_space_id
+      const { eventId: googleEventId, meetLink: meetGerado } = await criarEventoCalendar(
+        accessToken,
+        {
+          summary:       `[Simplizzia] Reunião ${TIPO_LABELS[tipo]} — ${contextLabel}`,
+          description:   notas_brutas ?? '',
+          startDateTime: startDt,
+          endDateTime:   endDt,
+          attendees,
+        },
+        gerarMeet,
+      )
 
-      // Salva o google_event_id na reunião (best-effort — ignora erro se coluna não existir)
+      // Salva o google_event_id + meet_space_id do link gerado (best-effort)
       const service = createServiceClient()
+      const meetSpaceGerado = meetGerado ? extractMeetSpaceId(meetGerado) : null
       await service
         .from('reunioes')
-        .update({ google_event_id: googleEventId })
+        .update({
+          google_event_id: googleEventId,
+          ...(meetSpaceGerado ? { meet_space_id: meetSpaceGerado } : {}),
+        })
         .eq('id', reuniaoId)
     }
   } catch (err) {

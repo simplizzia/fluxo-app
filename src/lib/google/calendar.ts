@@ -219,12 +219,22 @@ export interface EventoCalendar {
   location?: string
 }
 
-/** Cria evento no Google Calendar primário do usuário. Retorna o eventId. */
+export interface EventoCriado {
+  eventId: string
+  meetLink: string | null
+}
+
+/**
+ * Cria evento no Google Calendar primário do usuário.
+ * Quando `comMeet` é true, solicita ao Google a geração automática de um link
+ * do Google Meet (conferenceData) e o retorna junto com o eventId.
+ */
 export async function criarEventoCalendar(
   accessToken: string,
   evento: EventoCalendar,
-): Promise<string> {
-  const body = {
+  comMeet = false,
+): Promise<EventoCriado> {
+  const body: Record<string, unknown> = {
     summary:     evento.summary,
     description: evento.description ?? '',
     start: { dateTime: evento.startDateTime, timeZone: TIMEZONE },
@@ -237,25 +247,45 @@ export async function criarEventoCalendar(
     },
   }
 
-  const res = await fetch(
-    `${GOOGLE_CALENDAR_API}/calendars/primary/events`,
-    {
-      method:  'POST',
-      headers: {
-        Authorization:  `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+  if (comMeet) {
+    body.conferenceData = {
+      createRequest: {
+        requestId: crypto.randomUUID(),
+        conferenceSolutionKey: { type: 'hangoutsMeet' },
       },
-      body: JSON.stringify(body),
+    }
+  }
+
+  const url = comMeet
+    ? `${GOOGLE_CALENDAR_API}/calendars/primary/events?conferenceDataVersion=1`
+    : `${GOOGLE_CALENDAR_API}/calendars/primary/events`
+
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: {
+      Authorization:  `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
     },
-  )
+    body: JSON.stringify(body),
+  })
 
   if (!res.ok) {
     const err = await res.text()
     throw new Error(`Google Calendar createEvent failed (${res.status}): ${err}`)
   }
 
-  const data = (await res.json()) as { id: string }
-  return data.id
+  const data = (await res.json()) as {
+    id: string
+    hangoutLink?: string
+    conferenceData?: { entryPoints?: { entryPointType: string; uri: string }[] }
+  }
+
+  const meetLink =
+    data.hangoutLink ??
+    data.conferenceData?.entryPoints?.find((e) => e.entryPointType === 'video')?.uri ??
+    null
+
+  return { eventId: data.id, meetLink }
 }
 
 /** Atualiza evento existente no Google Calendar. */

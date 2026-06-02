@@ -532,10 +532,15 @@ function AbaTranscricao({
 
         {temMeet ? (
           <div className="flex items-center justify-between rounded-xl bg-white border border-zinc-200 px-4 py-2.5">
-            <div className="flex items-center gap-2">
-              <Link2 className="h-3.5 w-3.5 text-zinc-400" />
-              <p className="text-xs text-zinc-600 font-mono">{reuniao.meet_space_id}</p>
-            </div>
+            <a
+              href={`https://meet.google.com/${reuniao.meet_space_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-blue-600 hover:underline"
+            >
+              <Link2 className="h-3.5 w-3.5 flex-none" />
+              <p className="text-xs font-mono">meet.google.com/{reuniao.meet_space_id}</p>
+            </a>
             <button
               onClick={handleImportarMeet}
               disabled={meetPending || status === 'processando'}
