@@ -5,7 +5,7 @@
  */
 import { NextRequest } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { gerarModo2 } from '@/lib/onboarding/geradores'
+import { gerarModo2, type GerarModo2Result } from '@/lib/onboarding/geradores'
 
 // Estende o timeout máximo para esta rota (requer Vercel Pro para >10s)
 export const maxDuration = 60
@@ -29,10 +29,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await gerarModo2({ token, organizationId: session.organization_id })
-    return Response.json({ ok: true, message: 'Modo 2 gerado com sucesso.' })
+    const resultado = await gerarModo2({ token, organizationId: session.organization_id })
+    return Response.json({ ...resultado })
   } catch (err) {
-    console.error('[reprocessar-modo2]', err)
-    return Response.json({ error: String(err) }, { status: 500 })
+    return Response.json({ error: String(err), etapa: 'exception' }, { status: 500 })
   }
 }

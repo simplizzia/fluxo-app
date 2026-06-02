@@ -6,10 +6,20 @@ import { executarAgente } from '@/lib/agents/executor'
 // gerarModo2 — Prep de Reunião (auto-gerado ao concluir onboarding)
 // ---------------------------------------------------------------------------
 
+export interface GerarModo2Result {
+  etapa: string
+  marcasEncontradas: number
+  marcasComBriefing: number
+  agenteErro?: string
+  outputLen?: number
+  insertErro?: string
+  ok: boolean
+}
+
 export async function gerarModo2(opts: {
   token: string
   organizationId: string
-}): Promise<void> {
+}): Promise<GerarModo2Result> {
   const { token, organizationId } = opts
   const service = createServiceClient()
 
@@ -24,10 +34,8 @@ export async function gerarModo2(opts: {
     .single()
 
   if (!session?.cliente_id) {
-    console.error('[gerarModo2] session não encontrada para token:', token)
-    return
+    return { etapa: 'session_nao_encontrada', marcasEncontradas: 0, marcasComBriefing: 0, ok: false }
   }
-  console.log('[gerarModo2] cliente:', session.client_name, '| id:', session.cliente_id)
 
   const { data: marcasAll, error: errMarcas } = await service
     .from('onboarding_marcas')
@@ -35,12 +43,17 @@ export async function gerarModo2(opts: {
     .eq('token', token)
     .order('ordem', { ascending: true })
 
-  if (errMarcas) console.error('[gerarModo2] erro ao buscar marcas:', errMarcas)
-
-  // Usa briefing_output como fonte de verdade (status pode estar desatualizado)
   const marcas = (marcasAll ?? []).filter((m) => m.briefing_output)
-  console.log('[gerarModo2] marcas com briefing:', marcas.length, '/', (marcasAll ?? []).length)
-  if (marcas.length === 0) return
+
+  if (marcas.length === 0) {
+    return {
+      etapa: 'sem_briefings',
+      marcasEncontradas: (marcasAll ?? []).length,
+      marcasComBriefing: 0,
+      agenteErro: errMarcas?.message,
+      ok: false,
+    }
+  }
 
   const clienteTexto = [
     `Nome: ${session.client_name}`,
@@ -57,22 +70,21 @@ export async function gerarModo2(opts: {
     `## ${m.nome}\n${m.briefing_output ?? '(sem briefing)'}`
   ).join('\n\n')
 
-  console.log('[gerarModo2] chamando executarAgente...')
   const result = await executarAgente({
     organizationId,
     agenteChave: 'onboarding.modo2',
     clienteId: session.cliente_id,
-    input: {
-      cliente: clienteTexto,
-      briefings: briefingsTexto,
-    },
+    input: { cliente: clienteTexto, briefings: briefingsTexto },
   })
 
-  console.log('[gerarModo2] result:', { error: result.error, hasOutput: !!result.output, outputLen: result.output?.length })
-
   if (!result.output) {
-    console.error('[gerarModo2] sem output. Erro do agente:', result.error)
-    return
+    return {
+      etapa: 'agente_falhou',
+      marcasEncontradas: (marcasAll ?? []).length,
+      marcasComBriefing: marcas.length,
+      agenteErro: result.error,
+      ok: false,
+    }
   }
 
   const { error: insertError } = await service.from('universo_marca').upsert({
@@ -86,10 +98,13 @@ export async function gerarModo2(opts: {
     gerado_por_agente:    'onboarding.modo2',
   }, { onConflict: 'organization_id,cliente_id,categoria' })
 
-  if (insertError) {
-    console.error('[gerarModo2] erro ao salvar em universo_marca:', insertError)
-  } else {
-    console.log('[gerarModo2] ✅ Prep de Reunião salva com sucesso')
+  return {
+    etapa: insertError ? 'insert_falhou' : 'concluido',
+    marcasEncontradas: (marcasAll ?? []).length,
+    marcasComBriefing: marcas.length,
+    outputLen: result.output.length,
+    insertErro: insertError?.message,
+    ok: !insertError,
   }
 }
 
