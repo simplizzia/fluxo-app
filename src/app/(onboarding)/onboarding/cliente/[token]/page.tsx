@@ -36,12 +36,13 @@ export default async function OnboardingClientePage({ params }: PageProps) {
   // Busca marcas configuradas
   const { data: marcas } = await service
     .from('onboarding_marcas')
-    .select('id, nome, publico, instagram, linkedin, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, status')
+    .select('id, nome, publico, instagram, linkedin, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, status, briefing_output')
     .eq('token', token)
     .order('ordem', { ascending: true })
 
   // Só mostra tela de conclusão se TODAS as marcas tiverem briefing salvo
-  const temMarcasPendentes = (marcas ?? []).some((m) => m.status !== 'done')
+  // (usa briefing_output como fonte de verdade — status pode estar desatualizado)
+  const temMarcasPendentes = (marcas ?? []).some((m) => m.status !== 'done' && !m.briefing_output)
   if (session.status === 'done' && !temMarcasPendentes) return <TelaConcluido />
 
   // Busca histórico de mensagens para retomada
@@ -74,6 +75,7 @@ export default async function OnboardingClientePage({ params }: PageProps) {
           contextoEstrategico: m.contexto_estrategico,
           cenarioAtual:       m.cenario_atual,
           status:             m.status,
+          briefingOutput:     m.briefing_output,
         })),
       }}
       initialMessages={

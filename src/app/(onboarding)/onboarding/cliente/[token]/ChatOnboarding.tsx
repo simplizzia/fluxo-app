@@ -29,6 +29,7 @@ export interface MarcaInfo {
   contextoEstrategico: string | null
   cenarioAtual: string | null
   status: string
+  briefingOutput: string | null
 }
 
 export interface ClienteInfo {
@@ -202,8 +203,9 @@ export default function ChatOnboarding({ token, cliente, initialMessages }: Prop
   // Carrega estado do localStorage (para retomada) ou inicializa
   const estadoSalvo = typeof window !== 'undefined' ? carregarEstado(token) : null
 
-  // Índice da primeira marca ainda pendente (sem briefing salvo)
-  const primeiraIndexPendente = marcas.findIndex((m) => m.status !== 'done')
+  // Índice da primeira marca ainda pendente — usa briefingOutput como fonte de verdade
+  // (status pode estar desatualizado se o update falhou anteriormente)
+  const primeiraIndexPendente = marcas.findIndex((m) => m.status !== 'done' && !m.briefingOutput)
   const indexInicial = estadoSalvo?.marcaIndex ?? (primeiraIndexPendente > 0 ? primeiraIndexPendente : 0)
   const faseInicial: Fase = estadoSalvo?.fase ?? (primeiraIndexPendente > 0 ? 'briefing' : 'boas-vindas')
 
