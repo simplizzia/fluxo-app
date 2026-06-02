@@ -87,16 +87,39 @@ export async function gerarModo2(opts: {
     }
   }
 
-  const { error: insertError } = await service.from('universo_marca').upsert({
-    organization_id:      organizationId,
-    cliente_id:           session.cliente_id,
-    categoria:            'diagnostico',
-    subcategoria:         'prep_reuniao',
-    titulo:               `Prep de Reunião — ${session.client_name}`,
-    conteudo:             { texto: result.output },
-    visivel_para_cliente: false,
-    gerado_por_agente:    'onboarding.modo2',
-  }, { onConflict: 'organization_id,cliente_id,categoria' })
+  // Verifica se já existe uma linha de prep_reuniao para este cliente
+  const { data: existente } = await service
+    .from('universo_marca')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .eq('cliente_id', session.cliente_id)
+    .eq('subcategoria', 'prep_reuniao')
+    .maybeSingle()
+
+  let insertError
+  if (existente) {
+    const { error } = await service
+      .from('universo_marca')
+      .update({
+        titulo:            `Prep de Reunião — ${session.client_name}`,
+        conteudo:          { texto: result.output },
+        gerado_por_agente: 'onboarding.modo2',
+      })
+      .eq('id', existente.id)
+    insertError = error
+  } else {
+    const { error } = await service.from('universo_marca').insert({
+      organization_id:      organizationId,
+      cliente_id:           session.cliente_id,
+      categoria:            'diagnostico',
+      subcategoria:         'prep_reuniao',
+      titulo:               `Prep de Reunião — ${session.client_name}`,
+      conteudo:             { texto: result.output },
+      visivel_para_cliente: false,
+      gerado_por_agente:    'onboarding.modo2',
+    })
+    insertError = error
+  }
 
   return {
     etapa: insertError ? 'insert_falhou' : 'concluido',
