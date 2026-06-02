@@ -27,6 +27,7 @@ export interface ParticipanteExterno {
 export interface Reuniao {
   id: string
   tipo: TipoReuniao
+  assunto: string | null
   data_reuniao: string
   duracao_minutos: number | null
   prospect_id: string | null
@@ -73,7 +74,7 @@ export async function buscarReunioes(): Promise<Reuniao[]> {
   const { data, error } = await supabase
     .from('reunioes')
     .select(`
-      id, tipo, data_reuniao, duracao_minutos, prospect_id, cliente_id,
+      id, tipo, assunto, data_reuniao, duracao_minutos, prospect_id, cliente_id,
       participantes_internos, participantes_externos, notas_brutas,
       resumo_gerado, created_by, created_at, updated_at,
       clientes(nome),
@@ -121,7 +122,7 @@ export async function buscarReuniaoDetalhe(reuniaoId: string) {
     supabase
       .from('reunioes')
       .select(`
-        id, tipo, data_reuniao, duracao_minutos, prospect_id, cliente_id,
+        id, tipo, assunto, data_reuniao, duracao_minutos, prospect_id, cliente_id,
         participantes_internos, participantes_externos, notas_brutas,
         resumo_gerado, created_by, created_at, updated_at,
         clientes(nome),
@@ -219,6 +220,7 @@ export async function actionCriarReuniao(formData: FormData): Promise<string> {
   const supabase = await createClient()
 
   const tipo = formData.get('tipo') as TipoReuniao
+  const assunto = (formData.get('assunto') as string)?.trim() || null
   const data_reuniao = formData.get('data_reuniao') as string
   const duracao_str = formData.get('duracao_minutos') as string
   const duracao_minutos = duracao_str ? parseInt(duracao_str) : null
@@ -249,6 +251,7 @@ export async function actionCriarReuniao(formData: FormData): Promise<string> {
     .insert({
       organization_id: profile.organization_id,
       tipo,
+      assunto,
       data_reuniao,
       duracao_minutos,
       prospect_id,
@@ -316,7 +319,9 @@ export async function actionCriarReuniao(formData: FormData): Promise<string> {
       const { eventId: googleEventId, meetLink: meetGerado } = await criarEventoCalendar(
         accessToken,
         {
-          summary:       `[Simplizzia] Reunião ${TIPO_LABELS[tipo]} — ${contextLabel}`,
+          summary:       assunto
+            ? `[Simplizzia] ${assunto} — ${contextLabel}`
+            : `[Simplizzia] Reunião ${TIPO_LABELS[tipo]} — ${contextLabel}`,
           description:   notas_brutas ?? '',
           startDateTime: startDt,
           endDateTime:   endDt,

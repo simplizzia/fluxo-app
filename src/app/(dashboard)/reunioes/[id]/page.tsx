@@ -70,8 +70,13 @@ export default async function ReuniaoPage({ params }: Props) {
               )}
             </div>
             <h1 className="font-display text-xl font-bold text-zinc-900 mt-1">
-              {reuniao.cliente_nome ?? reuniao.prospect_nome ?? 'Reunião interna'}
+              {reuniao.assunto ?? reuniao.cliente_nome ?? reuniao.prospect_nome ?? 'Reunião interna'}
             </h1>
+            {reuniao.assunto && (reuniao.cliente_nome || reuniao.prospect_nome) && (
+              <p className="text-sm text-zinc-500">
+                {reuniao.cliente_nome ?? reuniao.prospect_nome}
+              </p>
+            )}
 
             <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-zinc-500">
               <span className="flex items-center gap-1.5">

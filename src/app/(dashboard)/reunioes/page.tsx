@@ -55,8 +55,11 @@ export default async function ReunioesPage() {
             )}
           </div>
 
-          {/* Contexto */}
+          {/* Assunto + Contexto */}
           <p className="mt-1 text-sm font-semibold text-zinc-800 group-hover:text-violet-700 transition-colors">
+            {r.assunto ?? `Reunião ${cfg.label.toLowerCase()}`}
+          </p>
+          <p className="text-xs text-zinc-500">
             {r.cliente_nome ?? r.prospect_nome ?? 'Reunião interna'}
           </p>
 

@@ -104,6 +104,22 @@ export function NovaReuniaoForm({ perfis, clientes, prospects, profileId, papel 
         </div>
       </div>
 
+      {/* Assunto da reunião */}
+      <div>
+        <label className="label-form">
+          Assunto {tipo === 'onboarding' ? <span className="text-zinc-400">(opcional — onboarding já é identificado)</span> : '*'}
+        </label>
+        <input
+          name="assunto"
+          type="text"
+          required={tipo !== 'onboarding'}
+          placeholder={tipo === 'onboarding'
+            ? 'Ex: Kickoff de onboarding'
+            : 'Ex: Alinhamento de campanha de junho'}
+          className="input-form"
+        />
+      </div>
+
       {/* Contexto (cliente ou prospect) */}
       <div className="grid grid-cols-2 gap-4">
         {(tipo === 'cliente' || tipo === 'onboarding') && (

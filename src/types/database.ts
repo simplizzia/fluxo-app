@@ -3143,6 +3143,7 @@ export type Database = {
       reunioes: {
         Row: {
           arquivo_notas_url: string | null
+          assunto: string | null
           audio_storage_path: string | null
           cliente_id: string | null
           confidencial: boolean
@@ -3166,6 +3167,7 @@ export type Database = {
         }
         Insert: {
           arquivo_notas_url?: string | null
+          assunto?: string | null
           audio_storage_path?: string | null
           cliente_id?: string | null
           confidencial?: boolean
@@ -3189,6 +3191,7 @@ export type Database = {
         }
         Update: {
           arquivo_notas_url?: string | null
+          assunto?: string | null
           audio_storage_path?: string | null
           cliente_id?: string | null
           confidencial?: boolean
