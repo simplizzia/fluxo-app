@@ -37,6 +37,7 @@ function DadosClienteForm({
 
   const [form, setForm] = useState({
     nome_contato:         config?.nome_contato ?? '',
+    email_contato:        config?.email_contato ?? '',
     cargo_contato:        config?.cargo_contato ?? '',
     setor:                config?.setor ?? '',
     servicos:             (config?.servicos_contratados ?? []).join(', '),
@@ -50,6 +51,7 @@ function DadosClienteForm({
     start(async () => {
       const res = await actionSalvarOnboardingConfig(clienteId, {
         nome_contato:         form.nome_contato || undefined,
+        email_contato:        form.email_contato || undefined,
         cargo_contato:        form.cargo_contato || undefined,
         setor:                form.setor || undefined,
         servicos_contratados: form.servicos ? form.servicos.split(',').map((s) => s.trim()).filter(Boolean) : [],
@@ -85,6 +87,7 @@ function DadosClienteForm({
             <Campo label="Nome do contato" value={form.nome_contato} onChange={(v) => setForm((f) => ({ ...f, nome_contato: v }))} placeholder="ex: Ana Souza" />
             <Campo label="Cargo" value={form.cargo_contato} onChange={(v) => setForm((f) => ({ ...f, cargo_contato: v }))} placeholder="ex: Diretora de Marketing" />
           </div>
+          <Campo label="E-mail do contato" value={form.email_contato} onChange={(v) => setForm((f) => ({ ...f, email_contato: v }))} placeholder="ex: ana@cliente.com.br — usado para convites de reunião e onboarding" />
           <Campo label="Setor / Indústria" value={form.setor} onChange={(v) => setForm((f) => ({ ...f, setor: v }))} placeholder="ex: Laticínios, E-commerce, SaaS..." />
           <Campo label="Serviços contratados" value={form.servicos} onChange={(v) => setForm((f) => ({ ...f, servicos: v }))} placeholder="ex: Social Media, Design de Marca, Tráfego Pago (separados por vírgula)" />
           <CampoTexto label="Objetivo declarado pelo cliente" value={form.objetivo_declarado} onChange={(v) => setForm((f) => ({ ...f, objetivo_declarado: v }))} placeholder="O que o cliente disse que quer alcançar com a Simplizzia..." />
@@ -345,7 +348,7 @@ function EnvioSection({
   emailCliente?: string
   appUrl: string
 }) {
-  const [email, setEmail] = useState(emailCliente ?? '')
+  const [email, setEmail] = useState(emailCliente ?? config.email_contato ?? '')
   const [pending, start] = useTransition()
   const [enviado, setEnviado] = useState(false)
   const [erro, setErro] = useState('')

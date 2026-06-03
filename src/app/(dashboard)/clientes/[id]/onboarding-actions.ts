@@ -30,6 +30,7 @@ export interface OnboardingConfig {
   token: string
   status: 'pending' | 'briefing' | 'done'
   nome_contato: string | null
+  email_contato: string | null
   cargo_contato: string | null
   setor: string | null
   servicos_contratados: string[]
@@ -54,7 +55,7 @@ export async function buscarOnboardingConfig(
   const { data: session, error } = await service
     .from('onboarding_clientes')
     .select(`
-      token, status, nome_contato, cargo_contato, setor,
+      token, status, nome_contato, email_contato, cargo_contato, setor,
       servicos_contratados, objetivo_declarado, dores_identificadas,
       cenario_atual, link_enviado_em
     `)
@@ -88,6 +89,7 @@ export async function buscarOnboardingConfig(
       token:                session.token,
       status:               session.status as OnboardingConfig['status'],
       nome_contato:         session.nome_contato,
+      email_contato:        session.email_contato,
       cargo_contato:        session.cargo_contato,
       setor:                session.setor,
       servicos_contratados: (session.servicos_contratados as string[]) ?? [],
@@ -112,6 +114,7 @@ export async function actionSalvarOnboardingConfig(
   clienteId: string,
   config: {
     nome_contato?: string
+    email_contato?: string
     cargo_contato?: string
     setor?: string
     servicos_contratados?: string[]
