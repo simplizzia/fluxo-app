@@ -9,6 +9,29 @@ import { enviarEmail, emailOnboardingCliente } from '@/lib/email'
 // Tipos
 // ---------------------------------------------------------------------------
 
+export interface PipelineEtapa {
+  etapa: string
+  ordem: number
+  status: 'pendente' | 'gerando' | 'aguardando_aprovacao' | 'aprovado' | 'ajuste_solicitado' | 'erro'
+  output: string | null
+  input_manual: string | null
+  ajustes: string | null
+  erro: string | null
+  gerado_em: string | null
+  aprovado_em: string | null
+}
+
+export async function buscarPipeline(clienteId: string): Promise<PipelineEtapa[]> {
+  await requirePapel('socia', 'gestao', 'atendimento')
+  const service = createServiceClient()
+  const { data } = await service
+    .from('onboarding_pipeline')
+    .select('etapa, ordem, status, output, input_manual, ajustes, erro, gerado_em, aprovado_em')
+    .eq('cliente_id', clienteId)
+    .order('ordem', { ascending: true })
+  return (data ?? []) as PipelineEtapa[]
+}
+
 export interface OnboardingMarca {
   id: string
   nome: string

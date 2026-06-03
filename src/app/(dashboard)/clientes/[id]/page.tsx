@@ -13,7 +13,8 @@ import {
 } from './actions'
 import MarcaTab from './MarcaTab'
 import OnboardingConfig from './OnboardingConfig'
-import { buscarOnboardingConfig } from './onboarding-actions'
+import PipelineSequencia from './PipelineSequencia'
+import { buscarOnboardingConfig, buscarPipeline } from './onboarding-actions'
 import { ClienteNomeEditor } from './ClienteNomeEditor'
 
 interface Props {
@@ -38,6 +39,7 @@ export default async function ClienteDetalhePage({ params }: Props) {
     { items: moodboard },
     { insights },
     { data: onboardingConfig },
+    pipeline,
   ] = await Promise.all([
     buscarClienteDetalhe(id),
     buscarSecoesMarca(id),
@@ -45,6 +47,7 @@ export default async function ClienteDetalhePage({ params }: Props) {
     buscarMoodboard(id),
     buscarInsightsCliente(id),
     buscarOnboardingConfig(id),
+    buscarPipeline(id),
   ])
 
   if (error || !cliente) {
@@ -167,6 +170,17 @@ export default async function ClienteDetalhePage({ params }: Props) {
             config={onboardingConfig}
             appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ''}
           />
+        </div>
+      )}
+
+      {/* Sequência de onboarding pós-kickoff (Personas → ... → Parâmetros) */}
+      {podeEditar && pipeline.length > 0 && (
+        <div>
+          <h2 className="mb-1 font-display text-lg font-bold text-ink">Sequência pós-kickoff</h2>
+          <p className="mb-4 text-sm text-zinc-500">
+            Cada etapa é gerada pela Izzi, revisada e aprovada antes da próxima. Os ajustes calibram o agente para este cliente.
+          </p>
+          <PipelineSequencia clienteId={id} etapas={pipeline} podeEditar={podeEditar} />
         </div>
       )}
 

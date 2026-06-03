@@ -1,6 +1,7 @@
 import 'server-only'
 import { createServiceClient } from '@/lib/supabase/server'
 import { executarAgente } from '@/lib/agents/executor'
+import { inicializarPipeline } from '@/lib/onboarding/pipeline'
 
 // ---------------------------------------------------------------------------
 // gerarModo2 — Prep de Reunião (auto-gerado ao concluir onboarding)
@@ -271,6 +272,13 @@ export async function gerarModo3(opts: {
       gerado_por_agente:    'onboarding.modo3',
     })
     insertError = error
+  }
+
+  // Inicializa o pipeline pós-kickoff (Personas → ... → Parâmetros) — idempotente
+  if (!insertError) {
+    await inicializarPipeline(clienteId, organizationId).catch(
+      (err) => console.error('[gerarModo3] inicializarPipeline', err),
+    )
   }
 
   return {

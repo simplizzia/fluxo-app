@@ -2380,6 +2380,63 @@ export type Database = {
           },
         ]
       }
+      onboarding_pipeline: {
+        Row: {
+          ajustes: string | null
+          aprovado_em: string | null
+          aprovado_por: string | null
+          cliente_id: string
+          created_at: string
+          erro: string | null
+          etapa: string
+          gerado_em: string | null
+          id: string
+          input_manual: string | null
+          ordem: number
+          organization_id: string
+          output: string | null
+          run_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ajustes?: string | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cliente_id: string
+          created_at?: string
+          erro?: string | null
+          etapa: string
+          gerado_em?: string | null
+          id?: string
+          input_manual?: string | null
+          ordem: number
+          organization_id: string
+          output?: string | null
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ajustes?: string | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cliente_id?: string
+          created_at?: string
+          erro?: string | null
+          etapa?: string
+          gerado_em?: string | null
+          id?: string
+          input_manual?: string | null
+          ordem?: number
+          organization_id?: string
+          output?: string | null
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_feedback: {
         Row: {
           clarity_score: number | null
