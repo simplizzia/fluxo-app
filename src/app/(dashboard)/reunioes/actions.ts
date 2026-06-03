@@ -200,13 +200,27 @@ export async function buscarClientesEProspects() {
   await requireEquipe()
   const supabase = await createClient()
 
-  const [{ data: clientes }, { data: prospects }] = await Promise.all([
+  const service = createServiceClient()
+  const [{ data: clientes }, { data: prospects }, { data: onboardings }] = await Promise.all([
     supabase.from('clientes').select('id, nome').eq('status', 'ativo').order('nome'),
     supabase.from('prospects').select('id, nome').not('stage', 'in', '("cliente_ativo","perdido")').order('nome'),
+    service.from('onboarding_clientes').select('cliente_id, nome_contato, email_contato'),
   ])
 
+  // Mapeia email/nome do contato por cliente (vindo do onboarding)
+  const contatoMap = new Map(
+    (onboardings ?? [])
+      .filter((o) => o.cliente_id && o.email_contato)
+      .map((o) => [o.cliente_id as string, { email: o.email_contato as string, nome: o.nome_contato as string | null }]),
+  )
+
   return {
-    clientes: (clientes ?? []) as { id: string; nome: string }[],
+    clientes: (clientes ?? []).map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      contatoEmail: contatoMap.get(c.id)?.email ?? null,
+      contatoNome:  contatoMap.get(c.id)?.nome ?? null,
+    })),
     prospects: (prospects ?? []) as { id: string; nome: string }[],
   }
 }

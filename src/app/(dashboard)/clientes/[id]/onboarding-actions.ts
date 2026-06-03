@@ -313,10 +313,10 @@ export async function actionEnviarLinkOnboarding(
     emailOnboardingCliente({ nome: session.client_name, link }),
   )
 
-  // Marca data/hora do envio
+  // Marca data/hora do envio + guarda o email do contato (para convites de reunião)
   await service
     .from('onboarding_clientes')
-    .update({ link_enviado_em: new Date().toISOString() })
+    .update({ link_enviado_em: new Date().toISOString(), email_contato: emailCliente })
     .eq('cliente_id', clienteId)
 
   revalidatePath(`/clientes/${clienteId}`)

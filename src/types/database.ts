@@ -2308,6 +2308,7 @@ export type Database = {
           cliente_id: string
           context_extra: string | null
           dores_identificadas: string | null
+          email_contato: string | null
           enviado_em: string
           finished_at: string | null
           id: string
@@ -2328,6 +2329,7 @@ export type Database = {
           cliente_id: string
           context_extra?: string | null
           dores_identificadas?: string | null
+          email_contato?: string | null
           enviado_em?: string
           finished_at?: string | null
           id?: string
@@ -2348,6 +2350,7 @@ export type Database = {
           cliente_id?: string
           context_extra?: string | null
           dores_identificadas?: string | null
+          email_contato?: string | null
           enviado_em?: string
           finished_at?: string | null
           id?: string

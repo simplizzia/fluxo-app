@@ -9,7 +9,7 @@ import type { PapelUsuario } from '@/types/database'
 
 interface Props {
   perfis: { id: string; nome: string; papel: string }[]
-  clientes: { id: string; nome: string }[]
+  clientes: { id: string; nome: string; contatoEmail?: string | null; contatoNome?: string | null }[]
   prospects: { id: string; nome: string }[]
   profileId: string
   papel: PapelUsuario
@@ -42,6 +42,21 @@ export function NovaReuniaoForm({ perfis, clientes, prospects, profileId, papel 
 
   function removerExterno(i: number) {
     setExternos((prev) => prev.filter((_, idx) => idx !== i))
+  }
+
+  // Ao selecionar um cliente, auto-adiciona o contato do onboarding como participante
+  function handleSelecionarCliente(clienteId: string) {
+    const cliente = clientes.find((c) => c.id === clienteId)
+    if (!cliente?.contatoEmail) return
+    setExternos((prev) => {
+      // Evita duplicar se já estiver na lista
+      if (prev.some((e) => e.email === cliente.contatoEmail)) return prev
+      return [...prev, {
+        nome:    cliente.contatoNome ?? cliente.nome,
+        empresa: cliente.nome,
+        email:   cliente.contatoEmail!,
+      }]
+    })
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -125,12 +140,19 @@ export function NovaReuniaoForm({ perfis, clientes, prospects, profileId, papel 
         {(tipo === 'cliente' || tipo === 'onboarding') && (
           <div>
             <label className="label-form">Cliente</label>
-            <select name="cliente_id" className="input-form">
+            <select
+              name="cliente_id"
+              className="input-form"
+              onChange={(e) => handleSelecionarCliente(e.target.value)}
+            >
               <option value="">— Selecione —</option>
               {clientes.map((c) => (
                 <option key={c.id} value={c.id}>{c.nome}</option>
               ))}
             </select>
+            <p className="text-[10px] text-zinc-400 mt-1">
+              Ao selecionar, o contato do onboarding é adicionado como participante automaticamente.
+            </p>
           </div>
         )}
         {tipo === 'prospeccao' && (
