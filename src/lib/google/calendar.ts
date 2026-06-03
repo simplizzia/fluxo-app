@@ -256,9 +256,10 @@ export async function criarEventoCalendar(
     }
   }
 
-  const url = comMeet
-    ? `${GOOGLE_CALENDAR_API}/calendars/primary/events?conferenceDataVersion=1`
-    : `${GOOGLE_CALENDAR_API}/calendars/primary/events`
+  // sendUpdates=all → Google dispara os emails de convite para os participantes
+  const params = new URLSearchParams({ sendUpdates: 'all' })
+  if (comMeet) params.set('conferenceDataVersion', '1')
+  const url = `${GOOGLE_CALENDAR_API}/calendars/primary/events?${params}`
 
   const res = await fetch(url, {
     method:  'POST',
@@ -303,7 +304,7 @@ export async function atualizarEventoCalendar(
   }
 
   const res = await fetch(
-    `${GOOGLE_CALENDAR_API}/calendars/primary/events/${eventId}`,
+    `${GOOGLE_CALENDAR_API}/calendars/primary/events/${eventId}?sendUpdates=all`,
     {
       method:  'PUT',
       headers: {
