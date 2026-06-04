@@ -199,6 +199,7 @@ export default async function ClienteDetalhePage({ params }: Props) {
           moodboard={moodboard ?? []}
           podeEditar={podeEditar}
           insights={insights ?? []}
+          marcas={(onboardingConfig?.marcas ?? []).map((m) => ({ id: m.id, nome: m.nome }))}
         />
       </div>
     </div>

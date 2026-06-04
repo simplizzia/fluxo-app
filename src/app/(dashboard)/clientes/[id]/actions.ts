@@ -18,6 +18,7 @@ export interface ClienteDetalhe {
 
 export interface SecaoMarca {
   id: string
+  marcaId: string | null
   categoria: string
   subcategoria: string | null
   titulo: string
@@ -30,6 +31,7 @@ export interface SecaoMarca {
 
 export interface AtivoVisual {
   id: string
+  marcaId: string | null
   categoria: string
   nome: string
   descricao: string | null
@@ -44,6 +46,7 @@ export interface AtivoVisual {
 
 export interface MoodboardItem {
   id: string
+  marcaId: string | null
   secao: string
   tipo: string
   url: string | null
@@ -163,7 +166,7 @@ export async function buscarSecoesMarca(clienteId: string): Promise<{
 
   const { data, error } = await supabase
     .from('universo_marca')
-    .select('id, categoria, subcategoria, titulo, conteudo, visivel_para_cliente, gerado_por_agente, versao, updated_at')
+    .select('id, marca_id, categoria, subcategoria, titulo, conteudo, visivel_para_cliente, gerado_por_agente, versao, updated_at')
     .eq('cliente_id', clienteId)
     .order('categoria')
     .order('updated_at', { ascending: false })
@@ -173,6 +176,7 @@ export async function buscarSecoesMarca(clienteId: string): Promise<{
   return {
     secoes: (data ?? []).map((s) => ({
       id: s.id,
+      marcaId: s.marca_id,
       categoria: s.categoria,
       subcategoria: s.subcategoria,
       titulo: s.titulo,
@@ -199,7 +203,7 @@ export async function buscarAtivosVisuais(clienteId: string): Promise<{
 
   const { data, error } = await supabase
     .from('identidade_visual_ativos')
-    .select('id, categoria, nome, descricao, nota_uso, url, versao, tags, visivel_para_cliente, created_at')
+    .select('id, marca_id, categoria, nome, descricao, nota_uso, url, versao, tags, visivel_para_cliente, created_at')
     .eq('cliente_id', clienteId)
     .order('categoria')
     .order('created_at', { ascending: false })
@@ -216,6 +220,7 @@ export async function buscarAtivosVisuais(clienteId: string): Promise<{
   return {
     ativos: (data ?? []).map((a) => ({
       id: a.id,
+      marcaId: a.marca_id,
       categoria: a.categoria,
       nome: a.nome,
       descricao: a.descricao,
@@ -244,7 +249,7 @@ export async function buscarMoodboard(clienteId: string): Promise<{
 
   const { data, error } = await supabase
     .from('moodboard_items')
-    .select('id, secao, tipo, url, cor_hex, texto, nota, anti_referencia, ordem')
+    .select('id, marca_id, secao, tipo, url, cor_hex, texto, nota, anti_referencia, ordem')
     .eq('cliente_id', clienteId)
     .order('secao')
     .order('ordem')
@@ -262,6 +267,7 @@ export async function buscarMoodboard(clienteId: string): Promise<{
   return {
     items: (data ?? []).map((i) => ({
       id: i.id,
+      marcaId: i.marca_id,
       secao: i.secao,
       tipo: i.tipo,
       url: i.url,
@@ -281,6 +287,7 @@ export async function buscarMoodboard(clienteId: string): Promise<{
 
 export async function actionSalvarSecaoMarca(opts: {
   clienteId: string
+  marcaId?: string | null
   categoria: string
   subcategoria?: string
   titulo: string
@@ -290,14 +297,19 @@ export async function actionSalvarSecaoMarca(opts: {
   const profile = await requirePapel('socia', 'gestao')
   const supabase = await createClient()
 
-  // Verificar se já existe
-  const { data: existente } = await supabase
+  // Verificar se já existe (escopado por marca)
+  let buscaQuery = supabase
     .from('universo_marca')
     .select('id, versao')
     .eq('cliente_id', opts.clienteId)
     .eq('categoria', opts.categoria as 'outros' | 'brand_system' | 'personas' | 'diagnostico' | 'parametros' | 'calendario')
     .eq('subcategoria', opts.subcategoria ?? '')
-    .maybeSingle()
+
+  buscaQuery = opts.marcaId
+    ? buscaQuery.eq('marca_id', opts.marcaId)
+    : buscaQuery.is('marca_id', null)
+
+  const { data: existente } = await buscaQuery.maybeSingle()
 
   if (existente) {
     const { error } = await supabase
@@ -318,6 +330,7 @@ export async function actionSalvarSecaoMarca(opts: {
       .insert({
         organization_id: profile.organization_id,
         cliente_id: opts.clienteId,
+        marca_id: opts.marcaId ?? null,
         categoria: opts.categoria as 'outros' | 'brand_system' | 'personas' | 'diagnostico' | 'parametros' | 'calendario',
         subcategoria: opts.subcategoria ?? null,
         titulo: opts.titulo,
@@ -350,6 +363,7 @@ export async function actionUploadAtivoVisual(
   const notaUso = formData.get('nota_uso') as string | null
   const visivelStr = formData.get('visivel_para_cliente') as string | null
   const visivel = visivelStr !== 'false'
+  const marcaId = (formData.get('marca_id') as string | null) || null
 
   if (!file || !categoria || !nome) return { error: 'Arquivo, categoria e nome são obrigatórios.' }
 
@@ -374,6 +388,7 @@ export async function actionUploadAtivoVisual(
     .insert({
       organization_id: profile.organization_id,
       cliente_id: clienteId,
+      marca_id: marcaId,
       categoria: (categoria as 'tipografia' | 'logo' | 'paleta' | 'elemento_grafico' | 'mockup' | 'brand_guidelines' | 'arquivo_fonte'),
       nome,
       descricao: descricao || null,
@@ -435,6 +450,7 @@ export async function actionDeleteAtivoVisual(
 
 export async function actionAddMoodboardItem(opts: {
   clienteId: string
+  marcaId?: string | null
   secao: string
   tipo: string
   url?: string
@@ -463,6 +479,7 @@ export async function actionAddMoodboardItem(opts: {
     .insert({
       organization_id: profile.organization_id,
       cliente_id: opts.clienteId,
+      marca_id: opts.marcaId ?? null,
       secao: opts.secao as 'fotografia' | 'tipografia' | 'cor' | 'textura' | 'referencia_marca' | 'geral',
       tipo: opts.tipo as 'cor' | 'imagem_upload' | 'link_externo' | 'texto',
       url: opts.url ?? null,

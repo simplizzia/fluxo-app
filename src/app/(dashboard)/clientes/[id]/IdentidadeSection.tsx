@@ -7,6 +7,7 @@ import type { AtivoVisual } from './actions'
 
 interface Props {
   clienteId: string
+  marcaId: string | null
   ativos: AtivoVisual[]
   podeEditar: boolean
 }
@@ -25,7 +26,7 @@ function isImage(url: string) {
   return /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url)
 }
 
-export default function IdentidadeSection({ clienteId, ativos, podeEditar }: Props) {
+export default function IdentidadeSection({ clienteId, marcaId, ativos, podeEditar }: Props) {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [categoria, setCategoria] = useState('logo')
   const [nome, setNome] = useState('')
@@ -58,6 +59,7 @@ export default function IdentidadeSection({ clienteId, ativos, podeEditar }: Pro
     fd.append('descricao', descricao)
     fd.append('nota_uso', notaUso)
     fd.append('visivel_para_cliente', String(visivelCliente))
+    if (marcaId) fd.append('marca_id', marcaId)
 
     startTransition(async () => {
       const res = await actionUploadAtivoVisual(clienteId, fd)

@@ -20,6 +20,7 @@ interface Props {
   moodboard: MoodboardItem[]
   podeEditar: boolean
   insights: InsightAgente[]
+  marcas: { id: string; nome: string }[]
 }
 
 const CATEGORIAS_TEXTO = [
@@ -32,8 +33,9 @@ const CATEGORIAS_TEXTO = [
 
 type SubTab = 'estrategia' | 'identidade' | 'moodboard' | 'aprendizados'
 
-export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEditar, insights }: Props) {
+export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEditar, insights, marcas }: Props) {
   const [subTab, setSubTab] = useState<SubTab>('estrategia')
+  const [marcaAtiva, setMarcaAtiva] = useState<string | null>(marcas[0]?.id ?? null)
 
   const SUB_TABS: { id: SubTab; label: string }[] = [
     { id: 'estrategia', label: 'Estratégia' },
@@ -42,8 +44,43 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
     { id: 'aprendizados', label: 'Aprendizados' },
   ]
 
+  // Documentos de nível cliente (Modo 2/3) — compartilhados entre as marcas
+  const docsCliente = secoes.filter(
+    (s) => s.subcategoria === 'prep_reuniao' || s.subcategoria === 'briefing_completo',
+  )
+
+  // Conteúdo escopado à marca selecionada (marca_id null = quando não há marca)
+  const secoesDaMarca = secoes.filter((s) => s.marcaId === marcaAtiva)
+  const ativosDaMarca = ativos.filter((a) => a.marcaId === marcaAtiva)
+  const moodboardDaMarca = moodboard.filter((m) => m.marcaId === marcaAtiva)
+
   return (
     <div className="space-y-5">
+      {/* Documentos gerais do cliente (Modo 2/3) — acima das marcas */}
+      {docsCliente.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Documentos gerais do cliente</p>
+          {docsCliente.map((doc) => <DocumentoIzzi key={doc.id} secao={doc} />)}
+        </div>
+      )}
+
+      {/* Seletor de marca */}
+      {marcas.length > 0 && (
+        <div className="flex flex-wrap gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 w-fit">
+          {marcas.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setMarcaAtiva(m.id)}
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+                marcaAtiva === m.id ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+              }`}
+            >
+              {m.nome}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Sub-tabs */}
       <div className="flex gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 w-fit">
         {SUB_TABS.map((t) => (
@@ -69,28 +106,13 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
       {/* Estratégia */}
       {subTab === 'estrategia' && (
         <div className="space-y-4">
-          {/* Documentos gerados pela Izzi no onboarding (read-only) */}
-          {(() => {
-            const docsIzzi = secoes.filter(
-              (s) => s.subcategoria === 'prep_reuniao' || s.subcategoria === 'briefing_completo',
-            )
-            if (docsIzzi.length === 0) return null
-            return docsIzzi.map((doc) => (
-              <DocumentoIzzi key={doc.id} secao={doc} />
-            ))
-          })()}
-
-          {/* Campos editáveis manualmente — ignoram as linhas de documento da Izzi */}
           {CATEGORIAS_TEXTO.map((cat) => {
-            const secao = secoes.find(
-              (s) => s.categoria === cat.value
-                && s.subcategoria !== 'prep_reuniao'
-                && s.subcategoria !== 'briefing_completo',
-            ) ?? null
+            const secao = secoesDaMarca.find((s) => s.categoria === cat.value) ?? null
             return (
               <SecaoEditor
                 key={cat.value}
                 clienteId={clienteId}
+                marcaId={marcaAtiva}
                 categoria={cat.value}
                 label={cat.label}
                 placeholder={cat.placeholder}
@@ -106,7 +128,8 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
       {subTab === 'identidade' && (
         <IdentidadeSection
           clienteId={clienteId}
-          ativos={ativos}
+          marcaId={marcaAtiva}
+          ativos={ativosDaMarca}
           podeEditar={podeEditar}
         />
       )}
@@ -115,7 +138,8 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
       {subTab === 'moodboard' && (
         <MoodboardSection
           clienteId={clienteId}
-          items={moodboard}
+          marcaId={marcaAtiva}
+          items={moodboardDaMarca}
           podeEditar={podeEditar}
         />
       )}
@@ -382,6 +406,7 @@ function DocumentoIzzi({ secao }: { secao: SecaoMarca }) {
 
 function SecaoEditor({
   clienteId,
+  marcaId,
   categoria,
   label,
   placeholder,
@@ -389,6 +414,7 @@ function SecaoEditor({
   podeEditar,
 }: {
   clienteId: string
+  marcaId: string | null
   categoria: string
   label: string
   placeholder: string
@@ -407,6 +433,7 @@ function SecaoEditor({
     startTransition(async () => {
       const res = await actionSalvarSecaoMarca({
         clienteId,
+        marcaId,
         categoria,
         titulo: label,
         conteudo: { texto },

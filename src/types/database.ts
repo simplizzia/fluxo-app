@@ -1636,6 +1636,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          marca_id: string | null
           nome: string
           nota_uso: string | null
           organization_id: string
@@ -1652,6 +1653,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          marca_id?: string | null
           nome: string
           nota_uso?: string | null
           organization_id: string
@@ -1668,6 +1670,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          marca_id?: string | null
           nome?: string
           nota_uso?: string | null
           organization_id?: string
@@ -2189,6 +2192,7 @@ export type Database = {
           cor_hex: string | null
           created_at: string
           id: string
+          marca_id: string | null
           nota: string | null
           ordem: number
           organization_id: string
@@ -2204,6 +2208,7 @@ export type Database = {
           cor_hex?: string | null
           created_at?: string
           id?: string
+          marca_id?: string | null
           nota?: string | null
           ordem?: number
           organization_id: string
@@ -2219,6 +2224,7 @@ export type Database = {
           cor_hex?: string | null
           created_at?: string
           id?: string
+          marca_id?: string | null
           nota?: string | null
           ordem?: number
           organization_id?: string

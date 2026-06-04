@@ -7,6 +7,7 @@ import type { MoodboardItem } from './actions'
 
 interface Props {
   clienteId: string
+  marcaId: string | null
   items: MoodboardItem[]
   podeEditar: boolean
 }
@@ -26,7 +27,7 @@ const TIPO_ICONS: Record<string, React.ReactNode> = {
   texto: <Type className="h-3 w-3" />,
 }
 
-export default function MoodboardSection({ clienteId, items, podeEditar }: Props) {
+export default function MoodboardSection({ clienteId, marcaId, items, podeEditar }: Props) {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [tipo, setTipo] = useState('link_externo')
   const [secao, setSecao] = useState('geral')
@@ -45,6 +46,7 @@ export default function MoodboardSection({ clienteId, items, podeEditar }: Props
     setErro(null)
     const opts = {
       clienteId,
+      marcaId,
       secao,
       tipo,
       url: tipo === 'link_externo' ? url : undefined,
