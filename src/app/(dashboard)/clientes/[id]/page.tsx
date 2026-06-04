@@ -173,14 +173,19 @@ export default async function ClienteDetalhePage({ params }: Props) {
         </div>
       )}
 
-      {/* Sequência de onboarding pós-kickoff (Personas → ... → Parâmetros) */}
+      {/* Sequência de onboarding pós-kickoff, por marca (Personas → ... → Parâmetros) */}
       {podeEditar && pipeline.length > 0 && (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold text-ink">Sequência pós-kickoff</h2>
           <p className="mb-4 text-sm text-zinc-500">
-            Cada etapa é gerada pela Izzi, revisada e aprovada antes da próxima. Os ajustes calibram o agente para este cliente.
+            Cada marca tem sua própria sequência. Cada etapa é gerada pela Izzi, revisada e aprovada antes da próxima — os ajustes calibram o agente para esta marca.
           </p>
-          <PipelineSequencia clienteId={id} etapas={pipeline} podeEditar={podeEditar} />
+          <PipelineSequencia
+            clienteId={id}
+            etapas={pipeline}
+            marcas={(onboardingConfig?.marcas ?? []).map((m) => ({ id: m.id, nome: m.nome }))}
+            podeEditar={podeEditar}
+          />
         </div>
       )}
 

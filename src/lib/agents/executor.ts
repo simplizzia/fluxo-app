@@ -10,6 +10,7 @@ export interface ExecucaoOpts {
   organizationId: string
   agenteChave: string         // e.g. 'criativo.carrossel'
   clienteId?: string
+  marcaId?: string            // escopa o contexto a uma marca específica
   cardId?: string
   triggeredBy?: string        // profile.id
   input: Record<string, unknown>
@@ -31,6 +32,7 @@ export interface ExecucaoResult {
 async function buildContextoCliente(
   clienteId: string,
   organizationId: string,
+  marcaId?: string,
 ): Promise<string> {
   try {
     const service = createServiceClient()
@@ -49,13 +51,43 @@ async function buildContextoCliente(
       `## Dados do Cliente\nNome: ${cliente.nome}\nStatus: ${cliente.status}`,
     ]
 
-    // Seções do universo de marca (estratégia)
-    const { data: secoes } = await service
+    // Quando há marca, injeta o contexto específico dela (dados + briefing Modo 1)
+    if (marcaId) {
+      const { data: marca } = await service
+        .from('onboarding_marcas')
+        .select('nome, publico, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, briefing_output')
+        .eq('id', marcaId)
+        .single()
+
+      if (marca) {
+        const dados = [
+          `Nome: ${marca.nome}`,
+          marca.publico ? `Público: ${marca.publico}` : null,
+          marca.posicionamento_atual ? `Posicionamento atual: ${marca.posicionamento_atual}` : null,
+          marca.concorrentes ? `Concorrentes: ${marca.concorrentes}` : null,
+          marca.contexto_estrategico ? `Contexto estratégico: ${marca.contexto_estrategico}` : null,
+          marca.cenario_atual ? `Cenário atual: ${marca.cenario_atual}` : null,
+        ].filter(Boolean).join('\n')
+        partes.push(`\n## Marca em foco\n${dados}`)
+        if (marca.briefing_output) {
+          partes.push(`\n## Briefing da Marca (onboarding)\n${marca.briefing_output}`)
+        }
+      }
+    }
+
+    // Seções do universo de marca: documentos de nível cliente (marca_id null,
+    // ex: Briefing Geral) + os da marca em foco. Sem marca, traz tudo do cliente.
+    let query = service
       .from('universo_marca')
-      .select('categoria, titulo, conteudo')
+      .select('categoria, titulo, conteudo, marca_id')
       .eq('cliente_id', clienteId)
       .eq('organization_id', organizationId)
-      .order('categoria')
+
+    if (marcaId) {
+      query = query.or(`marca_id.is.null,marca_id.eq.${marcaId}`)
+    }
+
+    const { data: secoes } = await query.order('categoria')
 
     if (secoes && secoes.length > 0) {
       partes.push('\n## Universo de Marca')
@@ -125,7 +157,7 @@ async function buildFeedbackContext(
 // ---------------------------------------------------------------------------
 
 export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult> {
-  const { organizationId, agenteChave, clienteId, cardId, triggeredBy, input } = opts
+  const { organizationId, agenteChave, clienteId, marcaId, cardId, triggeredBy, input } = opts
   const inicio = Date.now()
   const service = createServiceClient()
 
@@ -165,7 +197,7 @@ export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult
   try {
     // 3. Build context in parallel: client brand data + feedback history
     const [contextoCliente, contextoFeedback] = await Promise.all([
-      clienteId ? buildContextoCliente(clienteId, organizationId) : Promise.resolve(''),
+      clienteId ? buildContextoCliente(clienteId, organizationId, marcaId) : Promise.resolve(''),
       buildFeedbackContext(agente.id as string, organizationId, clienteId),
     ])
 

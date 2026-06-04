@@ -36,11 +36,16 @@ const MD_COMPONENTS = {
 interface Props {
   clienteId: string
   etapas: PipelineEtapa[]
+  marcas: { id: string; nome: string }[]
   podeEditar: boolean
 }
 
-export default function PipelineSequencia({ clienteId, etapas, podeEditar }: Props) {
-  if (etapas.length === 0) {
+export default function PipelineSequencia({ clienteId, etapas, marcas, podeEditar }: Props) {
+  // Marcas que têm linhas no pipeline (na ordem de `marcas`)
+  const marcasComPipeline = marcas.filter((m) => etapas.some((e) => e.marca_id === m.id))
+  const [marcaAtiva, setMarcaAtiva] = useState(marcasComPipeline[0]?.id ?? '')
+
+  if (etapas.length === 0 || marcasComPipeline.length === 0) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-sm text-zinc-500">
         A sequência (Personas → Diagnósticos → Posicionamento → Parâmetros) é iniciada automaticamente
@@ -49,29 +54,62 @@ export default function PipelineSequencia({ clienteId, etapas, podeEditar }: Pro
     )
   }
 
-  // A etapa "ativa" é a primeira que ainda não foi aprovada
-  const ativaOrdem = etapas.find((e) => e.status !== 'aprovado')?.ordem ?? Infinity
+  const etapasDaMarca = etapas
+    .filter((e) => e.marca_id === marcaAtiva)
+    .sort((a, b) => a.ordem - b.ordem)
+  const ativaOrdem = etapasDaMarca.find((e) => e.status !== 'aprovado')?.ordem ?? Infinity
+
+  // Progresso por marca (etapas aprovadas / total) para o badge da aba
+  function progresso(marcaId: string) {
+    const linhas = etapas.filter((e) => e.marca_id === marcaId)
+    const aprovadas = linhas.filter((e) => e.status === 'aprovado').length
+    return `${aprovadas}/${linhas.length}`
+  }
 
   return (
-    <div className="space-y-3">
-      {etapas.map((etapa) => (
-        <EtapaCard
-          key={etapa.etapa}
-          clienteId={clienteId}
-          etapa={etapa}
-          ativa={etapa.ordem === ativaOrdem}
-          bloqueada={etapa.ordem > ativaOrdem}
-          podeEditar={podeEditar}
-        />
-      ))}
+    <div className="space-y-4">
+      {/* Sub-abas por marca */}
+      {marcasComPipeline.length > 1 && (
+        <div className="flex flex-wrap gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 w-fit">
+          {marcasComPipeline.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setMarcaAtiva(m.id)}
+              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
+                marcaAtiva === m.id ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+              }`}
+            >
+              {m.nome}
+              <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-500">
+                {progresso(m.id)}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {etapasDaMarca.map((etapa) => (
+          <EtapaCard
+            key={`${etapa.marca_id}-${etapa.etapa}`}
+            clienteId={clienteId}
+            marcaId={marcaAtiva}
+            etapa={etapa}
+            ativa={etapa.ordem === ativaOrdem}
+            bloqueada={etapa.ordem > ativaOrdem}
+            podeEditar={podeEditar}
+          />
+        ))}
+      </div>
     </div>
   )
 }
 
 function EtapaCard({
-  clienteId, etapa, ativa, bloqueada, podeEditar,
+  clienteId, marcaId, etapa, ativa, bloqueada, podeEditar,
 }: {
   clienteId: string
+  marcaId: string
   etapa: PipelineEtapa
   ativa: boolean
   bloqueada: boolean
@@ -92,7 +130,7 @@ function EtapaCard({
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clienteId, etapaKey: etapa.etapa, ...body }),
+        body: JSON.stringify({ clienteId, marcaId, etapaKey: etapa.etapa, ...body }),
       })
       const data = await res.json()
       if (!res.ok || data.error) { setErro(data.error ?? 'Erro inesperado'); return }

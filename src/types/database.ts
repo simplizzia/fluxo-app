@@ -2392,6 +2392,7 @@ export type Database = {
           gerado_em: string | null
           id: string
           input_manual: string | null
+          marca_id: string | null
           ordem: number
           organization_id: string
           output: string | null
@@ -2410,6 +2411,7 @@ export type Database = {
           gerado_em?: string | null
           id?: string
           input_manual?: string | null
+          marca_id?: string | null
           ordem: number
           organization_id: string
           output?: string | null
@@ -2428,6 +2430,7 @@ export type Database = {
           gerado_em?: string | null
           id?: string
           input_manual?: string | null
+          marca_id?: string | null
           ordem?: number
           organization_id?: string
           output?: string | null
@@ -3440,6 +3443,7 @@ export type Database = {
           created_at: string
           gerado_por_agente: string | null
           id: string
+          marca_id: string | null
           organization_id: string
           subcategoria: string | null
           titulo: string
@@ -3454,6 +3458,7 @@ export type Database = {
           created_at?: string
           gerado_por_agente?: string | null
           id?: string
+          marca_id?: string | null
           organization_id: string
           subcategoria?: string | null
           titulo: string
@@ -3468,6 +3473,7 @@ export type Database = {
           created_at?: string
           gerado_por_agente?: string | null
           id?: string
+          marca_id?: string | null
           organization_id?: string
           subcategoria?: string | null
           titulo?: string

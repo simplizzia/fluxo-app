@@ -3,7 +3,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { executarAgente } from '@/lib/agents/executor'
 
 // ---------------------------------------------------------------------------
-// Definição das etapas do pipeline pós-kickoff (ordem por dependência)
+// Definição das etapas do pipeline pós-kickoff (ordem por dependência).
+// O pipeline roda POR MARCA — cada marca do cliente tem sua própria sequência.
 // ---------------------------------------------------------------------------
 
 type CategoriaUniverso = 'outros' | 'brand_system' | 'personas' | 'diagnostico' | 'parametros' | 'calendario'
@@ -57,9 +58,26 @@ export function etapaDef(key: string): EtapaDef | undefined {
   return ETAPAS_PIPELINE.find((e) => e.key === key)
 }
 
+// Marcas configuradas do cliente (via onboarding)
+async function getMarcas(clienteId: string): Promise<{ id: string; nome: string }[]> {
+  const service = createServiceClient()
+  const { data: session } = await service
+    .from('onboarding_clientes')
+    .select('token')
+    .eq('cliente_id', clienteId)
+    .maybeSingle()
+  if (!session) return []
+  const { data: marcas } = await service
+    .from('onboarding_marcas')
+    .select('id, nome')
+    .eq('token', session.token)
+    .order('ordem', { ascending: true })
+  return (marcas ?? []) as { id: string; nome: string }[]
+}
+
 // ---------------------------------------------------------------------------
-// Inicializa as linhas do pipeline (idempotente) — chamado quando o briefing
-// geral (Modo 3) é gerado.
+// Inicializa o pipeline (idempotente): cria as etapas para CADA marca.
+// Chamado quando o Briefing Geral (Modo 3) é gerado.
 // ---------------------------------------------------------------------------
 
 export async function inicializarPipeline(
@@ -67,22 +85,35 @@ export async function inicializarPipeline(
   organizationId: string,
 ): Promise<void> {
   const service = createServiceClient()
+  const marcas = await getMarcas(clienteId)
+  if (marcas.length === 0) return
+
   const { data: existentes } = await service
     .from('onboarding_pipeline')
-    .select('etapa')
+    .select('etapa, marca_id')
     .eq('cliente_id', clienteId)
 
-  const jaExiste = new Set((existentes ?? []).map((r) => r.etapa))
+  const jaExiste = new Set((existentes ?? []).map((r) => `${r.marca_id}::${r.etapa}`))
 
-  const novas = ETAPAS_PIPELINE
-    .filter((e) => !jaExiste.has(e.key))
-    .map((e) => ({
-      organization_id: organizationId,
-      cliente_id:      clienteId,
-      etapa:           e.key,
-      ordem:           e.ordem,
-      status:          'pendente' as const,
-    }))
+  const novas: {
+    organization_id: string; cliente_id: string; marca_id: string
+    etapa: string; ordem: number; status: 'pendente'
+  }[] = []
+
+  for (const marca of marcas) {
+    for (const e of ETAPAS_PIPELINE) {
+      if (!jaExiste.has(`${marca.id}::${e.key}`)) {
+        novas.push({
+          organization_id: organizationId,
+          cliente_id:      clienteId,
+          marca_id:        marca.id,
+          etapa:           e.key,
+          ordem:           e.ordem,
+          status:          'pendente',
+        })
+      }
+    }
+  }
 
   if (novas.length > 0) {
     await service.from('onboarding_pipeline').insert(novas)
@@ -90,32 +121,30 @@ export async function inicializarPipeline(
 }
 
 // ---------------------------------------------------------------------------
-// Gera (ou regenera) uma etapa via executarAgente
+// Gera (ou regenera) uma etapa de uma marca via executarAgente
 // ---------------------------------------------------------------------------
 
 export async function gerarEtapa(opts: {
   clienteId: string
   organizationId: string
+  marcaId: string
   etapaKey: string
   inputManual?: string
   ajuste?: string
 }): Promise<{ ok: boolean; error?: string }> {
-  const { clienteId, organizationId, etapaKey, inputManual, ajuste } = opts
+  const { clienteId, organizationId, marcaId, etapaKey, inputManual, ajuste } = opts
   const def = etapaDef(etapaKey)
   if (!def) return { ok: false, error: 'Etapa inválida' }
 
   const service = createServiceClient()
 
-  // marca como gerando
   await service
     .from('onboarding_pipeline')
     .update({ status: 'gerando', erro: null, updated_at: new Date().toISOString() })
-    .eq('cliente_id', clienteId)
-    .eq('etapa', etapaKey)
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
 
-  // monta input — o contexto do cliente (universo_marca) é injetado pelo executor
   const input: Record<string, unknown> = {
-    instrucao: `Gere a etapa "${def.label}" com base no contexto do cliente já fornecido (briefing, personas e demais documentos aprovados).`,
+    instrucao: `Gere a etapa "${def.label}" para a marca em foco, com base no contexto já fornecido (briefing geral, briefing da marca e documentos aprovados desta marca).`,
   }
   if (inputManual) input.presenca_digital = inputManual
   if (ajuste) input.ajuste_solicitado = ajuste
@@ -124,6 +153,7 @@ export async function gerarEtapa(opts: {
     organizationId,
     agenteChave: def.agenteChave,
     clienteId,
+    marcaId,
     input,
   })
 
@@ -131,8 +161,7 @@ export async function gerarEtapa(opts: {
     await service
       .from('onboarding_pipeline')
       .update({ status: 'erro', erro: result.error ?? 'Falha ao gerar', updated_at: new Date().toISOString() })
-      .eq('cliente_id', clienteId)
-      .eq('etapa', etapaKey)
+      .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
     return { ok: false, error: result.error }
   }
 
@@ -147,23 +176,23 @@ export async function gerarEtapa(opts: {
       gerado_em:    new Date().toISOString(),
       updated_at:   new Date().toISOString(),
     })
-    .eq('cliente_id', clienteId)
-    .eq('etapa', etapaKey)
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
 
   return { ok: true }
 }
 
 // ---------------------------------------------------------------------------
-// Aprova uma etapa → grava em universo_marca + dispara a próxima (se automática)
+// Aprova uma etapa → grava em universo_marca (com marca_id) + dispara a próxima
 // ---------------------------------------------------------------------------
 
 export async function aprovarEtapa(opts: {
   clienteId: string
   organizationId: string
+  marcaId: string
   etapaKey: string
   aprovadoPor: string
 }): Promise<{ ok: boolean; error?: string; proximaGerada?: string }> {
-  const { clienteId, organizationId, etapaKey, aprovadoPor } = opts
+  const { clienteId, organizationId, marcaId, etapaKey, aprovadoPor } = opts
   const def = etapaDef(etapaKey)
   if (!def) return { ok: false, error: 'Etapa inválida' }
 
@@ -172,30 +201,29 @@ export async function aprovarEtapa(opts: {
   const { data: row } = await service
     .from('onboarding_pipeline')
     .select('output')
-    .eq('cliente_id', clienteId)
-    .eq('etapa', etapaKey)
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
     .single()
 
   if (!row?.output) return { ok: false, error: 'Etapa sem conteúdo para aprovar.' }
 
-  // nome do cliente para o título
-  const { data: cliente } = await service
-    .from('clientes')
+  const { data: marca } = await service
+    .from('onboarding_marcas')
     .select('nome')
-    .eq('id', clienteId)
+    .eq('id', marcaId)
     .single()
 
-  // grava o conteúdo aprovado em universo_marca (insert ou update por subcategoria)
+  // grava o conteúdo aprovado em universo_marca (por marca + subcategoria)
   const { data: existente } = await service
     .from('universo_marca')
     .select('id')
     .eq('organization_id', organizationId)
     .eq('cliente_id', clienteId)
+    .eq('marca_id', marcaId)
     .eq('subcategoria', def.subcategoria)
     .maybeSingle()
 
   const conteudo = { texto: row.output }
-  const titulo = `${def.label} — ${cliente?.nome ?? ''}`.trim()
+  const titulo = `${def.label} — ${marca?.nome ?? ''}`.trim()
 
   if (existente) {
     await service.from('universo_marca').update({
@@ -205,6 +233,7 @@ export async function aprovarEtapa(opts: {
     await service.from('universo_marca').insert({
       organization_id:      organizationId,
       cliente_id:           clienteId,
+      marca_id:             marcaId,
       categoria:            def.categoria,
       subcategoria:         def.subcategoria,
       titulo,
@@ -222,13 +251,12 @@ export async function aprovarEtapa(opts: {
       aprovado_por: aprovadoPor,
       updated_at:   new Date().toISOString(),
     })
-    .eq('cliente_id', clienteId)
-    .eq('etapa', etapaKey)
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
 
-  // dispara a próxima etapa, se automática
+  // dispara a próxima etapa da mesma marca, se automática
   const proxima = ETAPAS_PIPELINE.find((e) => e.ordem === def.ordem + 1)
   if (proxima && !proxima.requerInput) {
-    await gerarEtapa({ clienteId, organizationId, etapaKey: proxima.key })
+    await gerarEtapa({ clienteId, organizationId, marcaId, etapaKey: proxima.key })
     return { ok: true, proximaGerada: proxima.key }
   }
 
@@ -242,23 +270,23 @@ export async function aprovarEtapa(opts: {
 export async function solicitarAjuste(opts: {
   clienteId: string
   organizationId: string
+  marcaId: string
   etapaKey: string
   feedback: string
   avaliadoPor: string
 }): Promise<{ ok: boolean; error?: string }> {
-  const { clienteId, organizationId, etapaKey, feedback, avaliadoPor } = opts
+  const { clienteId, organizationId, marcaId, etapaKey, feedback, avaliadoPor } = opts
   const def = etapaDef(etapaKey)
   if (!def) return { ok: false, error: 'Etapa inválida' }
 
   const service = createServiceClient()
 
-  // pega run_id atual + agent_id para gravar o feedback
   const [{ data: row }, { data: agente }] = await Promise.all([
-    service.from('onboarding_pipeline').select('run_id, input_manual').eq('cliente_id', clienteId).eq('etapa', etapaKey).single(),
+    service.from('onboarding_pipeline').select('run_id, input_manual')
+      .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey).single(),
     service.from('agent_catalog').select('id').eq('chave', def.agenteChave).single(),
   ])
 
-  // registra o ajuste como feedback negativo (calibra próximas gerações deste cliente)
   if (row?.run_id && agente?.id) {
     await service.from('agent_feedback').insert({
       organization_id: organizationId,
@@ -274,13 +302,12 @@ export async function solicitarAjuste(opts: {
   await service
     .from('onboarding_pipeline')
     .update({ status: 'ajuste_solicitado', ajustes: feedback, updated_at: new Date().toISOString() })
-    .eq('cliente_id', clienteId)
-    .eq('etapa', etapaKey)
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
 
-  // regenera com o ajuste no input
   return gerarEtapa({
     clienteId,
     organizationId,
+    marcaId,
     etapaKey,
     inputManual: row?.input_manual ?? undefined,
     ajuste: feedback,

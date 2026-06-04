@@ -10,6 +10,7 @@ import { enviarEmail, emailOnboardingCliente } from '@/lib/email'
 // ---------------------------------------------------------------------------
 
 export interface PipelineEtapa {
+  marca_id: string | null
   etapa: string
   ordem: number
   status: 'pendente' | 'gerando' | 'aguardando_aprovacao' | 'aprovado' | 'ajuste_solicitado' | 'erro'
@@ -26,7 +27,7 @@ export async function buscarPipeline(clienteId: string): Promise<PipelineEtapa[]
   const service = createServiceClient()
   const { data } = await service
     .from('onboarding_pipeline')
-    .select('etapa, ordem, status, output, input_manual, ajustes, erro, gerado_em, aprovado_em')
+    .select('marca_id, etapa, ordem, status, output, input_manual, ajustes, erro, gerado_em, aprovado_em')
     .eq('cliente_id', clienteId)
     .order('ordem', { ascending: true })
   return (data ?? []) as PipelineEtapa[]

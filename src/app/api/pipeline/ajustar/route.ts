@@ -11,17 +11,18 @@ export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   const profile = await requirePapel('socia', 'gestao')
-  const { clienteId, etapaKey, feedback } = await request.json() as {
-    clienteId: string; etapaKey: string; feedback: string
+  const { clienteId, marcaId, etapaKey, feedback } = await request.json() as {
+    clienteId: string; marcaId: string; etapaKey: string; feedback: string
   }
 
-  if (!clienteId || !etapaKey || !feedback?.trim()) {
-    return Response.json({ error: 'clienteId, etapaKey e feedback obrigatórios' }, { status: 400 })
+  if (!clienteId || !marcaId || !etapaKey || !feedback?.trim()) {
+    return Response.json({ error: 'clienteId, marcaId, etapaKey e feedback obrigatórios' }, { status: 400 })
   }
 
   const res = await solicitarAjuste({
     clienteId,
     organizationId: profile.organization_id,
+    marcaId,
     etapaKey,
     feedback: feedback.trim(),
     avaliadoPor: profile.id,
