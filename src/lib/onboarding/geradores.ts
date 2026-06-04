@@ -67,9 +67,22 @@ export async function gerarModo2(opts: {
     session.cenario_atual ? `Cenário atual: ${session.cenario_atual}` : null,
   ].filter(Boolean).join('\n')
 
-  const briefingsTexto = marcas.map((m) =>
-    `## ${m.nome}\n${m.briefing_output ?? '(sem briefing)'}`
-  ).join('\n\n')
+  const briefingsTexto = marcas.map((m) => {
+    // Contexto que a equipe preencheu ANTES da conversa com a Izzi
+    const contextoEquipe = [
+      m.publico ? `Público: ${m.publico}` : null,
+      m.posicionamento_atual ? `Posicionamento atual: ${m.posicionamento_atual}` : null,
+      m.concorrentes ? `Concorrentes: ${m.concorrentes}` : null,
+      m.contexto_estrategico ? `Contexto estratégico: ${m.contexto_estrategico}` : null,
+      m.cenario_atual ? `Cenário atual: ${m.cenario_atual}` : null,
+    ].filter(Boolean).join('\n')
+
+    return [
+      `## ${m.nome}`,
+      contextoEquipe ? `### Contexto já levantado pela equipe (antes da conversa)\n${contextoEquipe}` : null,
+      `### Briefing da conversa com a Izzi\n${m.briefing_output ?? '(sem briefing)'}`,
+    ].filter(Boolean).join('\n\n')
+  }).join('\n\n---\n\n')
 
   const result = await executarAgente({
     organizationId,
@@ -200,17 +213,30 @@ export async function gerarModo3(opts: {
     ].filter(Boolean).join('\n')
 
     if (!briefingRows?.length) {
-      // Fallback: buscar direto das onboarding_marcas usando briefing_output
+      // Fallback: buscar direto das onboarding_marcas (contexto da equipe + briefing)
       const { data: marcas } = await service
         .from('onboarding_marcas')
-        .select('nome, briefing_output')
+        .select('nome, publico, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, briefing_output')
         .eq('token', onboardingSession.token)
         .order('ordem', { ascending: true })
 
       briefingsTexto = (marcas ?? [])
         .filter((m) => m.briefing_output)
-        .map((m) => `## ${m.nome}\n${m.briefing_output}`)
-        .join('\n\n')
+        .map((m) => {
+          const contextoEquipe = [
+            m.publico ? `Público: ${m.publico}` : null,
+            m.posicionamento_atual ? `Posicionamento atual: ${m.posicionamento_atual}` : null,
+            m.concorrentes ? `Concorrentes: ${m.concorrentes}` : null,
+            m.contexto_estrategico ? `Contexto estratégico: ${m.contexto_estrategico}` : null,
+            m.cenario_atual ? `Cenário atual: ${m.cenario_atual}` : null,
+          ].filter(Boolean).join('\n')
+          return [
+            `## ${m.nome}`,
+            contextoEquipe ? `### Contexto levantado pela equipe\n${contextoEquipe}` : null,
+            `### Briefing da conversa\n${m.briefing_output}`,
+          ].filter(Boolean).join('\n\n')
+        })
+        .join('\n\n---\n\n')
     }
   }
 
