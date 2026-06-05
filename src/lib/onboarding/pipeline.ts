@@ -1,4 +1,5 @@
 import 'server-only'
+import Anthropic from '@anthropic-ai/sdk'
 import { createServiceClient } from '@/lib/supabase/server'
 import { executarAgente } from '@/lib/agents/executor'
 
@@ -209,38 +210,42 @@ export async function continuarEtapa(opts: {
 
   if (!row?.output) return { ok: false, error: 'Nada para continuar.' }
 
-  // Dá o documento INTEIRO para o agente saber o que já existe e escrever só o
-  // que falta. Não marca 'gerando' (não trava o estado se a função expirar).
+  // IMPORTANTE: a continuação NÃO usa o prompt do agente (que mandaria refazer o
+  // documento inteiro). Usa um prompt mínimo de "continuação de texto", então o
+  // modelo apenas emenda de onde parou — sem reiniciar nem repetir.
   const MARCADOR_COMPLETO = '[DOCUMENTO_COMPLETO]'
-  const result = await executarAgente({
-    organizationId,
-    agenteChave: def.agenteChave,
-    clienteId,
-    marcaId,
-    maxTokens: 2000,
-    input: {
-      instrucao: `Abaixo está o DOCUMENTO ATUAL da etapa "${def.label}" — ele pode estar incompleto (foi cortado por limite de tamanho). Sua tarefa é produzir APENAS o que ainda falta para completá-lo segundo a estrutura obrigatória do seu papel, continuando exatamente de onde o texto para.
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
-REGRAS CRÍTICAS:
-1. NÃO repita nenhuma seção, título, tabela ou frase que JÁ aparece no documento atual.
-2. NÃO reescreva o início nem reintroduza o documento.
-3. Comece a resposta diretamente pela continuação, a partir da última linha existente.
-4. Se o documento JÁ está completo segundo a estrutura obrigatória, responda APENAS com o texto exato ${MARCADOR_COMPLETO} e mais nada.`,
-      documento_atual: row.output,
-    },
-  })
-
-  if (!result.output) {
-    return { ok: false, error: result.error ?? 'Falha ao continuar' }
+  let continuacaoRaw = ''
+  try {
+    const resp = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 2000,
+      system:
+        'Você CONTINUA documentos markdown que foram cortados no fim por limite de tamanho. ' +
+        'Você recebe o documento atual e devolve APENAS a continuação — começando exatamente na palavra/frase onde o texto parou. ' +
+        'NUNCA repita, reescreva ou reintroduza nada que já está no documento. NUNCA recomece do título. ' +
+        'Mantenha o mesmo formato markdown, tom e idioma. ' +
+        `Se o documento já está visivelmente completo e bem encerrado, responda APENAS com ${MARCADOR_COMPLETO} e nada mais.`,
+      messages: [{
+        role: 'user',
+        content: `Documento atual (continue a partir do final dele):\n\n<documento>\n${row.output}\n</documento>\n\nDevolva apenas a continuação a partir de onde o texto para (ou ${MARCADOR_COMPLETO} se já estiver completo).`,
+      }],
+    })
+    continuacaoRaw = resp.content
+      .filter((b) => b.type === 'text')
+      .map((b) => (b as { type: 'text'; text: string }).text)
+      .join('')
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Falha ao continuar' }
   }
 
   // Documento já estava completo
-  if (result.output.includes(MARCADOR_COMPLETO) && result.output.replace(MARCADOR_COMPLETO, '').trim().length < 40) {
+  if (continuacaoRaw.includes(MARCADOR_COMPLETO) && continuacaoRaw.replace(MARCADOR_COMPLETO, '').trim().length < 40) {
     return { ok: true, completo: true }
   }
 
-  // Emenda: junta o output existente com a continuação (remove o marcador se veio junto)
-  const continuacao = result.output.replace(MARCADOR_COMPLETO, '').trimStart()
+  const continuacao = continuacaoRaw.replace(MARCADOR_COMPLETO, '').trimStart()
   if (!continuacao) return { ok: true, completo: true }
 
   const sep = row.output.endsWith('\n') ? '' : '\n'
@@ -251,7 +256,6 @@ REGRAS CRÍTICAS:
     .update({
       status:     'aguardando_aprovacao',
       output:     novoOutput,
-      run_id:     result.runId ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
