@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   Edit2, Check, X, ExternalLink,
   Brain, Loader2, TrendingUp, TrendingDown, Lightbulb,
@@ -368,6 +369,9 @@ const MD_COMPONENTS = {
   ul: ({ children }: { children?: React.ReactNode }) => <ul className="mb-2.5 list-disc space-y-0.5 pl-5">{children}</ul>,
   ol: ({ children }: { children?: React.ReactNode }) => <ol className="mb-2.5 list-decimal space-y-0.5 pl-5">{children}</ol>,
   li: ({ children }: { children?: React.ReactNode }) => <li className="leading-relaxed">{children}</li>,
+  table: ({ children }: { children?: React.ReactNode }) => <div className="my-3 overflow-x-auto"><table className="w-full text-xs border-collapse">{children}</table></div>,
+  th: ({ children }: { children?: React.ReactNode }) => <th className="border border-zinc-200 bg-zinc-50 px-2 py-1 text-left font-semibold">{children}</th>,
+  td: ({ children }: { children?: React.ReactNode }) => <td className="border border-zinc-200 px-2 py-1 align-top">{children}</td>,
   hr: () => <hr className="my-4 border-zinc-100" />,
 }
 
@@ -393,7 +397,7 @@ function DocumentoIzzi({ secao }: { secao: SecaoMarca }) {
       </button>
       {aberto && (
         <div className="border-t border-violet-100 bg-white px-5 py-4 text-sm leading-relaxed text-zinc-700">
-          <ReactMarkdown components={MD_COMPONENTS}>{texto}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD_COMPONENTS}>{texto}</ReactMarkdown>
         </div>
       )}
     </div>
@@ -521,7 +525,7 @@ function SecaoEditor({
           </div>
         ) : textoAtual ? (
           <div className="text-sm leading-relaxed text-zinc-700">
-            <ReactMarkdown components={MD_COMPONENTS}>{textoAtual}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD_COMPONENTS}>{textoAtual}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm italic text-zinc-400">{placeholder}</p>
