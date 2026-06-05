@@ -217,7 +217,7 @@ export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: agente.prompt_sistema as string,
       messages: [{ role: 'user', content: userMessage }],
     })

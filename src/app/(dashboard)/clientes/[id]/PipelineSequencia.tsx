@@ -255,6 +255,15 @@ function EtapaCard({
                 >
                   <RefreshCw className="h-4 w-4" /> Pedir ajustes
                 </button>
+                <button
+                  onClick={() => chamar('/api/pipeline/continuar', {})}
+                  disabled={loading}
+                  title="Use se o texto foi cortado no fim — emenda a continuação sem regenerar"
+                  className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown className="h-4 w-4" />}
+                  Continuar texto
+                </button>
               </div>
             ) : (
               <div className="space-y-2">

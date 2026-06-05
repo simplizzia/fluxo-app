@@ -185,6 +185,74 @@ export async function gerarEtapa(opts: {
 // Aprova uma etapa → grava em universo_marca (com marca_id) + dispara a próxima
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Continua uma etapa cujo texto foi cortado por limite — emenda sem regenerar
+// ---------------------------------------------------------------------------
+
+export async function continuarEtapa(opts: {
+  clienteId: string
+  organizationId: string
+  marcaId: string
+  etapaKey: string
+}): Promise<{ ok: boolean; error?: string }> {
+  const { clienteId, organizationId, marcaId, etapaKey } = opts
+  const def = etapaDef(etapaKey)
+  if (!def) return { ok: false, error: 'Etapa inválida' }
+
+  const service = createServiceClient()
+
+  const { data: row } = await service
+    .from('onboarding_pipeline')
+    .select('output')
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
+    .single()
+
+  if (!row?.output) return { ok: false, error: 'Nada para continuar.' }
+
+  await service
+    .from('onboarding_pipeline')
+    .update({ status: 'gerando', updated_at: new Date().toISOString() })
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
+
+  // Dá ao agente o trecho final do documento e pede para emendar
+  const trechoFinal = row.output.slice(-2000)
+  const result = await executarAgente({
+    organizationId,
+    agenteChave: def.agenteChave,
+    clienteId,
+    marcaId,
+    input: {
+      instrucao: `O documento abaixo (etapa "${def.label}") foi INTERROMPIDO por limite de tamanho. Continue EXATAMENTE de onde parou: não repita nada já escrito, não reescreva o início nem reintroduza o documento, apenas emende o texto que falta a partir da última frase, mantendo o mesmo formato markdown e o mesmo tom. Comece a resposta diretamente com a continuação.`,
+      trecho_final_ja_escrito: trechoFinal,
+    },
+  })
+
+  if (!result.output) {
+    await service
+      .from('onboarding_pipeline')
+      .update({ status: 'aguardando_aprovacao', updated_at: new Date().toISOString() })
+      .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
+    return { ok: false, error: result.error ?? 'Falha ao continuar' }
+  }
+
+  // Emenda: junta o output existente com a continuação
+  const continuacao = result.output.trimStart()
+  const sep = row.output.endsWith('\n') ? '' : '\n'
+  const novoOutput = `${row.output}${sep}${continuacao}`
+
+  await service
+    .from('onboarding_pipeline')
+    .update({
+      status:     'aguardando_aprovacao',
+      output:     novoOutput,
+      run_id:     result.runId ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
+
+  return { ok: true }
+}
+
 export async function aprovarEtapa(opts: {
   clienteId: string
   organizationId: string
