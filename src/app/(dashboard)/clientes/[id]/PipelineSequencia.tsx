@@ -120,12 +120,13 @@ function EtapaCard({
   const [aberto, setAberto] = useState(etapa.status === 'aguardando_aprovacao')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
+  const [info, setInfo] = useState('')
   const [inputManual, setInputManual] = useState(etapa.input_manual ?? '')
   const [feedback, setFeedback] = useState('')
   const [mostrandoAjuste, setMostrandoAjuste] = useState(false)
 
   async function chamar(url: string, body: Record<string, unknown>) {
-    setLoading(true); setErro('')
+    setLoading(true); setErro(''); setInfo('')
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -134,6 +135,7 @@ function EtapaCard({
       })
       const data = await res.json()
       if (!res.ok || data.error) { setErro(data.error ?? 'Erro inesperado'); return }
+      if (data.completo) { setInfo('Documento já está completo — nada mais a continuar.'); return }
       router.refresh()
     } catch {
       setErro('Falha de conexão. Tente novamente.')
@@ -312,6 +314,7 @@ function EtapaCard({
         )}
 
         {erro && <p className="text-xs text-red-600">{erro}</p>}
+        {info && <p className="flex items-center gap-1.5 text-xs text-green-600"><CheckCircle2 className="h-3.5 w-3.5" />{info}</p>}
       </div>
     </div>
   )

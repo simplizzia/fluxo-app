@@ -194,7 +194,7 @@ export async function continuarEtapa(opts: {
   organizationId: string
   marcaId: string
   etapaKey: string
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{ ok: boolean; error?: string; completo?: boolean }> {
   const { clienteId, organizationId, marcaId, etapaKey } = opts
   const def = etapaDef(etapaKey)
   if (!def) return { ok: false, error: 'Etapa inválida' }
@@ -209,20 +209,24 @@ export async function continuarEtapa(opts: {
 
   if (!row?.output) return { ok: false, error: 'Nada para continuar.' }
 
-  // Não marca 'gerando' para não travar o estado se a função expirar — o
-  // botão segue disponível para nova tentativa.
-  const trechoFinal = row.output.slice(-2000)
+  // Dá o documento INTEIRO para o agente saber o que já existe e escrever só o
+  // que falta. Não marca 'gerando' (não trava o estado se a função expirar).
+  const MARCADOR_COMPLETO = '[DOCUMENTO_COMPLETO]'
   const result = await executarAgente({
     organizationId,
     agenteChave: def.agenteChave,
     clienteId,
     marcaId,
-    // Trecho menor por clique para nunca estourar o tempo da função — basta
-    // clicar "Continuar" de novo se ainda faltar.
     maxTokens: 2000,
     input: {
-      instrucao: `O documento abaixo (etapa "${def.label}") foi INTERROMPIDO por limite de tamanho. Continue EXATAMENTE de onde parou: não repita nada já escrito, não reescreva o início nem reintroduza o documento, apenas emende o texto que falta a partir da última frase, mantendo o mesmo formato markdown e o mesmo tom. Comece a resposta diretamente com a continuação.`,
-      trecho_final_ja_escrito: trechoFinal,
+      instrucao: `Abaixo está o DOCUMENTO ATUAL da etapa "${def.label}" — ele pode estar incompleto (foi cortado por limite de tamanho). Sua tarefa é produzir APENAS o que ainda falta para completá-lo segundo a estrutura obrigatória do seu papel, continuando exatamente de onde o texto para.
+
+REGRAS CRÍTICAS:
+1. NÃO repita nenhuma seção, título, tabela ou frase que JÁ aparece no documento atual.
+2. NÃO reescreva o início nem reintroduza o documento.
+3. Comece a resposta diretamente pela continuação, a partir da última linha existente.
+4. Se o documento JÁ está completo segundo a estrutura obrigatória, responda APENAS com o texto exato ${MARCADOR_COMPLETO} e mais nada.`,
+      documento_atual: row.output,
     },
   })
 
@@ -230,8 +234,15 @@ export async function continuarEtapa(opts: {
     return { ok: false, error: result.error ?? 'Falha ao continuar' }
   }
 
-  // Emenda: junta o output existente com a continuação
-  const continuacao = result.output.trimStart()
+  // Documento já estava completo
+  if (result.output.includes(MARCADOR_COMPLETO) && result.output.replace(MARCADOR_COMPLETO, '').trim().length < 40) {
+    return { ok: true, completo: true }
+  }
+
+  // Emenda: junta o output existente com a continuação (remove o marcador se veio junto)
+  const continuacao = result.output.replace(MARCADOR_COMPLETO, '').trimStart()
+  if (!continuacao) return { ok: true, completo: true }
+
   const sep = row.output.endsWith('\n') ? '' : '\n'
   const novoOutput = `${row.output}${sep}${continuacao}`
 
