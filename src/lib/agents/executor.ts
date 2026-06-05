@@ -218,9 +218,9 @@ export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      // 6144 cabe a maioria dos documentos em uma geração só (~40s, dentro do
-      // limite de 60s). Os raros que passarem disso completam com "Continuar".
-      max_tokens: maxTokens ?? 6144,
+      // 4096 termina com folga (~27s) dentro do limite de 60s da função, mesmo
+      // com cold start. Documentos longos completam com o botão "Continuar".
+      max_tokens: maxTokens ?? 4096,
       system: agente.prompt_sistema as string,
       messages: [{ role: 'user', content: userMessage }],
     })
