@@ -367,9 +367,15 @@ export async function actionUploadAtivoVisual(
 
   if (!file || !categoria || !nome) return { error: 'Arquivo, categoria e nome são obrigatórios.' }
 
-  // Build storage path
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'bin'
-  const storagePath = `${profile.organization_id}/${clienteId}/${categoria}/${Date.now()}-${nome.replace(/\s+/g, '-')}.${ext}`
+  // Build storage path — chave do Storage só aceita ASCII seguro; remove
+  // acentos e caracteres inválidos do nome (o nome original fica no registro).
+  const ext = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin'
+  const nomeSlug = nome
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove acentos
+    .replace(/[^a-zA-Z0-9]+/g, '-')                    // troca o resto por hífen
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase() || 'ativo'
+  const storagePath = `${profile.organization_id}/${clienteId}/${categoria}/${Date.now()}-${nomeSlug}.${ext}`
 
   // Upload
   const buffer = await file.arrayBuffer()
