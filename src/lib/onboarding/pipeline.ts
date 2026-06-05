@@ -209,12 +209,8 @@ export async function continuarEtapa(opts: {
 
   if (!row?.output) return { ok: false, error: 'Nada para continuar.' }
 
-  await service
-    .from('onboarding_pipeline')
-    .update({ status: 'gerando', updated_at: new Date().toISOString() })
-    .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
-
-  // Dá ao agente o trecho final do documento e pede para emendar
+  // Não marca 'gerando' para não travar o estado se a função expirar — o
+  // botão segue disponível para nova tentativa.
   const trechoFinal = row.output.slice(-2000)
   const result = await executarAgente({
     organizationId,
@@ -228,10 +224,6 @@ export async function continuarEtapa(opts: {
   })
 
   if (!result.output) {
-    await service
-      .from('onboarding_pipeline')
-      .update({ status: 'aguardando_aprovacao', updated_at: new Date().toISOString() })
-      .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
     return { ok: false, error: result.error ?? 'Falha ao continuar' }
   }
 

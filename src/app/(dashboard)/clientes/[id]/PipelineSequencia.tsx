@@ -160,7 +160,11 @@ function EtapaCard({
   }
 
   const temOutput = !!etapa.output
-  const gerandoAgora = loading || etapa.status === 'gerando' || etapa.status === 'ajuste_solicitado'
+  // Gerando "de verdade" = sem output ainda. Se já há texto e o status é
+  // 'gerando', foi uma tentativa que expirou — tratamos como revisável.
+  const gerandoAgora = loading || (etapa.status === 'gerando' && !temOutput) || (etapa.status === 'ajuste_solicitado' && !loading)
+  // Pronto para revisar/aprovar/continuar
+  const revisavel = temOutput && !loading && (etapa.status === 'aguardando_aprovacao' || etapa.status === 'gerando')
 
   return (
     <div className={`overflow-hidden rounded-2xl border ${
@@ -235,8 +239,8 @@ function EtapaCard({
           </div>
         )}
 
-        {/* Aguardando aprovação → Aprovar / Pedir ajustes */}
-        {ativa && etapa.status === 'aguardando_aprovacao' && podeEditar && (
+        {/* Pronto para revisar → Aprovar / Pedir ajustes / Continuar */}
+        {ativa && revisavel && podeEditar && (
           <div className="space-y-3 pt-1">
             {!mostrandoAjuste ? (
               <div className="flex flex-wrap gap-2">
