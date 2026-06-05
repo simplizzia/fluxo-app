@@ -327,13 +327,8 @@ export async function aprovarEtapa(opts: {
     })
     .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
 
-  // dispara a próxima etapa da mesma marca, se automática
-  const proxima = ETAPAS_PIPELINE.find((e) => e.ordem === def.ordem + 1)
-  if (proxima && !proxima.requerInput) {
-    await gerarEtapa({ clienteId, organizationId, marcaId, etapaKey: proxima.key })
-    return { ok: true, proximaGerada: proxima.key }
-  }
-
+  // Aprovar apenas libera a próxima etapa (fica 'pendente'); a geração é feita
+  // num clique separado para não estourar o tempo da função serverless.
   return { ok: true }
 }
 

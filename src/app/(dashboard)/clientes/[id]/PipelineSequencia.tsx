@@ -162,11 +162,11 @@ function EtapaCard({
   }
 
   const temOutput = !!etapa.output
-  // Gerando "de verdade" = sem output ainda. Se já há texto e o status é
-  // 'gerando', foi uma tentativa que expirou — tratamos como revisável.
-  const gerandoAgora = loading || (etapa.status === 'gerando' && !temOutput) || (etapa.status === 'ajuste_solicitado' && !loading)
-  // Pronto para revisar/aprovar/continuar
-  const revisavel = temOutput && !loading && (etapa.status === 'aguardando_aprovacao' || etapa.status === 'gerando')
+  // Os controles são guiados por "tem texto?" + loading — nunca pelo status do
+  // banco, que pode ficar preso em 'gerando' se uma tentativa expirou.
+  const gerandoAgora = loading
+  const revisavel = temOutput && !loading       // já gerou → revisar/aprovar/continuar
+  const podeGerar = !temOutput && !loading        // ainda não gerou → gerar/tentar
 
   return (
     <div className={`overflow-hidden rounded-2xl border ${
@@ -197,8 +197,8 @@ function EtapaCard({
           <p className="text-xs italic text-zinc-400">Aguardando aprovação da etapa anterior.</p>
         )}
 
-        {/* Etapa ativa, ainda não gerada */}
-        {ativa && (etapa.status === 'pendente' || etapa.status === 'erro') && (
+        {/* Etapa ativa, ainda não gerada → Gerar */}
+        {ativa && podeGerar && (
           <div className="space-y-3">
             {meta.requerInput && (
               <div>
@@ -218,19 +218,19 @@ function EtapaCard({
             {podeEditar && (
               <button
                 onClick={() => chamar('/api/pipeline/gerar', meta.requerInput ? { inputManual } : {})}
-                disabled={gerandoAgora || (meta.requerInput && !inputManual.trim())}
+                disabled={meta.requerInput && !inputManual.trim()}
                 className="flex items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:opacity-50"
               >
-                {gerandoAgora ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {gerandoAgora ? 'Gerando…' : etapa.status === 'erro' ? 'Tentar de novo' : `Gerar ${meta.label}`}
+                <Sparkles className="h-4 w-4" />
+                {etapa.status === 'erro' || etapa.status === 'gerando' ? 'Tentar de novo' : `Gerar ${meta.label}`}
               </button>
             )}
           </div>
         )}
 
-        {gerandoAgora && etapa.status !== 'pendente' && etapa.status !== 'erro' && (
+        {gerandoAgora && (
           <p className="flex items-center gap-2 text-xs text-amber-600">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> A Izzi está gerando… isso leva alguns segundos.
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> A Izzi está trabalhando… isso leva alguns segundos.
           </p>
         )}
 
