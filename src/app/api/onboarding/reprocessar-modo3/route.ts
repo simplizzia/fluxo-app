@@ -11,16 +11,28 @@ import { gerarModo3 } from '@/lib/onboarding/geradores'
 export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
-  const { clienteId, transcricao } = await request.json() as {
-    clienteId: string
+  const body = await request.json() as {
+    clienteId?: string
+    token?: string
     transcricao?: string
+  }
+  const { token, transcricao } = body
+  let clienteId = body.clienteId
+
+  // Permite resolver o cliente pelo token do onboarding
+  const service = createServiceClient()
+  if (!clienteId && token) {
+    const { data: sess } = await service
+      .from('onboarding_clientes')
+      .select('cliente_id')
+      .eq('token', token)
+      .maybeSingle()
+    clienteId = sess?.cliente_id ?? undefined
   }
 
   if (!clienteId) {
-    return Response.json({ error: 'clienteId obrigatório' }, { status: 400 })
+    return Response.json({ error: 'clienteId ou token obrigatório' }, { status: 400 })
   }
-
-  const service = createServiceClient()
 
   // Descobre organization_id e (se preciso) a transcrição da reunião
   const { data: cliente } = await service
