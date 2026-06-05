@@ -14,6 +14,7 @@ export interface ExecucaoOpts {
   cardId?: string
   triggeredBy?: string        // profile.id
   input: Record<string, unknown>
+  maxTokens?: number          // limite de saída (default 8192)
 }
 
 export interface ExecucaoResult {
@@ -157,7 +158,7 @@ async function buildFeedbackContext(
 // ---------------------------------------------------------------------------
 
 export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult> {
-  const { organizationId, agenteChave, clienteId, marcaId, cardId, triggeredBy, input } = opts
+  const { organizationId, agenteChave, clienteId, marcaId, cardId, triggeredBy, input, maxTokens } = opts
   const inicio = Date.now()
   const service = createServiceClient()
 
@@ -217,7 +218,7 @@ export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 8192,
+      max_tokens: maxTokens ?? 8192,
       system: agente.prompt_sistema as string,
       messages: [{ role: 'user', content: userMessage }],
     })

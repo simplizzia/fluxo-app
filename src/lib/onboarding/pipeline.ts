@@ -217,6 +217,9 @@ export async function continuarEtapa(opts: {
     agenteChave: def.agenteChave,
     clienteId,
     marcaId,
+    // Trecho menor por clique para nunca estourar o tempo da função — basta
+    // clicar "Continuar" de novo se ainda faltar.
+    maxTokens: 2000,
     input: {
       instrucao: `O documento abaixo (etapa "${def.label}") foi INTERROMPIDO por limite de tamanho. Continue EXATAMENTE de onde parou: não repita nada já escrito, não reescreva o início nem reintroduza o documento, apenas emende o texto que falta a partir da última frase, mantendo o mesmo formato markdown e o mesmo tom. Comece a resposta diretamente com a continuação.`,
       trecho_final_ja_escrito: trechoFinal,
