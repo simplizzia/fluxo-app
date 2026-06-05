@@ -33,8 +33,9 @@ export default function IdentidadeSection({ clienteId, marcaId, ativos, podeEdit
   const [descricao, setDescricao] = useState('')
   const [notaUso, setNotaUso] = useState('')
   const [visivelCliente, setVisivelCliente] = useState(true)
-  const [arquivo, setArquivo] = useState<File | null>(null)
+  const [arquivos, setArquivos] = useState<File[]>([])
   const [erro, setErro] = useState<string | null>(null)
+  const [progresso, setProgresso] = useState('')
   const [pending, startTransition] = useTransition()
 
   // Agrupar por categoria
@@ -46,32 +47,45 @@ export default function IdentidadeSection({ clienteId, marcaId, ativos, podeEdit
   }
 
   function handleUpload() {
-    if (!arquivo || !nome) {
-      setErro('Preencha o nome e selecione um arquivo.')
+    if (arquivos.length === 0 || !nome) {
+      setErro('Preencha o nome e selecione ao menos um arquivo.')
       return
     }
     setErro(null)
 
-    const fd = new FormData()
-    fd.append('file', arquivo)
-    fd.append('categoria', categoria)
-    fd.append('nome', nome)
-    fd.append('descricao', descricao)
-    fd.append('nota_uso', notaUso)
-    fd.append('visivel_para_cliente', String(visivelCliente))
-    if (marcaId) fd.append('marca_id', marcaId)
-
     startTransition(async () => {
-      const res = await actionUploadAtivoVisual(clienteId, fd)
-      if (res.error) {
-        setErro(res.error)
-      } else {
-        setMostrarForm(false)
-        setNome('')
-        setDescricao('')
-        setNotaUso('')
-        setArquivo(null)
+      const multi = arquivos.length > 1
+      let enviados = 0
+      for (const arquivo of arquivos) {
+        if (multi) setProgresso(`Enviando ${enviados + 1} de ${arquivos.length}…`)
+        // Com vários arquivos (ex: família de fonte), cada um vira um ativo com
+        // o nome da família + o nome do arquivo, para ficarem agrupados.
+        const baseArq = arquivo.name.replace(/\.[^.]+$/, '')
+        const nomeFinal = multi ? `${nome} — ${baseArq}` : nome
+
+        const fd = new FormData()
+        fd.append('file', arquivo)
+        fd.append('categoria', categoria)
+        fd.append('nome', nomeFinal)
+        fd.append('descricao', descricao)
+        fd.append('nota_uso', notaUso)
+        fd.append('visivel_para_cliente', String(visivelCliente))
+        if (marcaId) fd.append('marca_id', marcaId)
+
+        const res = await actionUploadAtivoVisual(clienteId, fd)
+        if (res.error) {
+          setErro(`Erro no arquivo "${arquivo.name}": ${res.error}`)
+          setProgresso('')
+          return
+        }
+        enviados++
       }
+      setProgresso('')
+      setMostrarForm(false)
+      setNome('')
+      setDescricao('')
+      setNotaUso('')
+      setArquivos([])
     })
   }
 
@@ -123,12 +137,21 @@ export default function IdentidadeSection({ clienteId, marcaId, ativos, podeEdit
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-700">Arquivo <span className="text-red-500">*</span></label>
+                <label className="mb-1.5 block text-xs font-medium text-zinc-700">
+                  Arquivo(s) <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="file"
-                  onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
+                  multiple
+                  onChange={(e) => setArquivos(Array.from(e.target.files ?? []))}
                   className="block w-full text-sm text-zinc-500 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-200 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-300"
                 />
+                <p className="mt-1 text-[10px] text-zinc-400">
+                  Pode selecionar vários de uma vez — ex: a família de fonte inteira (Regular, Bold, Italic…). Cada arquivo vira um ativo com o nome da família.
+                </p>
+                {arquivos.length > 1 && (
+                  <p className="mt-1 text-[11px] text-zinc-500">{arquivos.length} arquivos selecionados</p>
+                )}
               </div>
 
               <div>
@@ -166,13 +189,13 @@ export default function IdentidadeSection({ clienteId, marcaId, ativos, podeEdit
 
               {erro && <p className="text-xs text-red-600">{erro}</p>}
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleUpload}
                   disabled={pending}
                   className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
                 >
-                  {pending ? 'Enviando…' : 'Fazer upload'}
+                  {pending ? (progresso || 'Enviando…') : arquivos.length > 1 ? `Enviar ${arquivos.length} arquivos` : 'Fazer upload'}
                 </button>
                 <button
                   onClick={() => { setMostrarForm(false); setErro(null) }}
