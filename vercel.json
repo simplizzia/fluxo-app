@@ -62,7 +62,7 @@
     },
     {
       "path": "/api/cron/avisos-agendados",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 8 * * *"
     }
   ]
 }
