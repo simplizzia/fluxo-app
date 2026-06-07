@@ -139,6 +139,44 @@ export async function actionConvidarParceiro(formData: FormData): Promise<void> 
   revalidatePath('/socias/pessoas')
 }
 
+export async function actionReenviarConvite(tokenId: string): Promise<void> {
+  await requirePapel('socia')
+  const service = createServiceClient()
+
+  // Gerar novo token UUID e resetar expiração
+  const novoToken = crypto.randomUUID()
+  const { data, error } = await service
+    .from('onboarding_tokens')
+    .update({
+      token: novoToken,
+      status: 'pendente',
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    })
+    .eq('id', tokenId)
+    .select('token, parceiro_nome, parceiro_email')
+    .single()
+
+  if (error) throw new Error(error.message)
+
+  const { token, parceiro_nome, parceiro_email } = data as {
+    token: string; parceiro_nome: string; parceiro_email: string
+  }
+  const link = `${process.env.ONBOARDING_URL ?? 'https://onboarding.simplizzia.com.br'}/parceiro?token=${token}`
+
+  const { subject, html } = emailConviteParceiro({ nome: parceiro_nome, link })
+  await enviarEmail(parceiro_email, subject, html)
+
+  revalidatePath('/socias/pessoas')
+}
+
+export async function actionExcluirToken(tokenId: string): Promise<void> {
+  await requirePapel('socia')
+  const service = createServiceClient()
+
+  await service.from('onboarding_tokens').delete().eq('id', tokenId)
+  revalidatePath('/socias/pessoas')
+}
+
 // ---------------------------------------------------------------------------
 // Perfis de Parceiros
 // ---------------------------------------------------------------------------

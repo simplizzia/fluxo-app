@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Mail, Plus, Clock, CheckCircle2, AlertCircle, Copy, Check } from 'lucide-react'
+import { Mail, Plus, Clock, CheckCircle2, AlertCircle, Copy, Check, RefreshCw, Trash2 } from 'lucide-react'
 import type { OnboardingToken } from '@/app/(dashboard)/socias/pessoas/actions'
-import { actionConvidarParceiro } from '@/app/(dashboard)/socias/pessoas/actions'
+import { actionConvidarParceiro, actionReenviarConvite, actionExcluirToken } from '@/app/(dashboard)/socias/pessoas/actions'
 
 interface Props {
   tokens: OnboardingToken[]
@@ -24,6 +24,8 @@ export function AbaConvites({ tokens }: Props) {
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [reenviandoId, setReenviandoId] = useState<string | null>(null)
+  const [confirmExcluir, setConfirmExcluir] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
@@ -50,6 +52,25 @@ export function AbaConvites({ tokens }: Props) {
     navigator.clipboard.writeText(`${ONBOARDING_URL}/parceiro?token=${token}`)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  function reenviar(id: string) {
+    setReenviandoId(id)
+    startTransition(async () => {
+      try {
+        await actionReenviarConvite(id)
+        setSucesso(true)
+        setTimeout(() => setSucesso(false), 4000)
+      } catch { /* silencioso */ }
+      finally { setReenviandoId(null) }
+    })
+  }
+
+  function excluir(id: string) {
+    startTransition(async () => {
+      await actionExcluirToken(id)
+      setConfirmExcluir(null)
+    })
   }
 
   return (
@@ -148,6 +169,7 @@ export function AbaConvites({ tokens }: Props) {
                   <Icon className="h-3 w-3" />
                   {cfg.label}
                 </span>
+                {/* Copiar link (só pendentes) */}
                 {t.status === 'pendente' && (
                   <button
                     onClick={() => copiarLink(t.token, t.id)}
@@ -156,6 +178,46 @@ export function AbaConvites({ tokens }: Props) {
                   >
                     {copiedId === t.id ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
                     {copiedId === t.id ? 'Copiado!' : 'Link'}
+                  </button>
+                )}
+
+                {/* Reenviar (pendentes e expirados) */}
+                {t.status !== 'completado' && (
+                  <button
+                    onClick={() => reenviar(t.id)}
+                    disabled={reenviandoId === t.id || isPending}
+                    className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1 text-[10px] text-zinc-500 hover:border-violet-300 hover:text-violet-600 disabled:opacity-40 transition"
+                    title="Gerar novo link e reenviar e-mail"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${reenviandoId === t.id ? 'animate-spin' : ''}`} />
+                    {reenviandoId === t.id ? '...' : 'Reenviar'}
+                  </button>
+                )}
+
+                {/* Excluir */}
+                {confirmExcluir === t.id ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => excluir(t.id)}
+                      disabled={isPending}
+                      className="rounded-lg bg-red-500 px-2 py-1 text-[10px] font-semibold text-white hover:bg-red-600 disabled:opacity-40 transition"
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      onClick={() => setConfirmExcluir(null)}
+                      className="rounded-lg border border-zinc-200 px-2 py-1 text-[10px] text-zinc-500 hover:text-zinc-700 transition"
+                    >
+                      Não
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmExcluir(t.id)}
+                    className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1 text-[10px] text-zinc-400 hover:border-red-200 hover:text-red-500 transition"
+                    title="Excluir convite"
+                  >
+                    <Trash2 className="h-3 w-3" />
                   </button>
                 )}
               </div>
