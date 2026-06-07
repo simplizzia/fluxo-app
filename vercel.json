@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/avaliar-badges",
       "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/avisos-agendados",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

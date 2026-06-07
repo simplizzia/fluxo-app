@@ -3504,6 +3504,215 @@ export type Database = {
           },
         ]
       }
+      atividades_parceiros: {
+        Row: {
+          id: string
+          organization_id: string
+          titulo: string
+          descricao: string | null
+          tipo: Database["public"]["Enums"]["tipo_atividade"]
+          status: Database["public"]["Enums"]["status_atividade"]
+          destinatario_tipo: string
+          parceiro_ids: string[] | null
+          data_prevista: string | null
+          custo_estimado: number | null
+          observacoes: string | null
+          gerado_por_ia: boolean
+          criado_por: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          titulo: string
+          descricao?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_atividade"]
+          status?: Database["public"]["Enums"]["status_atividade"]
+          destinatario_tipo?: string
+          parceiro_ids?: string[] | null
+          data_prevista?: string | null
+          custo_estimado?: number | null
+          observacoes?: string | null
+          gerado_por_ia?: boolean
+          criado_por?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          titulo?: string
+          descricao?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_atividade"]
+          status?: Database["public"]["Enums"]["status_atividade"]
+          destinatario_tipo?: string
+          parceiro_ids?: string[] | null
+          data_prevista?: string | null
+          custo_estimado?: number | null
+          observacoes?: string | null
+          gerado_por_ia?: boolean
+          criado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      avisos_equipe: {
+        Row: {
+          id: string
+          organization_id: string
+          criado_por: string
+          titulo: string
+          conteudo: string
+          imagem_url: string | null
+          link_url: string | null
+          link_label: string | null
+          destinatarios: string
+          parceiro_ids: string[] | null
+          agendado_para: string | null
+          publicado_em: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          criado_por: string
+          titulo: string
+          conteudo: string
+          imagem_url?: string | null
+          link_url?: string | null
+          link_label?: string | null
+          destinatarios?: string
+          parceiro_ids?: string[] | null
+          agendado_para?: string | null
+          publicado_em?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          criado_por?: string
+          titulo?: string
+          conteudo?: string
+          imagem_url?: string | null
+          link_url?: string | null
+          link_label?: string | null
+          destinatarios?: string
+          parceiro_ids?: string[] | null
+          agendado_para?: string | null
+          publicado_em?: string | null
+        }
+        Relationships: []
+      }
+      avisos_visualizacoes: {
+        Row: {
+          aviso_id: string
+          user_id: string
+          visualizado_em: string
+        }
+        Insert: {
+          aviso_id: string
+          user_id: string
+          visualizado_em?: string
+        }
+        Update: {
+          aviso_id?: string
+          user_id?: string
+          visualizado_em?: string
+        }
+        Relationships: []
+      }
+      onboarding_tokens: {
+        Row: {
+          id: string
+          organization_id: string
+          token: string
+          parceiro_email: string
+          parceiro_nome: string
+          status: string
+          created_at: string
+          expires_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          token?: string
+          parceiro_email: string
+          parceiro_nome: string
+          status?: string
+          created_at?: string
+          expires_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          token?: string
+          parceiro_email?: string
+          parceiro_nome?: string
+          status?: string
+          expires_at?: string
+        }
+        Relationships: []
+      }
+      parceiros_perfil: {
+        Row: {
+          id: string
+          organization_id: string
+          colaborador_id: string | null
+          token_id: string | null
+          nome: string
+          email: string
+          whatsapp: string | null
+          cidade: string | null
+          nascimento: string | null
+          estado_civil: string | null
+          dados_pessoais: Json
+          dados_profissionais: Json
+          datas_importantes: Json
+          perfil_markdown: string | null
+          onboarding_completado_em: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          colaborador_id?: string | null
+          token_id?: string | null
+          nome: string
+          email: string
+          whatsapp?: string | null
+          cidade?: string | null
+          nascimento?: string | null
+          estado_civil?: string | null
+          dados_pessoais?: Json
+          dados_profissionais?: Json
+          datas_importantes?: Json
+          perfil_markdown?: string | null
+          onboarding_completado_em?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          colaborador_id?: string | null
+          token_id?: string | null
+          nome?: string
+          email?: string
+          whatsapp?: string | null
+          cidade?: string | null
+          nascimento?: string | null
+          estado_civil?: string | null
+          dados_pessoais?: Json
+          dados_profissionais?: Json
+          datas_importantes?: Json
+          perfil_markdown?: string | null
+          onboarding_completado_em?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       whatsapp_mensagens: {
         Row: {
           card_id: string | null
@@ -3803,7 +4012,21 @@ export type Database = {
         | "nova_avaliacao"
         | "action_item_pendente"
         | "geral"
+      tipo_atividade:
+        | "atividade_equipe"
+        | "brinde"
+        | "mimo_individual"
+        | "reconhecimento"
+        | "evento"
+        | "celebracao"
+        | "outro"
       tipo_reuniao: "prospeccao" | "cliente" | "interna" | "onboarding"
+      status_atividade:
+        | "ideia"
+        | "planejada"
+        | "em_andamento"
+        | "executada"
+        | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4040,7 +4263,23 @@ export const Constants = {
         "action_item_pendente",
         "geral",
       ],
+      tipo_atividade: [
+        "atividade_equipe",
+        "brinde",
+        "mimo_individual",
+        "reconhecimento",
+        "evento",
+        "celebracao",
+        "outro",
+      ],
       tipo_reuniao: ["prospeccao", "cliente", "interna", "onboarding"],
+      status_atividade: [
+        "ideia",
+        "planejada",
+        "em_andamento",
+        "executada",
+        "cancelada",
+      ],
     },
   },
 } as const

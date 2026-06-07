@@ -767,6 +767,18 @@ export const AGENTES: AgenteDef[] = [
     papeisPermitidos: ['socia'],
     inputsSchema: [{ chave: 'periodo', label: 'Período a planejar', tipo: 'text', obrigatorio: true }],
   },
+  {
+    chave: 'pessoas-cultura.planejador-atividades',
+    nome: 'Planejador de Atividades',
+    descricao: 'Sugere atividades, mimos e ações de cultura personalizadas com base nos perfis dos parceiros coletados no onboarding.',
+    time: 'Pessoas & Cultura',
+    timeNumero: 14,
+    padrao: 'C',
+    papeisPermitidos: ['socia'],
+    inputsSchema: [
+      { chave: 'contexto', label: 'Contexto ou restrição (ex: orçamento, data especial)', tipo: 'text', obrigatorio: false },
+    ],
+  },
 
   // ── Time 15: Análise de Concorrência ─────────────────────────────────────
   {

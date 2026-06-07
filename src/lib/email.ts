@@ -458,6 +458,63 @@ export function emailOnboardingCliente(opts: {
   `)
 }
 
+// ---------------------------------------------------------------------------
+// Pessoas & Cultura — Convite de parceiro e avisos em popup
+// ---------------------------------------------------------------------------
+
+/** E-mail de convite enviado a um parceiro para fazer o onboarding com a Izzi. */
+export function emailConviteParceiro(opts: {
+  nome: string
+  link: string
+}): { subject: string; html: string } {
+  const primeiroNome = opts.nome.split(' ')[0]
+  return {
+    subject: `ei, ${primeiroNome}! seu onboarding tá te esperando 🎉`,
+    html: layout(`
+      <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#1E1E1E">
+        Oi, ${primeiroNome}! 👋
+      </p>
+      <p style="margin:0 0 16px;font-size:14px;color:#4B5563;line-height:1.6">
+        Que bom ter você na equipe da Simplizzia!
+        Antes de começarmos a trabalhar juntos, a <strong>Izzi</strong> — a inteligência da Simplizzia —
+        vai bater um papo com você para te conhecer de verdade.
+      </p>
+      <p style="margin:0 0 24px;font-size:14px;color:#4B5563;line-height:1.6">
+        Não é um formulário chato. É uma conversa de verdade — leve e rápida (uns 10-15 minutos). 😊
+      </p>
+      ${btn(opts.link, 'Iniciar conversa com a Izzi →')}
+      <p style="margin:20px 0 0;font-size:12px;color:#9CA3AF;line-height:1.5">
+        Se o botão não funcionar, copie e cole este link no navegador:<br/>
+        <a href="${opts.link}" style="color:#A046C6">${opts.link}</a>
+      </p>
+    `),
+  }
+}
+
+/** E-mail enviado para cada destinatário quando um aviso é publicado. */
+export function emailAviso(opts: {
+  destinatarioNome: string
+  titulo: string
+  conteudo: string
+  linkUrl: string | null
+}): { subject: string; html: string } {
+  const primeiroNome = opts.destinatarioNome.split(' ')[0]
+  return {
+    subject: `📣 ${opts.titulo}`,
+    html: layout(`
+      <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#1E1E1E">
+        Oi, ${primeiroNome}! 👋
+      </p>
+      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#A046C6;text-transform:uppercase;letter-spacing:0.05em">
+        Aviso da equipe
+      </p>
+      <h2 style="margin:0 0 12px;font-size:18px;font-weight:700;color:#1E1E1E">${opts.titulo}</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#4B5563;line-height:1.6;white-space:pre-line">${opts.conteudo}</p>
+      ${opts.linkUrl ? btn(opts.linkUrl, 'Ver mais →') : ''}
+    `),
+  }
+}
+
 /** Alerta para sócia de plano/contrato de cliente expirando em N dias. */
 export function emailContratoExpirando(opts: {
   destinatarioNome: string

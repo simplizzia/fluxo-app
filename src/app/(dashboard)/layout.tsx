@@ -9,6 +9,7 @@ import { IzziEquipeTrigger } from '@/components/izzi/IzziEquipeTrigger'
 import { IzziOnboarding } from '@/components/izzi/IzziOnboarding'
 import { BuscaGlobal } from '@/components/shared/BuscaGlobal'
 import { NotificationCenter } from '@/components/shared/NotificationCenter'
+import { AvisoPopupModal } from '@/components/pessoas/AvisoPopupModal'
 import { SidebarNav } from './SidebarNav'
 import type { NavItem, NavGroup, IconKey } from './SidebarNav'
 
@@ -88,10 +89,11 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: 'Gestão',
     roles: ['socia'],
     items: [
-      { href: '/socias',              label: 'Área das Sócias',  iconKey: 'Star'       },
-      { href: '/socias/financeiro',   label: 'Financeiro',       iconKey: 'DollarSign' },
-      { href: '/socias/social',       label: 'Redes Sociais',    iconKey: 'Share2'     },
-      { href: '/socias/gamificacao',  label: 'Gamificação',      iconKey: 'Trophy'     },
+      { href: '/socias',              label: 'Área das Sócias',   iconKey: 'Star'       },
+      { href: '/socias/pessoas',      label: 'Pessoas & Cultura', iconKey: 'Users'      },
+      { href: '/socias/financeiro',   label: 'Financeiro',        iconKey: 'DollarSign' },
+      { href: '/socias/social',       label: 'Redes Sociais',     iconKey: 'Share2'     },
+      { href: '/socias/gamificacao',  label: 'Gamificação',       iconKey: 'Trophy'     },
       { href: '/lgpd',                label: 'LGPD & Segurança', iconKey: 'Shield'     },
       { href: '/admin/tipos-demanda', label: 'SLA por Demanda',  iconKey: 'Zap'        },
       { href: '/admin/convidar',      label: 'Convidar usuário', iconKey: 'Settings'   },
@@ -243,6 +245,13 @@ export default async function DashboardLayout({
 
       {/* ── Izzi — onboarding guiado para clientes novos ────────── */}
       {ehCliente && !profile.onboarding_concluido && <IzziOnboarding />}
+
+      {/* ── Avisos em popup para equipe (não clientes) ───────────── */}
+      {ehEquipe && (
+        <AvisoPopupModal
+          organizationId={profile.organization_id}
+        />
+      )}
     </div>
   )
 }
