@@ -14,7 +14,8 @@ export interface ExecucaoOpts {
   cardId?: string
   triggeredBy?: string        // profile.id
   input: Record<string, unknown>
-  maxTokens?: number          // limite de saída (default 8192)
+  maxTokens?: number          // limite de saída (default 4096)
+  model?: string              // override do modelo (default claude-haiku-4-5)
 }
 
 export interface ExecucaoResult {
@@ -158,7 +159,7 @@ async function buildFeedbackContext(
 // ---------------------------------------------------------------------------
 
 export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult> {
-  const { organizationId, agenteChave, clienteId, marcaId, cardId, triggeredBy, input, maxTokens } = opts
+  const { organizationId, agenteChave, clienteId, marcaId, cardId, triggeredBy, input, maxTokens, model } = opts
   const inicio = Date.now()
   const service = createServiceClient()
 
@@ -217,7 +218,7 @@ export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
+      model: model ?? 'claude-haiku-4-5',
       // 4096 termina com folga (~27s) dentro do limite de 60s da função, mesmo
       // com cold start. Documentos longos completam com o botão "Continuar".
       max_tokens: maxTokens ?? 4096,

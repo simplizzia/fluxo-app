@@ -66,7 +66,10 @@ export async function POST(request: NextRequest) {
     agenteChave: 'brand-system.moodboard',
     clienteId,
     marcaId,
-    maxTokens: 3500,
+    // Modelo mais forte = sugestões muito mais on-brand. maxTokens controlado
+    // para caber no limite de 60s da função mesmo com o modelo maior.
+    model: 'claude-opus-4-5',
+    maxTokens: 2400,
     input: {
       instrucao: 'Proponha a base do moodboard desta marca com base no contexto fornecido. Responda apenas com o array JSON.',
     },

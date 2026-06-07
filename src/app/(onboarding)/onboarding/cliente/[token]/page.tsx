@@ -90,14 +90,16 @@ export default async function OnboardingClientePage({ params }: PageProps) {
 
 function TelaConcluido() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md text-center">
-        <p className="mb-6 text-xs font-medium uppercase tracking-widest text-zinc-400">Simplizzia</p>
-        <h1 className="mb-3 text-2xl font-semibold text-zinc-900">Onboarding concluído.</h1>
-        <p className="text-sm leading-relaxed text-zinc-500">
-          Suas respostas foram registradas. A equipe Simplizzia irá analisar os briefings
-          e entrar em contato para os próximos passos.
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#A046C6] via-[#C040A0] to-[#F9267C] px-4">
+      <div className="w-full max-w-md rounded-3xl bg-white px-8 py-10 text-center shadow-xl">
+        <img src="/izzi-final.png" alt="Izzi" className="mx-auto mb-5 h-20 w-20 rounded-full object-cover" />
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C040A0]">Simplizzia</p>
+        <h1 className="mb-3 font-display text-2xl font-bold text-zinc-900">Onboarding concluído 💜</h1>
+        <p className="text-sm leading-relaxed text-zinc-600">
+          Já guardei tudo que a gente conversou. A equipe da Simplizzia vai analisar
+          e entrar em contato com você para os próximos passos.
         </p>
+        <p className="mt-6 text-xs italic text-zinc-400">— Izzi, da Simplizzia</p>
       </div>
     </div>
   )

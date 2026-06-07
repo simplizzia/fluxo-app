@@ -115,11 +115,11 @@ function Header() {
 
 function AvatarIzzi() {
   return (
-    <div className="mt-0.5 flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#F9267C] text-white self-start">
-      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-        <path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z" />
-      </svg>
-    </div>
+    <img
+      src="/izzi-avatar.png"
+      alt="Izzi"
+      className="mt-0.5 h-9 w-9 flex-none self-start rounded-full object-cover"
+    />
   )
 }
 
@@ -417,15 +417,23 @@ export default function ChatOnboarding({ token, cliente, initialMessages }: Prop
   }
 
   if (concluido) {
+    const primeiroNome = (cliente.nomeContato || cliente.nome || '').split(' ')[0]
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-4 bg-white">
-        <div className="w-full max-w-md text-center">
-          <p className="mb-6 text-xs font-medium uppercase tracking-widest text-zinc-400">Simplizzia</p>
-          <h1 className="mb-3 text-2xl font-semibold text-zinc-900">Tudo certo!</h1>
-          <p className="text-sm leading-relaxed text-zinc-500">
-            O onboarding foi concluído. Nossa equipe irá analisar os briefings
-            e entrar em contato para os próximos passos.
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#A046C6] via-[#C040A0] to-[#F9267C] px-4">
+        <div className="w-full max-w-md rounded-3xl bg-white px-8 py-10 text-center shadow-xl">
+          <img src="/izzi-final.png" alt="Izzi" className="mx-auto mb-5 h-20 w-20 rounded-full object-cover" />
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C040A0]">Simplizzia</p>
+          <h1 className="mb-3 font-display text-2xl font-bold text-zinc-900">
+            {primeiroNome ? `Valeu, ${primeiroNome}! 🤝` : 'Valeu por isso! 🤝'}
+          </h1>
+          <p className="text-sm leading-relaxed text-zinc-600">
+            Acabei de organizar tudo que a gente conversou. Agora a equipe da Simplizzia
+            chega na reunião já sabendo o que importa — sem perguntas óbvias, sem repetição.
           </p>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+            A gente se fala em breve. Foi ótimo te conhecer. 💜
+          </p>
+          <p className="mt-6 text-xs italic text-zinc-400">— Izzi, da Simplizzia</p>
         </div>
       </div>
     )
