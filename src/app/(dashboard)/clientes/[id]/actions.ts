@@ -91,6 +91,70 @@ export async function actionRenomearCliente(
 }
 
 // ---------------------------------------------------------------------------
+// actionArquivarCliente — arquiva (status inativo) ou restaura (ativo)
+// ---------------------------------------------------------------------------
+
+export async function actionArquivarCliente(
+  clienteId: string,
+  arquivar: boolean,
+): Promise<{ error?: string }> {
+  await requirePapel('socia', 'gestao')
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('clientes')
+    .update({
+      status: arquivar ? 'inativo' : 'ativo',
+      data_inativacao: arquivar ? new Date().toISOString().slice(0, 10) : null,
+    })
+    .eq('id', clienteId)
+
+  if (error) return { error: 'Erro ao atualizar o cliente.' }
+
+  revalidatePath(`/clientes/${clienteId}`)
+  revalidatePath('/clientes')
+  return {}
+}
+
+// ---------------------------------------------------------------------------
+// actionExcluirCliente — exclusão definitiva (só sócia)
+// Limpa as referências sem ON DELETE CASCADE antes; o resto cai por cascade.
+// ---------------------------------------------------------------------------
+
+export async function actionExcluirCliente(
+  clienteId: string,
+  confirmacaoNome: string,
+): Promise<{ error?: string }> {
+  await requirePapel('socia')
+  const service = createServiceClient()
+
+  // Confere o nome digitado como confirmação
+  const { data: cliente } = await service
+    .from('clientes')
+    .select('nome')
+    .eq('id', clienteId)
+    .single()
+
+  if (!cliente) return { error: 'Cliente não encontrado.' }
+  if (confirmacaoNome.trim() !== cliente.nome.trim()) {
+    return { error: 'O nome digitado não confere com o do cliente.' }
+  }
+
+  // Referências que não têm ON DELETE CASCADE — limpar antes para não bloquear
+  await service.from('reunioes').delete().eq('cliente_id', clienteId)
+  await service.from('prospects').update({ cliente_id: null }).eq('cliente_id', clienteId)
+  await service.from('lgpd_portabilidade_requests').delete().eq('cliente_id', clienteId)
+  await service.from('lgpd_encerramentos').delete().eq('cliente_id', clienteId)
+
+  // Exclui o cliente — cards, universo_marca, onboarding, identidade, etc. caem por cascade
+  const { error } = await service.from('clientes').delete().eq('id', clienteId)
+  if (error) return { error: `Erro ao excluir: ${error.message}` }
+
+  revalidatePath('/clientes')
+  return {}
+}
+
+// ---------------------------------------------------------------------------
 // buscarClienteDetalhe
 // ---------------------------------------------------------------------------
 

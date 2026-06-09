@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ChevronLeft, BarChart2, Heart, Kanban } from 'lucide-react'
+import { ChevronLeft, BarChart2, Heart, Kanban, Archive } from 'lucide-react'
 import { getCurrentProfile } from '@/lib/dal'
 import { UsageBarra } from '@/components/plano/UsageBarra'
 import { ScoreChip } from '@/components/cs/ScoreBadge'
@@ -16,6 +16,7 @@ import OnboardingConfig from './OnboardingConfig'
 import PipelineSequencia from './PipelineSequencia'
 import { buscarOnboardingConfig, buscarPipeline } from './onboarding-actions'
 import { ClienteNomeEditor } from './ClienteNomeEditor'
+import { ClienteAcoes } from './ClienteAcoes'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -99,8 +100,24 @@ export default async function ClienteDetalhePage({ params }: Props) {
             <Kanban className="h-3.5 w-3.5" />
             Ver no board
           </Link>
+          {podeEditar && (
+            <ClienteAcoes
+              clienteId={id}
+              nome={cliente.nome}
+              arquivado={cliente.status === 'inativo'}
+              podeExcluir={profile.papel === 'socia'}
+            />
+          )}
         </div>
       </div>
+
+      {/* Aviso de arquivado */}
+      {cliente.status === 'inativo' && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
+          <Archive className="h-4 w-4" />
+          Este cliente está <strong>arquivado</strong>. Use "Restaurar" para reativá-lo.
+        </div>
+      )}
 
       {/* KPIs rápidos */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
