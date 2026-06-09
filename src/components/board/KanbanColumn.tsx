@@ -58,9 +58,12 @@ interface KanbanColumnProps {
   cards: BoardCard[]
   onNovaDemanada?: () => void
   onCardDetalhes?: (card: BoardCard) => void
+  selectedIds?: Set<string>
+  modoSelecao?: boolean
+  onSelecionar?: (cardId: string) => void
 }
 
-export function KanbanColumn({ status, cards, onNovaDemanada, onCardDetalhes }: KanbanColumnProps) {
+export function KanbanColumn({ status, cards, onNovaDemanada, onCardDetalhes, selectedIds, modoSelecao, onSelecionar }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
   const config = COLUMN_CONFIG[status]
 
@@ -91,6 +94,9 @@ export function KanbanColumn({ status, cards, onNovaDemanada, onCardDetalhes }: 
             key={card.id}
             card={card}
             onDetalhes={() => onCardDetalhes?.(card)}
+            isSelected={selectedIds?.has(card.id)}
+            modoSelecao={modoSelecao}
+            onSelecionar={onSelecionar ? () => onSelecionar(card.id) : undefined}
           />
         ))}
 

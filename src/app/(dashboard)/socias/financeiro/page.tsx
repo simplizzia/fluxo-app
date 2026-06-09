@@ -5,6 +5,8 @@ import {
   buscarReceitasFinanceiro,
   buscarVisaoGeral,
   buscarDocumentosFinanceiros,
+  buscarDespesas,
+  buscarFluxoCaixa,
 } from './actions'
 import { FinanceiroPainel } from './FinanceiroPainel'
 
@@ -14,8 +16,7 @@ export default async function FinanceiroPage() {
   await requirePapel('socia')
   const supabase = await createClient()
 
-  // Busca paralela: receitas + docs + clientes ativos (para dropdowns)
-  const [receitas, documentos, { data: clientesRaw }] = await Promise.all([
+  const [receitas, documentos, { data: clientesRaw }, despesas, fluxoCaixa] = await Promise.all([
     buscarReceitasFinanceiro(),
     buscarDocumentosFinanceiros(),
     supabase
@@ -24,10 +25,11 @@ export default async function FinanceiroPage() {
       .eq('status', 'ativo')
       .order('nome')
       .limit(200),
+    buscarDespesas(),
+    buscarFluxoCaixa(6),
   ])
 
   const visaoGeral = await buscarVisaoGeral(receitas)
-
   const clientes = (clientesRaw ?? []) as { id: string; nome: string }[]
 
   return (
@@ -42,7 +44,7 @@ export default async function FinanceiroPage() {
             Módulo Financeiro
           </h1>
           <p className="text-xs text-zinc-500">
-            MRR, receitas recorrentes, inadimplência e documentos
+            MRR, receitas, despesas, fluxo de caixa e documentos
           </p>
         </div>
       </div>
@@ -52,6 +54,8 @@ export default async function FinanceiroPage() {
         visaoGeral={visaoGeral}
         documentos={documentos}
         clientes={clientes}
+        despesas={despesas}
+        fluxoCaixa={fluxoCaixa}
       />
     </div>
   )

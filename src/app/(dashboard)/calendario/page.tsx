@@ -33,6 +33,7 @@ export default async function CalendarioPage({
       anoMes={anoMes}
       alertas={alertas}
       papel={profile.papel}
+      organizationId={profile.organization_id}
     />
   )
 }

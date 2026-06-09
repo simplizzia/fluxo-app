@@ -958,6 +958,124 @@ export async function actionAgendarEntrega(
 // actionCancelarCard — equipe cancela com motivo obrigatório
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// actionBulkUpdate — atualiza múltiplos cards de uma vez (socia e gestao apenas)
+// Statuses cancelado, concluido e para_aprovacao são bloqueados aqui pois
+// exigem fluxos específicos (motivo, notificação, gamificação).
+// ---------------------------------------------------------------------------
+
+export async function actionBulkUpdate(
+  ids: string[],
+  update: {
+    status?: Exclude<StatusCard, 'para_aprovacao' | 'concluido' | 'cancelado'>
+    responsavel_id?: string | null
+    prioridade?: PrioridadeCard
+  },
+): Promise<{ error?: string; atualizados: number }> {
+  if (!ids.length) return { atualizados: 0 }
+
+  const profile = await requirePapel('socia', 'gestao')
+  const supabase = await createClient()
+
+  const updateData: Record<string, unknown> = {}
+  if (update.status !== undefined) updateData.status = update.status
+  if ('responsavel_id' in update) updateData.responsavel_id = update.responsavel_id ?? null
+  if (update.prioridade !== undefined) updateData.prioridade = update.prioridade
+
+  if (!Object.keys(updateData).length) return { atualizados: 0 }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('cards') as any)
+    .update(updateData)
+    .in('id', ids)
+
+  if (error) {
+    console.error('[actionBulkUpdate]', error.message)
+    return { error: 'Erro ao atualizar cards.', atualizados: 0 }
+  }
+
+  // Registra histórico de status para cada card atualizado
+  if (update.status) {
+    const service = createServiceClient()
+    const { data: cardsAntes } = await supabase
+      .from('cards')
+      .select('id, status, organization_id')
+      .in('id', ids)
+
+    if (cardsAntes?.length && update.status) {
+      const novoStatus = update.status
+      await service.from('card_status_history').insert(
+        cardsAntes.map((c) => ({
+          organization_id: c.organization_id,
+          card_id: c.id,
+          status_anterior: c.status,
+          status_novo: novoStatus,
+          alterado_por: profile.id,
+        })),
+      )
+    }
+  }
+
+  return { atualizados: ids.length }
+}
+
+// ---------------------------------------------------------------------------
+// actionDuplicarCard — cria cópia de um card existente
+// ---------------------------------------------------------------------------
+
+export async function actionDuplicarCard(cardId: string): Promise<{
+  card?: BoardCard
+  error?: string
+}> {
+  const profile = await requireEquipe()
+  const supabase = await createClient()
+
+  const { data: original, error: fetchError } = await supabase
+    .from('cards')
+    .select(`
+      organization_id, cliente_id, tipo_id, prioridade,
+      prazo_cliente, campos_publicos, confidencial,
+      titulo,
+      tipo:tipos_demanda!tipo_id(id, nome, categoria, sla_ativo, sla_prazo_inicio_horas, sla_prazo_resposta_horas),
+      cliente:clientes!cliente_id(id, nome)
+    `)
+    .eq('id', cardId)
+    .single()
+
+  if (fetchError || !original) return { error: 'Card não encontrado.' }
+
+  const { data: novo, error: insertError } = await supabase
+    .from('cards')
+    .insert({
+      organization_id: original.organization_id,
+      cliente_id:      original.cliente_id,
+      tipo_id:         original.tipo_id,
+      titulo:          `${original.titulo} (cópia)`,
+      status:          'a_fazer',
+      prioridade:      original.prioridade,
+      prazo_cliente:   original.prazo_cliente,
+      campos_publicos: original.campos_publicos ?? {},
+      confidencial:    original.confidencial,
+      responsavel_id:  null,
+      criado_por:      profile.id,
+    })
+    .select(`
+      id, titulo, status, prioridade, prazo_cliente, data_entrega_programada,
+      confidencial, created_at, sla_iniciado_em,
+      cliente:clientes!cliente_id(id, nome),
+      tipo:tipos_demanda!tipo_id(id, nome, categoria, sla_ativo, sla_prazo_inicio_horas, sla_prazo_resposta_horas),
+      responsavel:profiles!responsavel_id(id, nome)
+    `)
+    .single()
+
+  if (insertError || !novo) {
+    console.error('[actionDuplicarCard]', insertError?.message)
+    return { error: 'Erro ao duplicar card.' }
+  }
+
+  return { card: novo as unknown as BoardCard }
+}
+
 export async function actionCancelarCard(
   cardId: string,
   motivo: string,

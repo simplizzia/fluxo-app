@@ -25,16 +25,7 @@ const CACHE_TTL = 60_000
 
 interface SessionData {
   organization_id: string
-  cliente: {
-    nome: string
-    nomeContato: string | null
-    setor: string | null
-    servicosContratados: string[]
-    objetivoDeclarado: string | null
-    doresIdentificadas: string | null
-    cenarioAtual: string | null
-    marcas: MarcaData[]
-  }
+  cliente: ClienteData
 }
 
 interface MarcaData {
@@ -47,6 +38,18 @@ interface MarcaData {
   cenarioAtual: string | null
 }
 
+interface ClienteData {
+  nome: string
+  nomeContato: string | null
+  setor: string | null
+  servicosContratados: string[]
+  objetivoDeclarado: string | null
+  doresIdentificadas: string | null
+  cenarioAtual: string | null
+  contextExtra: string | null
+  marcas: MarcaData[]
+}
+
 async function buscarSessao(token: string): Promise<SessionData | null> {
   const hit = sessionCache.get(token)
   if (hit && Date.now() - hit.ts < CACHE_TTL) return hit.data
@@ -57,7 +60,7 @@ async function buscarSessao(token: string): Promise<SessionData | null> {
     .from('onboarding_clientes')
     .select(`
       organization_id, client_name, nome_contato, setor,
-      servicos_contratados, objetivo_declarado, dores_identificadas, cenario_atual
+      servicos_contratados, objetivo_declarado, dores_identificadas, cenario_atual, context_extra
     `)
     .eq('token', token)
     .single()
@@ -80,6 +83,7 @@ async function buscarSessao(token: string): Promise<SessionData | null> {
       objetivoDeclarado:   session.objetivo_declarado,
       doresIdentificadas:  session.dores_identificadas,
       cenarioAtual:        session.cenario_atual,
+      contextExtra:        session.context_extra,
       marcas: (marcas ?? []).map((m) => ({
         id:                   m.id,
         nome:                 m.nome,
@@ -116,7 +120,7 @@ CONTEXTO DO CLIENTE:
 - Objetivo: ${cliente.objetivoDeclarado ?? 'não informado'}
 - Cenário atual: ${cliente.cenarioAtual ?? 'não informado'}
 - Contato: ${cliente.nomeContato ?? 'não informado'}
-
+${cliente.contextExtra ? `\nNOTAS INTERNAS DA EQUIPE (use para calibrar abordagem, não mencione ao cliente):\n${cliente.contextExtra}\n` : ''}
 SUA MISSÃO:
 Apresentar a Simplizzia de forma genuína e contextualizada para esse cliente. Mostre que você já conhece o contexto. Explique que o próximo passo é o briefing de marca — você vai conversar sobre cada marca separadamente (${cliente.marcas.length} marca${cliente.marcas.length !== 1 ? 's' : ''} no total).
 
@@ -151,7 +155,7 @@ Conduzir o Modo 1 do briefing — entender profundamente essa marca via conversa
 - Tom de voz e personalidade da marca
 - O que a marca representa e promete ao cliente
 - O que nunca deve aparecer na comunicação
-- Referências visuais ou marcas que inspiram
+- Referências visuais ou marcas que inspiram${marca.contextoEstrategico ? '\n- Cubra também os tópicos mencionados no CONTEXTO ESTRATÉGICO acima que ainda não estão respondidos — especialmente objetivos por serviço (redes sociais, tráfego, SEO, influenciadores)' : ''}
 
 REGRAS:
 - Você já está no meio da sessão de onboarding — não se apresente de novo, vá direto para esta marca
@@ -174,7 +178,7 @@ Quando tiver coletado tudo, produza o OUTPUT MODO 1 — briefing estruturado com
 
 **Referências e inspirações**
 [síntese]
-
+${marca.contextoEstrategico ? '\n**Objetivos e estratégia de canais**\n[síntese dos objetivos por serviço discutidos: redes sociais, tráfego, SEO, influenciadores e outros temas levantados no contexto]' : ''}
 Escreva o documento completo e, na linha imediatamente seguinte (sem mais nenhum texto depois), escreva exatamente:${isUltima ? '\n[ONBOARDING_COMPLETO]' : '\n[MARCA_CONCLUIDA]'}`
 }
 

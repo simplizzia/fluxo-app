@@ -19,8 +19,10 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
+  const clienteId = req.nextUrl.searchParams.get('cliente_id') ?? null
+
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/meta/callback`
-  const state = Buffer.from(JSON.stringify({ userId: user.id })).toString('base64url')
+  const state = Buffer.from(JSON.stringify({ userId: user.id, clienteId })).toString('base64url')
 
   const url = new URL('https://www.facebook.com/v22.0/dialog/oauth')
   url.searchParams.set('client_id', process.env.META_APP_ID!)

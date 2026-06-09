@@ -1,14 +1,18 @@
 /**
  * GET /api/cron/publicar-agendados
- * Cron horário: publica posts com data_agendada <= now() e status='agendado'.
+ * Cron diário: publica posts com data_agendada <= now() e status='agendado'.
+ * Também retenta posts com status='falhou' e tentativas < 3.
+ * Após 3 falhas, cria notificação in-app para as sócias da organização.
  * Autorizado apenas via Bearer CRON_SECRET.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { publishPost as publishMeta } from '@/lib/social/meta'
+import { publishPost as publishFacebook, publishInstagram } from '@/lib/social/meta'
 import { publishPost as publishLinkedIn } from '@/lib/social/linkedin'
 
 export const maxDuration = 60
+
+const MAX_TENTATIVAS = 3
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get('authorization') ?? ''
@@ -18,18 +22,18 @@ export async function GET(req: NextRequest) {
 
   const service = createServiceClient()
 
-  // Busca publicações agendadas vencidas
+  // Busca publicações agendadas vencidas + falhas elegíveis para retry
   const { data: publicacoes, error } = await service
     .from('publicacoes_agendadas')
     .select(`
       id, organization_id, card_id,
       plataforma, tipo_conteudo, legenda, hashtags, storage_path,
-      data_agendada,
+      data_agendada, tentativas, rotulo_ia,
       integracao:integracao_id (
         access_token, page_id, plataforma, ativo, expires_at
       )
     `)
-    .eq('status', 'agendado')
+    .or(`status.eq.agendado,and(status.eq.falhou,tentativas.lt.${MAX_TENTATIVAS})`)
     .lte('data_agendada', new Date().toISOString())
     .limit(50)
 
@@ -55,20 +59,16 @@ export async function GET(req: NextRequest) {
     } | null
 
     if (!integracao || !integracao.ativo) {
-      await service
-        .from('publicacoes_agendadas')
-        .update({ status: 'falhou', updated_at: new Date().toISOString() })
-        .eq('id', pub.id)
+      await falhar(service, pub.id, pub.organization_id, pub.tentativas,
+        'Integração inativa ou não encontrada', pub.plataforma, pub.legenda)
       falhas++
       continue
     }
 
     // Verifica se o token não expirou
     if (integracao.expires_at && new Date(integracao.expires_at) < new Date()) {
-      await service
-        .from('publicacoes_agendadas')
-        .update({ status: 'falhou', updated_at: new Date().toISOString() })
-        .eq('id', pub.id)
+      await falhar(service, pub.id, pub.organization_id, pub.tentativas,
+        'Token de acesso expirado — reconecte a integração', pub.plataforma, pub.legenda)
       falhas++
       continue
     }
@@ -98,50 +98,110 @@ export async function GET(req: NextRequest) {
           texto:       textoCompleto ?? '',
           imageUrl:    mediaUrl,
         })
-      } else {
-        // facebook / instagram
-        if (!integracao.page_id) throw new Error('Meta page_id ausente')
+      } else if (pub.plataforma === 'instagram') {
+        if (!integracao.page_id) throw new Error('Instagram Business Account ID ausente')
+        const igMediaType =
+          pub.tipo_conteudo === 'reel'  ? 'REELS'
+          : pub.tipo_conteudo === 'story' ? 'STORIES'
+          : 'IMAGE'
 
-        const mediaType =
+        postId = await publishInstagram({
+          accessToken:    integracao.access_token,
+          igUserId:       integracao.page_id!,
+          legenda:        textoCompleto ?? '',
+          mediaUrl,
+          mediaType:      igMediaType,
+          isAiGenerated:  pub.rotulo_ia === true,
+        })
+      } else {
+        // facebook
+        if (!integracao.page_id) throw new Error('Facebook page_id ausente')
+
+        const fbMediaType =
           pub.tipo_conteudo === 'reel' ? 'REELS'
           : pub.tipo_conteudo === 'story' ? 'VIDEO'
           : 'IMAGE'
 
-        postId = await publishMeta({
+        postId = await publishFacebook({
           accessToken: integracao.access_token,
           pageId:      integracao.page_id!,
           legenda:     textoCompleto ?? '',
           mediaUrl,
-          mediaType,
+          mediaType:   fbMediaType,
         })
       }
 
       await service
         .from('publicacoes_agendadas')
         .update({
-          status:            'publicado',
-          publicado_em:      new Date().toISOString(),
+          status:             'publicado',
+          publicado_em:       new Date().toISOString(),
           plataforma_post_id: postId,
-          updated_at:        new Date().toISOString(),
+          updated_at:         new Date().toISOString(),
         })
         .eq('id', pub.id)
 
       publicadas++
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
       console.error(`[publicar-agendados] falha ao publicar ${pub.id}:`, err)
-      await service
-        .from('publicacoes_agendadas')
-        .update({
-          status:     'falhou',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', pub.id)
+      await falhar(service, pub.id, pub.organization_id, pub.tentativas, msg, pub.plataforma, pub.legenda)
       falhas++
     }
   }
 
-  // Audit log via console apenas (cron não tem org_id único)
   console.log(`[publicar-agendados] publicadas=${publicadas} falhas=${falhas}`)
-
   return NextResponse.json({ publicadas, falhas })
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+type SupabaseService = ReturnType<typeof createServiceClient>
+
+async function falhar(
+  service: SupabaseService,
+  pubId: string,
+  orgId: string,
+  tentativasAtual: number,
+  mensagemErro: string,
+  plataforma: string,
+  legenda: string | null,
+) {
+  const novasTentativas = (tentativasAtual ?? 0) + 1
+
+  await service
+    .from('publicacoes_agendadas')
+    .update({
+      status:         'falhou',
+      tentativas:     novasTentativas,
+      erro_mensagem:  mensagemErro,
+      updated_at:     new Date().toISOString(),
+    })
+    .eq('id', pubId)
+
+  // Após MAX_TENTATIVAS, notifica as sócias da organização
+  if (novasTentativas >= MAX_TENTATIVAS) {
+    const { data: socias } = await service
+      .from('profiles')
+      .select('id')
+      .eq('organization_id', orgId)
+      .eq('papel', 'socia')
+
+    const trecho = (legenda ?? '').slice(0, 60)
+    const titulo = `Publicação falhou após ${MAX_TENTATIVAS} tentativas`
+    const msg    = `"${trecho}${trecho.length >= 60 ? '…' : ''}" em ${plataforma}: ${mensagemErro}`
+
+    for (const socia of socias ?? []) {
+      await service.from('in_app_notificacoes').insert({
+        organization_id: orgId,
+        usuario_id:      socia.id,
+        tipo:            'publicacao_falhou',
+        titulo,
+        mensagem:        msg,
+        link:            '/socias/social',
+      })
+    }
+  }
 }

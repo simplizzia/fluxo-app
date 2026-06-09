@@ -360,3 +360,296 @@ export async function actionExcluirDocFinanceiro(docId: string): Promise<{ error
   revalidatePath('/socias/financeiro')
   return {}
 }
+
+// ---------------------------------------------------------------------------
+// Tipos — Despesas
+// ---------------------------------------------------------------------------
+
+export type CategoriaDespesa =
+  | 'impostos' | 'colaboradores' | 'ferramentas' | 'fornecedores'
+  | 'marketing' | 'escritorio' | 'outros'
+
+export type StatusDespesa = 'pendente' | 'paga' | 'vencida'
+
+export interface Despesa {
+  id: string
+  organization_id: string
+  categoria: CategoriaDespesa
+  descricao: string
+  fornecedor: string | null
+  valor: number
+  vencimento: string
+  pago_em: string | null
+  status: StatusDespesa
+  recorrente: boolean
+  ciclo: CicloCobranca | null
+  comprovante_path: string | null
+  observacoes: string | null
+  ativo: boolean
+  created_at: string
+}
+
+export interface FluxoCaixaMes {
+  mes: string      // 'YYYY-MM-01'
+  label: string    // 'jun. 2026'
+  receitas: number
+  despesas: number
+  resultado: number
+}
+
+// ---------------------------------------------------------------------------
+// Leitura — Despesas
+// ---------------------------------------------------------------------------
+
+export async function buscarDespesas(): Promise<Despesa[]> {
+  await requirePapel('socia')
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('financeiro_despesas')
+    .select(
+      'id, organization_id, categoria, descricao, fornecedor, valor, vencimento, pago_em, status, recorrente, ciclo, comprovante_path, observacoes, ativo, created_at',
+    )
+    .eq('ativo', true)
+    .order('vencimento', { ascending: true })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('[buscarDespesas]', error.message)
+    return []
+  }
+
+  return (data ?? []) as unknown as Despesa[]
+}
+
+export async function buscarFluxoCaixa(meses = 6): Promise<FluxoCaixaMes[]> {
+  await requirePapel('socia')
+  const supabase = await createClient()
+
+  const hoje = new Date()
+  const inicioData = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1), 1)
+  const inicioISO = inicioData.toISOString().split('T')[0]
+
+  const [{ data: historico }, { data: despesasPagas }] = await Promise.all([
+    supabase
+      .from('financeiro_historico')
+      .select('competencia, valor_cobrado')
+      .eq('status', 'pago')
+      .gte('competencia', inicioISO),
+    supabase
+      .from('financeiro_despesas')
+      .select('pago_em, valor')
+      .eq('status', 'paga')
+      .eq('ativo', true)
+      .gte('pago_em', inicioISO + 'T00:00:00'),
+  ])
+
+  // Monta buckets para cada mês no intervalo
+  const buckets = new Map<string, { receitas: number; despesas: number }>()
+  for (let i = 0; i < meses; i++) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1 - i), 1)
+    buckets.set(d.toISOString().split('T')[0], { receitas: 0, despesas: 0 })
+  }
+
+  for (const h of historico ?? []) {
+    const b = buckets.get(h.competencia)
+    if (b) b.receitas += Number(h.valor_cobrado)
+  }
+
+  for (const d of despesasPagas ?? []) {
+    if (!d.pago_em) continue
+    const dt = new Date(d.pago_em)
+    const key = new Date(dt.getFullYear(), dt.getMonth(), 1).toISOString().split('T')[0]
+    const b = buckets.get(key)
+    if (b) b.despesas += Number(d.valor)
+  }
+
+  return Array.from(buckets.entries()).map(([mes, { receitas, despesas }]) => ({
+    mes,
+    label: new Date(mes + 'T12:00:00').toLocaleDateString('pt-BR', {
+      month: 'short',
+      year: 'numeric',
+    }),
+    receitas,
+    despesas,
+    resultado: receitas - despesas,
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// Mutações — Despesas
+// ---------------------------------------------------------------------------
+
+const DespesaSchema = z.object({
+  categoria: z.enum([
+    'impostos', 'colaboradores', 'ferramentas', 'fornecedores',
+    'marketing', 'escritorio', 'outros',
+  ] as const),
+  descricao: z.string().trim().min(1, 'Descrição obrigatória'),
+  fornecedor: z.string().trim().optional(),
+  valor: z.number().positive('Valor deve ser positivo'),
+  vencimento: z.string().min(1, 'Vencimento obrigatório'),
+  recorrente: z.boolean().default(false),
+  ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual'] as const).optional().nullable(),
+  observacoes: z.string().optional(),
+})
+
+export async function actionCriarDespesa(
+  input: z.infer<typeof DespesaSchema>,
+): Promise<{ id?: string; error?: string }> {
+  const profile = await requirePapel('socia')
+  const supabase = await createClient()
+
+  const validated = DespesaSchema.safeParse(input)
+  if (!validated.success) return { error: 'Dados inválidos.' }
+
+  const { data, error } = await supabase
+    .from('financeiro_despesas')
+    .insert({
+      organization_id: profile.organization_id,
+      ...validated.data,
+      fornecedor: validated.data.fornecedor || null,
+      ciclo: validated.data.ciclo ?? null,
+      observacoes: validated.data.observacoes || null,
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    console.error('[actionCriarDespesa]', error.message)
+    return { error: 'Erro ao criar despesa.' }
+  }
+
+  revalidatePath('/socias/financeiro')
+  return { id: data.id }
+}
+
+export async function actionAtualizarStatusDespesa(
+  id: string,
+  status: StatusDespesa,
+  pagoEm?: string,
+): Promise<{ error?: string }> {
+  await requirePapel('socia')
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('financeiro_despesas')
+    .update({
+      status,
+      pago_em: pagoEm ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (error) return { error: 'Erro ao atualizar despesa.' }
+  revalidatePath('/socias/financeiro')
+  return {}
+}
+
+export async function actionArquivarDespesa(id: string): Promise<{ error?: string }> {
+  await requirePapel('socia')
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('financeiro_despesas')
+    .update({ ativo: false, updated_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return { error: 'Erro ao arquivar despesa.' }
+  revalidatePath('/socias/financeiro')
+  return {}
+}
+
+// ---------------------------------------------------------------------------
+// Export CSV para contabilidade
+// ---------------------------------------------------------------------------
+
+export async function actionExportarCSV(
+  mesInicio: string,
+  mesFim: string,
+): Promise<{ csv?: string; error?: string }> {
+  await requirePapel('socia')
+  const supabase = await createClient()
+
+  // Receitas: competencia entre mesInicio-01 e mesFim-01 (inclusive)
+  const dataInicioReceitas = `${mesInicio}-01`
+  const dataFimReceitas = `${mesFim}-01`
+
+  // Despesas: vencimento no período (dia a dia)
+  const dataInicioDespesas = `${mesInicio}-01`
+  const ultimoDia = new Date(
+    parseInt(mesFim.split('-')[0]),
+    parseInt(mesFim.split('-')[1]),
+    0,
+  ).getDate()
+  const dataFimDespesas = `${mesFim}-${String(ultimoDia).padStart(2, '0')}`
+
+  const [{ data: historico }, receitasRes, { data: despesas }] = await Promise.all([
+    supabase
+      .from('financeiro_historico')
+      .select('competencia, valor_cobrado, status, receita_id')
+      .gte('competencia', dataInicioReceitas)
+      .lte('competencia', dataFimReceitas)
+      .order('competencia'),
+    supabase
+      .from('financeiro_receitas')
+      .select('id, descricao, cliente:clientes!cliente_id(nome)'),
+    supabase
+      .from('financeiro_despesas')
+      .select('vencimento, pago_em, valor, status, categoria, descricao, fornecedor')
+      .gte('vencimento', dataInicioDespesas)
+      .lte('vencimento', dataFimDespesas)
+      .eq('ativo', true)
+      .order('vencimento'),
+  ])
+
+  // Mapa de receitas para join manual
+  const receitaMap = new Map(
+    (receitasRes.data ?? []).map((r) => [
+      r.id,
+      { descricao: r.descricao, cliente: (r.cliente as { nome?: string } | null)?.nome ?? '' },
+    ]),
+  )
+
+  const LABEL_CATEGORIA: Record<string, string> = {
+    impostos: 'Impostos',
+    colaboradores: 'Colaboradores',
+    ferramentas: 'Ferramentas/Software',
+    fornecedores: 'Fornecedores',
+    marketing: 'Marketing',
+    escritorio: 'Escritório',
+    outros: 'Outros',
+  }
+
+  // BOM para Excel UTF-8 + delimitador ponto-e-vírgula (padrão PT-BR)
+  const linhas: string[] = [
+    '﻿Tipo;Data;Descrição;Categoria/Cliente;Fornecedor;Valor (R$);Status',
+  ]
+
+  for (const h of historico ?? []) {
+    const receita = receitaMap.get(h.receita_id)
+    const data = new Date(h.competencia + 'T12:00:00').toLocaleDateString('pt-BR', {
+      month: '2-digit',
+      year: 'numeric',
+    })
+    const descricao = (receita?.descricao ?? h.receita_id).replace(/;/g, ',')
+    const cliente = (receita?.cliente ?? '').replace(/;/g, ',')
+    const valor = Number(h.valor_cobrado).toFixed(2).replace('.', ',')
+    const statusLabel =
+      h.status === 'pago' ? 'Pago' : h.status === 'pendente' ? 'Pendente' : 'Em atraso'
+    linhas.push(`Receita;${data};"${descricao}";"${cliente}";;${valor};${statusLabel}`)
+  }
+
+  for (const d of despesas ?? []) {
+    const data = new Date(d.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')
+    const descricao = (d.descricao ?? '').replace(/;/g, ',')
+    const fornecedor = (d.fornecedor ?? '').replace(/;/g, ',')
+    const cat = LABEL_CATEGORIA[d.categoria] ?? d.categoria
+    const valor = Number(d.valor).toFixed(2).replace('.', ',')
+    const statusLabel =
+      d.status === 'paga' ? 'Paga' : d.status === 'pendente' ? 'Pendente' : 'Vencida'
+    linhas.push(`Despesa;${data};"${descricao}";${cat};"${fornecedor}";${valor};${statusLabel}`)
+  }
+
+  return { csv: linhas.join('\n') }
+}

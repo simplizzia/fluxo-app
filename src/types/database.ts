@@ -1472,6 +1472,71 @@ export type Database = {
           },
         ]
       }
+      financeiro_despesas: {
+        Row: {
+          ativo: boolean
+          categoria: Database["public"]["Enums"]["categoria_despesa"]
+          ciclo: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          comprovante_path: string | null
+          created_at: string
+          descricao: string
+          fornecedor: string | null
+          id: string
+          observacoes: string | null
+          organization_id: string
+          pago_em: string | null
+          recorrente: boolean
+          status: string
+          updated_at: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["categoria_despesa"]
+          ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          comprovante_path?: string | null
+          created_at?: string
+          descricao: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id: string
+          pago_em?: string | null
+          recorrente?: boolean
+          status?: string
+          updated_at?: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["categoria_despesa"]
+          ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          comprovante_path?: string | null
+          created_at?: string
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          pago_em?: string | null
+          recorrente?: boolean
+          status?: string
+          updated_at?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_despesas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_receitas: {
         Row: {
           ativo: boolean
@@ -1759,6 +1824,7 @@ export type Database = {
         Row: {
           access_token: string
           ativo: boolean
+          cliente_id: string | null
           created_at: string
           criado_por: string
           expires_at: string | null
@@ -1773,6 +1839,7 @@ export type Database = {
         Insert: {
           access_token: string
           ativo?: boolean
+          cliente_id?: string | null
           created_at?: string
           criado_por: string
           expires_at?: string | null
@@ -1787,6 +1854,7 @@ export type Database = {
         Update: {
           access_token?: string
           ativo?: boolean
+          cliente_id?: string | null
           created_at?: string
           criado_por?: string
           expires_at?: string | null
@@ -2123,6 +2191,41 @@ export type Database = {
             columns: ["solicitado_por"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mrr_historico: {
+        Row: {
+          clientes_ativos: number
+          created_at: string
+          id: string
+          mes: string
+          mrr: number
+          organization_id: string
+        }
+        Insert: {
+          clientes_ativos?: number
+          created_at?: string
+          id?: string
+          mes: string
+          mrr?: number
+          organization_id: string
+        }
+        Update: {
+          clientes_ativos?: number
+          created_at?: string
+          id?: string
+          mes?: string
+          mrr?: number
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mrr_historico_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
             referencedColumns: ["id"]
           },
         ]
@@ -3053,8 +3156,10 @@ export type Database = {
           plataforma: Database["public"]["Enums"]["plataforma_social"]
           plataforma_post_id: string | null
           publicado_em: string | null
+          rotulo_ia: boolean
           status: Database["public"]["Enums"]["status_publicacao"]
           storage_path: string | null
+          tentativas: number
           tipo_conteudo: Database["public"]["Enums"]["tipo_conteudo_social"]
           updated_at: string
         }
@@ -3072,8 +3177,10 @@ export type Database = {
           plataforma: Database["public"]["Enums"]["plataforma_social"]
           plataforma_post_id?: string | null
           publicado_em?: string | null
+          rotulo_ia?: boolean
           status?: Database["public"]["Enums"]["status_publicacao"]
           storage_path?: string | null
+          tentativas?: number
           tipo_conteudo?: Database["public"]["Enums"]["tipo_conteudo_social"]
           updated_at?: string
         }
@@ -3091,8 +3198,10 @@ export type Database = {
           plataforma?: Database["public"]["Enums"]["plataforma_social"]
           plataforma_post_id?: string | null
           publicado_em?: string | null
+          rotulo_ia?: boolean
           status?: Database["public"]["Enums"]["status_publicacao"]
           storage_path?: string | null
+          tentativas?: number
           tipo_conteudo?: Database["public"]["Enums"]["tipo_conteudo_social"]
           updated_at?: string
         }
@@ -3938,6 +4047,14 @@ export type Database = {
         | "parametros"
         | "calendario"
         | "outros"
+      categoria_despesa:
+        | "impostos"
+        | "colaboradores"
+        | "ferramentas"
+        | "fornecedores"
+        | "marketing"
+        | "escritorio"
+        | "outros"
       ciclo_cobranca: "mensal" | "trimestral" | "semestral" | "anual"
       decisao_aprovacao: "aprovado" | "reprovado"
       entidade_pii: "card" | "arquivo" | "reuniao" | "proposta" | "contrato"
@@ -4012,6 +4129,7 @@ export type Database = {
         | "nova_avaliacao"
         | "action_item_pendente"
         | "geral"
+        | "publicacao_falhou"
       tipo_atividade:
         | "atividade_equipe"
         | "brinde"
@@ -4182,6 +4300,15 @@ export const Constants = {
         "calendario",
         "outros",
       ],
+      categoria_despesa: [
+        "impostos",
+        "colaboradores",
+        "ferramentas",
+        "fornecedores",
+        "marketing",
+        "escritorio",
+        "outros",
+      ],
       ciclo_cobranca: ["mensal", "trimestral", "semestral", "anual"],
       decisao_aprovacao: ["aprovado", "reprovado"],
       entidade_pii: ["card", "arquivo", "reuniao", "proposta", "contrato"],
@@ -4262,6 +4389,7 @@ export const Constants = {
         "nova_avaliacao",
         "action_item_pendente",
         "geral",
+        "publicacao_falhou",
       ],
       tipo_atividade: [
         "atividade_equipe",

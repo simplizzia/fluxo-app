@@ -17,6 +17,7 @@ import { KanbanCard } from './KanbanCard'
 import { NewCardDialog } from './NewCardDialog'
 import { CardDetailDrawer } from './CardDetailDrawer'
 import { CardFilters } from './CardFilters'
+import { BulkActionsBar } from './BulkActionsBar'
 import { actionMoverCard } from '@/app/(dashboard)/board/actions'
 import type { BoardCard } from '@/app/(dashboard)/board/actions'
 import type { StatusCard, PrioridadeCard, PapelUsuario } from '@/types/database'
@@ -78,6 +79,25 @@ export function KanbanBoard({
   const [activeCard, setActiveCard] = useState<BoardCard | null>(null)
   const [dialogAberto, setDialogAberto] = useState(false)
   const [cardDetalhe, setCardDetalhe] = useState<BoardCard | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const podeSelecionarEmLote = papelAtual === 'socia' || papelAtual === 'gestao'
+  const modoSelecao = selectedIds.size > 0
+
+  function toggleSelecao(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function handleBulkUpdate(ids: string[], update: Partial<BoardCard>) {
+    setCards((prev) =>
+      prev.map((c) => (ids.includes(c.id) ? { ...c, ...update } : c)),
+    )
+    setSelectedIds(new Set())
+  }
 
   // Abre o drawer para o card especificado via ?card=uuid na URL
   useEffect(() => {
@@ -305,7 +325,10 @@ export function KanbanBoard({
                     ? () => setDialogAberto(true)
                     : undefined
                 }
-                onCardDetalhes={setCardDetalhe}
+                onCardDetalhes={modoSelecao ? undefined : setCardDetalhe}
+                selectedIds={podeSelecionarEmLote ? selectedIds : undefined}
+                modoSelecao={modoSelecao}
+                onSelecionar={podeSelecionarEmLote ? toggleSelecao : undefined}
               />
             ))}
           </div>
@@ -338,6 +361,16 @@ export function KanbanBoard({
           papelAtual={papelAtual}
           onClose={() => setCardDetalhe(null)}
           onCardUpdated={handleCardUpdated}
+        />
+      )}
+
+      {/* Barra de ações em lote — socia e gestao apenas */}
+      {podeSelecionarEmLote && modoSelecao && (
+        <BulkActionsBar
+          selectedIds={[...selectedIds]}
+          executores={executores}
+          onClear={() => setSelectedIds(new Set())}
+          onCardsUpdated={handleBulkUpdate}
         />
       )}
 

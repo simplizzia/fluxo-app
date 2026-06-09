@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, AlertTriangle, CalendarDays } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import type { CardCalendario, AlertaPrazo } from '@/app/(dashboard)/calendario/actions'
 import type { PapelUsuario } from '@/types/database'
 
@@ -43,14 +45,30 @@ interface CalendarioViewProps {
   anoMes: string
   alertas: AlertaPrazo[]
   papel: PapelUsuario
+  organizationId: string
 }
 
 // ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 
-export function CalendarioView({ cards, anoMes, alertas, papel }: CalendarioViewProps) {
+export function CalendarioView({ cards, anoMes, alertas, papel, organizationId }: CalendarioViewProps) {
   const router = useRouter()
+
+  // Realtime: recarrega dados do Server Component ao detectar mudanças nos cards
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`calendario-${organizationId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cards' },
+        () => { router.refresh() },
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [organizationId, router])
 
   const [anoStr, mesStr] = anoMes.split('-')
   const ano = parseInt(anoStr, 10)

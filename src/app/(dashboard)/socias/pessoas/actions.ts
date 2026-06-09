@@ -197,6 +197,66 @@ export async function buscarPerfis(): Promise<ParceiroPerfilResumo[]> {
   return (data ?? []) as ParceiroPerfilResumo[]
 }
 
+export async function actionRegenerarPerfil(parceiroId: string): Promise<void> {
+  await requirePapel('socia')
+  const service = createServiceClient()
+
+  const { data: perfil, error } = await service
+    .from('parceiros_perfil')
+    .select('id, perfil_markdown')
+    .eq('id', parceiroId)
+    .single()
+
+  if (error || !perfil?.perfil_markdown) throw new Error('Perfil não encontrado')
+
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const msg = await anthropic.messages.create({
+    model: 'claude-haiku-4-5',
+    max_tokens: 2000,
+    messages: [{
+      role: 'user',
+      content: `Analise a conversa de onboarding abaixo e gere um perfil completo, organizado e bem formatado em Markdown.
+
+Use estas seções (inclua apenas se tiver dados):
+# Perfil — [Nome completo]
+
+## Dados Básicos
+Nome, e-mail, WhatsApp, cidade/estado, data de nascimento, estado civil
+
+## Contexto Pessoal
+Família (filhos, idades), pets, moradia
+
+## Universo Pessoal
+Música/artistas favoritos, séries/filmes, hobbies, esportes, comidas favoritas/restrições, signo, leituras
+
+## Perfil Profissional
+Cargo/especialidade, ferramentas, preferência de feedback, horário para reuniões, comunicação preferida
+
+## Datas Importantes
+Aniversário e outras datas significativas
+
+Use bullet points. Preserve todos os detalhes. Seja concisa mas completa.
+
+CONVERSA DE ONBOARDING:
+${perfil.perfil_markdown}
+
+Gere apenas o perfil em Markdown, sem introdução ou comentários adicionais.`
+    }],
+  })
+
+  const profileFormatted = (msg.content[0] as { type: string; text: string }).text?.trim()
+  if (!profileFormatted) throw new Error('Resposta vazia do Claude')
+
+  const { error: updateError } = await service
+    .from('parceiros_perfil')
+    .update({ perfil_markdown: profileFormatted, updated_at: new Date().toISOString() })
+    .eq('id', parceiroId)
+
+  if (updateError) throw new Error(updateError.message)
+
+  revalidatePath('/socias/pessoas')
+}
+
 // ---------------------------------------------------------------------------
 // Avisos em Popup
 // ---------------------------------------------------------------------------

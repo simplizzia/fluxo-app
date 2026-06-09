@@ -1,15 +1,25 @@
 import { Share2, TrendingUp, Eye, Heart } from 'lucide-react'
 import { requirePapel } from '@/lib/dal'
-import { buscarPublicacoes, buscarResumoMetricasSociais, buscarIntegracoesSociais } from './actions'
+import { buscarPublicacoes, buscarResumoMetricasSociais, buscarIntegracoesSociais, buscarClientesAtivos } from './actions'
 import SocialPainel from './SocialPainel'
 
-export default async function SocialPage() {
+interface Props {
+  searchParams: Promise<{ social_ok?: string; social_error?: string; cliente_id?: string }>
+}
+
+export default async function SocialPage({ searchParams }: Props) {
   await requirePapel('socia')
 
-  const [publicacoes, resumo, integracoes] = await Promise.all([
+  const params = await searchParams
+  const socialOk     = params.social_ok    ?? null
+  const socialError  = params.social_error ?? null
+  const clienteIdOk  = params.cliente_id   ?? null
+
+  const [publicacoes, resumo, integracoes, clientes] = await Promise.all([
     buscarPublicacoes(),
     buscarResumoMetricasSociais(),
     buscarIntegracoesSociais(),
+    buscarClientesAtivos(),
   ])
 
   return (
@@ -62,6 +72,10 @@ export default async function SocialPage() {
         publicacoes={publicacoes}
         resumo={resumo}
         integracoes={integracoes}
+        clientes={clientes}
+        socialOk={socialOk}
+        socialError={socialError}
+        clienteIdOk={clienteIdOk}
       />
     </div>
   )

@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { UserCircle2, MapPin, Calendar, ChevronDown, ChevronUp, FileText, X } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { UserCircle2, MapPin, Calendar, ChevronDown, ChevronUp, FileText, X, Sparkles } from 'lucide-react'
 import type { ParceiroPerfilResumo } from '@/app/(dashboard)/socias/pessoas/actions'
+import { actionRegenerarPerfil } from '@/app/(dashboard)/socias/pessoas/actions'
 
 interface Props {
   perfis: ParceiroPerfilResumo[]
@@ -98,9 +100,22 @@ function PerfilCard({ perfil: p, onAbrir }: { perfil: ParceiroPerfilResumo; onAb
 
 function PerfilModal({ perfil: p, onFechar }: { perfil: ParceiroPerfilResumo; onFechar: () => void }) {
   const [mostraMarkdown, setMostraMarkdown] = useState(false)
+  const [regenerando, startRegenerar] = useTransition()
+  const [regenerado, setRegenerado] = useState(false)
+  const router = useRouter()
   const pes = p.dados_pessoais as Record<string, unknown>
   const prof = p.dados_profissionais as Record<string, unknown>
   const datas = p.datas_importantes as Record<string, unknown>
+
+  function regenerar() {
+    startRegenerar(async () => {
+      await actionRegenerarPerfil(p.id)
+      setRegenerado(true)
+      router.refresh()
+      // Fecha o modal após 1s para o usuário ver o feedback
+      setTimeout(onFechar, 1000)
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
@@ -205,6 +220,27 @@ function PerfilModal({ perfil: p, onFechar }: { perfil: ParceiroPerfilResumo; on
             </section>
           )}
 
+          {/* Regenerar perfil */}
+          <section className="flex items-center gap-3">
+            <button
+              onClick={regenerar}
+              disabled={regenerando || regenerado}
+              className="flex items-center gap-1.5 rounded-lg border border-violet-200 px-3 py-2 text-xs font-medium text-violet-600 hover:border-violet-400 hover:bg-violet-50 disabled:opacity-50 transition"
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${regenerando ? 'animate-pulse' : ''}`} />
+              {regenerado
+                ? '✅ Perfil atualizado! Abrindo novamente...'
+                : regenerando
+                ? 'Gerando perfil com Izzi...'
+                : 'Regenerar perfil com Izzi'}
+            </button>
+            {!regenerando && !regenerado && (
+              <span className="text-[11px] text-zinc-400">
+                Converte a conversa em perfil organizado
+              </span>
+            )}
+          </section>
+
           {/* Perfil completo (markdown) */}
           {p.perfil_markdown && (
             <section>
@@ -217,9 +253,9 @@ function PerfilModal({ perfil: p, onFechar }: { perfil: ParceiroPerfilResumo; on
                 {mostraMarkdown ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </button>
               {mostraMarkdown && (
-                <pre className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-zinc-50 p-4 text-xs text-zinc-700 whitespace-pre-wrap">
-                  {p.perfil_markdown}
-                </pre>
+                <div className="max-h-96 overflow-y-auto">
+                  <MarkdownView text={p.perfil_markdown} />
+                </div>
               )}
             </section>
           )}
@@ -236,4 +272,73 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <span className="text-zinc-800">{value}</span>
     </div>
   )
+}
+
+/** Renderiza Markdown simples (headers, negrito, listas) como JSX sem dependência externa */
+function MarkdownView({ text }: { text: string }) {
+  // Remove marcadores técnicos do onboarding
+  const clean = text
+    .replace(/\[PERFIL_INICIO\]/g, '')
+    .replace(/\[PERFIL_FIM\]/g, '')
+    .replace(/\[ONBOARDING_COMPLETO\]/g, '')
+    .trim()
+
+  const lines = clean.split('\n')
+  const elements: React.ReactNode[] = []
+  let listItems: string[] = []
+  let key = 0
+
+  function flushList() {
+    if (listItems.length === 0) return
+    elements.push(
+      <ul key={key++} className="ml-4 mt-0.5 mb-2 space-y-0.5 list-disc text-zinc-700">
+        {listItems.map((item, i) => (
+          <li key={i} dangerouslySetInnerHTML={{ __html: renderInline(item) }} />
+        ))}
+      </ul>
+    )
+    listItems = []
+  }
+
+  function renderInline(s: string) {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) {
+      flushList()
+      elements.push(<div key={key++} className="h-1" />)
+      continue
+    }
+    if (trimmed.startsWith('# ')) {
+      flushList()
+      elements.push(
+        <h2 key={key++} className="mt-4 mb-1 text-sm font-bold text-zinc-900"
+          dangerouslySetInnerHTML={{ __html: renderInline(trimmed.slice(2)) }} />
+      )
+    } else if (trimmed.startsWith('## ')) {
+      flushList()
+      elements.push(
+        <h3 key={key++} className="mt-3 mb-0.5 text-xs font-semibold uppercase tracking-wider text-zinc-400"
+          dangerouslySetInnerHTML={{ __html: renderInline(trimmed.slice(3)) }} />
+      )
+    } else if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+      listItems.push(trimmed.slice(2))
+    } else {
+      flushList()
+      elements.push(
+        <p key={key++} className="text-sm text-zinc-700 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: renderInline(trimmed) }} />
+      )
+    }
+  }
+  flushList()
+
+  return <div className="mt-2 rounded-lg bg-zinc-50 p-4 text-xs leading-relaxed">{elements}</div>
 }

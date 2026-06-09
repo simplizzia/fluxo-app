@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     .from('publicacoes_agendadas')
     .select(`
       id, organization_id, plataforma, plataforma_post_id,
-      integracao:integracao_social_id (
+      integracao:integracao_id (
         access_token, page_id, ativo, expires_at
       )
     `)

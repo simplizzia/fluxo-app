@@ -63,6 +63,18 @@
     {
       "path": "/api/cron/avisos-agendados",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/snapshot-mrr",
+      "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/cron/despesas-vencidas",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/refresh-tokens",
+      "schedule": "0 5 * * 1"
     }
   ]
 }

@@ -3,7 +3,7 @@ import {
   TrendingUp, AlertTriangle, CheckCircle2, Clock,
   BarChart2, RefreshCw, ArrowRight, Users, Heart,
 } from 'lucide-react'
-import { buscarKpiSocia } from '@/app/(dashboard)/dashboard/actions'
+import { buscarKpiSocia, type MrrMes } from '@/app/(dashboard)/dashboard/actions'
 import { buscarDadosCS } from '@/app/(dashboard)/cs/actions'
 import { UsageBarra } from '@/components/plano/UsageBarra'
 import { STATUS_CONFIG } from '@/components/shared/StatusChip'
@@ -62,6 +62,30 @@ export async function DashboardSocia() {
           </ul>
         </div>
       )}
+      {/* MRR Atual + Gráfico de Evolução */}
+      {(kpi.mrrAtual > 0 || kpi.mrrHistorico.length > 0) && (
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-700">
+              <BarChart2 className="h-4 w-4 text-brand" />
+              MRR — Receita Recorrente Mensal
+            </h2>
+            {kpi.mrrAtual > 0 && (
+              <span className="text-xl font-bold text-zinc-900">
+                {kpi.mrrAtual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })}
+              </span>
+            )}
+          </div>
+          {kpi.mrrHistorico.length > 0 ? (
+            <MrrChart historico={kpi.mrrHistorico} />
+          ) : (
+            <p className="text-xs text-zinc-400">
+              O gráfico de evolução aparece após o primeiro snapshot mensal (cron no dia 1).
+            </p>
+          )}
+        </div>
+      )}
+
       {/* KPIs principais */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <KpiCard
@@ -253,6 +277,41 @@ export async function DashboardSocia() {
 // ---------------------------------------------------------------------------
 // Sub-componentes
 // ---------------------------------------------------------------------------
+
+function MrrChart({ historico }: { historico: MrrMes[] }) {
+  const max = Math.max(...historico.map((h) => h.mrr), 1)
+  const mesesPt = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+
+  return (
+    <div className="space-y-1">
+      {/* Área das barras — altura fixa, barras crescem do bottom */}
+      <div className="flex items-end gap-2 h-20">
+        {historico.map((h) => {
+          const pct = Math.max(Math.round((h.mrr / max) * 100), 6)
+          return (
+            <div
+              key={h.mes}
+              className="flex-1 rounded-t-md bg-brand/50 transition-all"
+              style={{ height: `${pct}%` }}
+              title={h.mrr.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            />
+          )
+        })}
+      </div>
+      {/* Labels de mês */}
+      <div className="flex gap-2">
+        {historico.map((h) => {
+          const mesIdx = parseInt(h.mes.split('-')[1], 10) - 1
+          return (
+            <span key={h.mes} className="flex-1 text-center text-[10px] text-zinc-400">
+              {mesesPt[mesIdx]}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function KpiCard({
   label,

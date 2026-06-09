@@ -22,6 +22,9 @@ export interface PublicacaoAgendada {
   publicado_em: string | null
   status: string
   plataforma_post_id: string | null
+  tentativas: number
+  rotulo_ia: boolean
+  erro_mensagem: string | null
   created_at: string
   card?: { titulo: string } | null
   integracao?: { plataforma: string; page_nome: string | null; page_id: string | null } | null
@@ -34,6 +37,13 @@ export interface IntegracaoSocial {
   page_id: string | null
   ativo: boolean
   expires_at: string | null
+  cliente_id: string | null
+  cliente?: { id: string; nome: string } | null
+}
+
+export interface ClienteSimples {
+  id: string
+  nome: string
 }
 
 export interface MetricasSociais {
@@ -57,9 +67,21 @@ export async function buscarIntegracoesSociais(): Promise<IntegracaoSocial[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('integracao_social')
-    .select('id, plataforma, page_nome, page_id, ativo, expires_at')
+    .select('id, plataforma, page_nome, page_id, ativo, expires_at, cliente_id, cliente:clientes(id, nome)')
+    .order('cliente_id', { ascending: true, nullsFirst: true })
     .order('plataforma')
-  return (data ?? []) as IntegracaoSocial[]
+  return (data ?? []) as unknown as IntegracaoSocial[]
+}
+
+export async function buscarClientesAtivos(): Promise<ClienteSimples[]> {
+  await requirePapel('socia', 'gestao', 'atendimento')
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('clientes')
+    .select('id, nome')
+    .eq('status', 'ativo')
+    .order('nome')
+  return (data ?? []) as ClienteSimples[]
 }
 
 export async function buscarPublicacoes(filtros?: {
@@ -74,7 +96,8 @@ export async function buscarPublicacoes(filtros?: {
     .select(`
       id, organization_id, card_id, integracao_id,
       plataforma, tipo_conteudo, legenda, hashtags, storage_path,
-      data_agendada, publicado_em, status, plataforma_post_id, created_at,
+      data_agendada, publicado_em, status, plataforma_post_id,
+      tentativas, rotulo_ia, erro_mensagem, created_at,
       card:cards(titulo),
       integracao:integracao_id(plataforma, page_nome, page_id)
     `)
@@ -278,6 +301,7 @@ export async function actionCriarPublicacao(formData: FormData) {
   const legenda            = formData.get('legenda') as string
   const hashtags           = formData.get('hashtags') as string | null
   const dataAgendada       = formData.get('data_agendada') as string
+  const rotuloIa           = formData.get('rotulo_ia') === 'true'
   const file               = formData.get('arquivo') as File | null
 
   if (!plataforma || !tipoConteudo || !legenda || !dataAgendada || !integracaoId) {
@@ -298,13 +322,14 @@ export async function actionCriarPublicacao(formData: FormData) {
   const { error } = await supabase.from('publicacoes_agendadas').insert({
     organization_id:      profile.organization_id,
     card_id:              cardId || null,
-    integracao_id: integracaoId,
+    integracao_id:        integracaoId,
     plataforma:           plataforma as 'instagram' | 'facebook' | 'linkedin' | 'tiktok',
     tipo_conteudo:        tipoConteudo as 'feed' | 'carrossel' | 'reel' | 'story' | 'bts',
     legenda,
     hashtags:             hashtags || null,
     storage_path:         storagePath,
     data_agendada:        dataAgendada,
+    rotulo_ia:            rotuloIa,
     status:               'agendado',
     criado_por:           user.id,
   })

@@ -11,9 +11,12 @@ interface KanbanCardProps {
   card: BoardCard
   isOverlay?: boolean
   onDetalhes?: () => void
+  isSelected?: boolean
+  modoSelecao?: boolean
+  onSelecionar?: () => void
 }
 
-export function KanbanCard({ card, isOverlay = false, onDetalhes }: KanbanCardProps) {
+export function KanbanCard({ card, isOverlay = false, onDetalhes, isSelected = false, modoSelecao = false, onSelecionar }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
     data: { card },
@@ -66,17 +69,37 @@ export function KanbanCard({ card, isOverlay = false, onDetalhes }: KanbanCardPr
       {...listeners}
       {...attributes}
       suppressHydrationWarning
-      onClick={() => { if (!isDragging) onDetalhes?.() }}
+      onClick={() => {
+        if (isDragging) return
+        if (modoSelecao) { onSelecionar?.(); return }
+        onDetalhes?.()
+      }}
       className={`
         group relative rounded-xl border bg-white p-3.5 shadow-sm
         transition-all duration-150 cursor-grab active:cursor-grabbing
         ${isDragging ? 'opacity-40 ring-2 ring-zinc-300 shadow-lg' : 'hover:shadow-md hover:border-zinc-300'}
         ${isOverlay ? 'rotate-2 shadow-xl ring-2 ring-brand/20' : ''}
-        ${card.prioridade === 'urgente' ? 'border-l-4 border-l-red-500 border-zinc-200' : 'border-zinc-200'}
+        ${isSelected ? 'ring-2 ring-brand border-brand/30' : card.prioridade === 'urgente' ? 'border-l-4 border-l-red-500 border-zinc-200' : 'border-zinc-200'}
       `}
     >
+      {/* Checkbox de seleção (visível no hover ou em modo seleção) */}
+      {!isOverlay && onSelecionar && (
+        <div
+          className={`absolute left-2 top-2 z-10 transition-opacity ${isSelected || modoSelecao ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onSelecionar() }}
+        >
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => {}}
+            className="h-3.5 w-3.5 cursor-pointer rounded accent-brand"
+          />
+        </div>
+      )}
+
       {/* Linha superior: prioridade + confidencial */}
-      <div className="mb-2.5 flex items-center justify-between gap-2">
+      <div className={`mb-2.5 flex items-center justify-between gap-2 ${onSelecionar ? 'pl-5' : ''}`}>
         <PriorityBadge prioridade={card.prioridade} size="xs" />
         {card.confidencial && (
           <span title="Confidencial">

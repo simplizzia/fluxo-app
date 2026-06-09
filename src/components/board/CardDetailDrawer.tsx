@@ -5,7 +5,7 @@ import {
   X, Calendar, User, Tag, Clock, Lock, Send,
   Paperclip, Download, FileImage, Film, FileText, Archive, File,
   RotateCcw, CheckCircle2, Sparkles, Loader2, Copy, Check,
-  Share2, Plus, ExternalLink,
+  Share2, Plus, ExternalLink, CopyPlus,
 } from 'lucide-react'
 import {
   actionMoverCard,
@@ -19,6 +19,7 @@ import {
   actionReprovarCard,
   actionCancelarCard,
   actionAgendarEntrega,
+  actionDuplicarCard,
 } from '@/app/(dashboard)/board/actions'
 import {
   buscarPublicacoes,
@@ -116,6 +117,19 @@ export function CardDetailDrawer({
   const [iaExecutando, setIaExecutando] = useState(false)
   const [iaErro, setIaErro] = useState<string | null>(null)
   const [iaCopiado, setIaCopiado] = useState(false)
+
+  // Duplicar card
+  const [pendingDuplicar, setPendingDuplicar] = useState(false)
+
+  async function handleDuplicar() {
+    setPendingDuplicar(true)
+    const result = await actionDuplicarCard(card.id)
+    setPendingDuplicar(false)
+    if (!result.error) {
+      // O realtime do KanbanBoard detecta o INSERT e adiciona o card automaticamente
+      onClose()
+    }
+  }
 
   // Cancelamento inline — motivo obrigatório
   const [cancelando, setCancelando] = useState(false)
@@ -452,6 +466,20 @@ export function CardDetailDrawer({
               {card.cliente.nome}
             </span>
           </div>
+          {/* Duplicar card — equipe exceto executor */}
+          {['socia', 'gestao', 'atendimento'].includes(papelAtual) && (
+            <button
+              onClick={handleDuplicar}
+              disabled={pendingDuplicar}
+              title="Duplicar card"
+              className="mt-0.5 shrink-0 rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 disabled:opacity-50"
+            >
+              {pendingDuplicar
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <CopyPlus className="h-4 w-4" />
+              }
+            </button>
+          )}
           <button
             onClick={onClose}
             className="mt-0.5 shrink-0 rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600"

@@ -14,16 +14,18 @@ export async function GET(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
   if (error || !code) {
-    return NextResponse.redirect(`${appUrl}/perfil?tab=integracoes&social_error=linkedin`)
+    return NextResponse.redirect(`${appUrl}/socias/social?social_error=linkedin`)
   }
 
-  // Decodifica state → userId
+  // Decodifica state → userId + clienteId
   let userId: string
+  let clienteId: string | null = null
   try {
     const decoded = JSON.parse(Buffer.from(state ?? '', 'base64url').toString())
-    userId = decoded.userId
+    userId   = decoded.userId
+    clienteId = decoded.clienteId ?? null
   } catch {
-    return NextResponse.redirect(`${appUrl}/perfil?tab=integracoes&social_error=linkedin`)
+    return NextResponse.redirect(`${appUrl}/socias/social?social_error=linkedin`)
   }
 
   const supabase = await createClient()
@@ -34,7 +36,7 @@ export async function GET(req: NextRequest) {
     .single()
 
   if (!profile) {
-    return NextResponse.redirect(`${appUrl}/perfil?tab=integracoes&social_error=linkedin`)
+    return NextResponse.redirect(`${appUrl}/socias/social?social_error=linkedin`)
   }
 
   // Troca code por access_token
@@ -53,36 +55,105 @@ export async function GET(req: NextRequest) {
 
   if (!tokenRes.ok) {
     console.error('[linkedin/callback] token exchange failed:', await tokenRes.text())
-    return NextResponse.redirect(`${appUrl}/perfil?tab=integracoes&social_error=linkedin`)
+    return NextResponse.redirect(`${appUrl}/socias/social?social_error=linkedin`)
   }
 
   const tokenJson = await tokenRes.json()
   const accessToken: string  = tokenJson.access_token
   const expiresIn:   number  = tokenJson.expires_in ?? 5184000 // 60 dias padrão
 
-  // Busca URN do perfil autenticado
-  const userinfoRes = await fetch('https://api.linkedin.com/v2/userinfo', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
+  const liHeaders = {
+    Authorization: `Bearer ${accessToken}`,
+    'X-Restli-Protocol-Version': '2.0.0',
+    'LinkedIn-Version': '202501',
+  }
 
-  let authorUrn: string | null = null
-  if (userinfoRes.ok) {
-    const userinfo = await userinfoRes.json()
-    authorUrn = userinfo.sub ? `urn:li:person:${userinfo.sub}` : null
+  // Busca organizações que o usuário administra
+  const aclRes = await fetch(
+    'https://api.linkedin.com/v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&count=5',
+    { headers: liHeaders },
+  )
+
+  let orgUrn: string | null = null
+  let orgNome: string | null = null
+
+  if (aclRes.ok) {
+    const aclJson = await aclRes.json()
+    const firstOrg = aclJson.elements?.[0]?.organization as string | undefined
+
+    if (firstOrg) {
+      orgUrn = firstOrg
+      // Extrai o ID numérico do URN para buscar o nome: urn:li:organization:123456
+      const orgId = firstOrg.split(':').pop()
+      if (orgId) {
+        const orgRes = await fetch(
+          `https://api.linkedin.com/v2/organizations/${orgId}?fields=localizedName`,
+          { headers: liHeaders },
+        )
+        if (orgRes.ok) {
+          const orgJson = await orgRes.json()
+          orgNome = orgJson.localizedName ?? null
+        }
+      }
+    }
+  }
+
+  // Fallback: usa URN pessoal se não encontrou organização
+  if (!orgUrn) {
+    const userinfoRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: liHeaders,
+    })
+    if (userinfoRes.ok) {
+      const userinfo = await userinfoRes.json()
+      orgUrn = userinfo.sub ? `urn:li:person:${userinfo.sub}` : null
+      orgNome = userinfo.name ?? 'Perfil pessoal'
+    }
   }
 
   const service = createServiceClient()
-  await service.from('integracao_social').upsert({
-    organization_id: profile.organization_id,
-    plataforma:      'linkedin',
-    access_token:    accessToken,
-    page_id:         authorUrn,          // reutiliza page_id para armazenar o URN do autor
-    page_nome:       null,
-    expires_at:      new Date(Date.now() + expiresIn * 1000).toISOString(),
-    ativo:           true,
-    criado_por:      profile.id,
-    updated_at:      new Date().toISOString(),
-  }, { onConflict: 'organization_id,plataforma' })
+  const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
+  const now       = new Date().toISOString()
 
-  return NextResponse.redirect(`${appUrl}/perfil?tab=integracoes&social_ok=linkedin`)
+  // Upsert manual (suporte a cliente_id nullable com índices parciais)
+  let query = service.from('integracao_social').select('id')
+    .eq('organization_id', profile.organization_id)
+    .eq('plataforma', 'linkedin')
+
+  if (clienteId) {
+    query = query.eq('cliente_id', clienteId)
+  } else {
+    query = query.is('cliente_id', null)
+  }
+
+  const { data: existing } = await query.maybeSingle()
+
+  if (existing) {
+    await service.from('integracao_social').update({
+      access_token: accessToken,
+      page_id:      orgUrn,
+      page_nome:    orgNome,
+      expires_at:   expiresAt,
+      ativo:        true,
+      updated_at:   now,
+    }).eq('id', existing.id)
+  } else {
+    await service.from('integracao_social').insert({
+      organization_id: profile.organization_id,
+      plataforma:      'linkedin',
+      cliente_id:      clienteId,
+      access_token:    accessToken,
+      page_id:         orgUrn,
+      page_nome:       orgNome,
+      expires_at:      expiresAt,
+      ativo:           true,
+      criado_por:      profile.id,
+      updated_at:      now,
+    })
+  }
+
+  const redirect = clienteId
+    ? `${appUrl}/socias/social?social_ok=linkedin&cliente_id=${clienteId}`
+    : `${appUrl}/socias/social?social_ok=linkedin`
+
+  return NextResponse.redirect(redirect)
 }

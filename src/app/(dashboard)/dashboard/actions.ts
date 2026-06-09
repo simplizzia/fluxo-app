@@ -21,6 +21,12 @@ export interface CardResumo {
   responsavel: { id: string; nome: string } | null
 }
 
+export interface MrrMes {
+  mes: string   // YYYY-MM-DD (primeiro dia do mês)
+  mrr: number
+  clientes_ativos: number
+}
+
 export interface KpiSocia {
   concluidosNoMes: number
   taxaNoProazo: number          // 0–100
@@ -30,6 +36,8 @@ export interface KpiSocia {
   distribuicao: Record<string, number>
   topClientesRetrabalho: Array<{ clienteNome: string; rodadasMedia: number; cards: number }>
   clientesEmAlerta: Array<{ clienteNome: string; usados: number; limite: number; porcentagem: number }>
+  mrrHistorico: MrrMes[]    // últimos 6 meses
+  mrrAtual: number
 }
 
 export interface KpiGestao {
@@ -93,10 +101,16 @@ export async function buscarKpiSocia(): Promise<{ kpi?: KpiSocia; error?: string
   await requirePapel('socia')
   const supabase = await createClient()
 
+  const seisAtras = new Date()
+  seisAtras.setMonth(seisAtras.getMonth() - 5)
+  const seisAtrasIso = new Date(seisAtras.getFullYear(), seisAtras.getMonth(), 1).toISOString().split('T')[0]
+
   const [
     { data: concluidos },
     { count: atrasados },
     { data: ativos },
+    { data: mrrRows },
+    { data: mrrAtualRows },
   ] = await Promise.all([
     // Cards concluídos no mês
     supabase
@@ -119,6 +133,20 @@ export async function buscarKpiSocia(): Promise<{ kpi?: KpiSocia; error?: string
       .from('cards')
       .select('status')
       .not('status', 'in', '(concluido,cancelado)'),
+
+    // MRR histórico — últimos 6 meses
+    supabase
+      .from('mrr_historico')
+      .select('mes, mrr, clientes_ativos')
+      .gte('mes', seisAtrasIso)
+      .order('mes', { ascending: true })
+      .limit(6),
+
+    // MRR atual: soma das receitas ativas
+    supabase
+      .from('financeiro_receitas')
+      .select('valor_mensal')
+      .eq('ativo', true),
   ])
 
   const listaConcluidos = (concluidos ?? []) as unknown as Array<{
@@ -167,6 +195,8 @@ export async function buscarKpiSocia(): Promise<{ kpi?: KpiSocia; error?: string
   // Clientes em alerta (>= 80% do plano) — consulta simplificada
   const clientesEmAlerta = await buscarClientesEmAlertaPlano(supabase)
 
+  const mrrAtual = (mrrAtualRows ?? []).reduce((s, r) => s + Number(r.valor_mensal), 0)
+
   return {
     kpi: {
       concluidosNoMes: listaConcluidos.length,
@@ -177,6 +207,8 @@ export async function buscarKpiSocia(): Promise<{ kpi?: KpiSocia; error?: string
       distribuicao,
       topClientesRetrabalho,
       clientesEmAlerta,
+      mrrHistorico: (mrrRows ?? []) as MrrMes[],
+      mrrAtual: Math.round(mrrAtual * 100) / 100,
     },
   }
 }
