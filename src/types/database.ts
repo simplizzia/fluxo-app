@@ -4064,7 +4064,7 @@ export type Database = {
         | "marketing"
         | "escritorio"
         | "outros"
-      ciclo_cobranca: "mensal" | "trimestral" | "semestral" | "anual"
+      ciclo_cobranca: "mensal" | "trimestral" | "semestral" | "anual" | "projeto"
       decisao_aprovacao: "aprovado" | "reprovado"
       entidade_pii: "card" | "arquivo" | "reuniao" | "proposta" | "contrato"
       origem_prospect: "indicacao" | "prospeccao_ativa" | "inbound" | "evento"
@@ -4318,7 +4318,7 @@ export const Constants = {
         "escritorio",
         "outros",
       ],
-      ciclo_cobranca: ["mensal", "trimestral", "semestral", "anual"],
+      ciclo_cobranca: ["mensal", "trimestral", "semestral", "anual", "projeto"],
       decisao_aprovacao: ["aprovado", "reprovado"],
       entidade_pii: ["card", "arquivo", "reuniao", "proposta", "contrato"],
       origem_prospect: ["indicacao", "prospeccao_ativa", "inbound", "evento"],

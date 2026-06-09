@@ -10,7 +10,7 @@ import { calcMRR, type ReceitaRow } from '@/lib/financeiro'
 // Tipos exportados para o client
 // ---------------------------------------------------------------------------
 
-export type CicloCobranca = 'mensal' | 'trimestral' | 'semestral' | 'anual'
+export type CicloCobranca = 'mensal' | 'trimestral' | 'semestral' | 'anual' | 'projeto'
 export type StatusPagamento = 'pago' | 'pendente' | 'em_atraso'
 export type TipoDocFinanceiro = 'nota_fiscal' | 'comprovante' | 'contrato' | 'boleto' | 'outro'
 
@@ -167,7 +167,7 @@ const ReceitaSchema = z.object({
   descricao: z.string().trim().min(1, 'Descrição obrigatória'),
   cliente_id: z.string().uuid().nullable().optional(),
   valor_mensal: z.number().positive('Valor deve ser positivo'),
-  ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual'] as const),
+  ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual', 'projeto'] as const),
   data_cobranca_dia: z.number().int().min(1).max(28),
   observacoes: z.string().optional(),
   competencia: z.string().optional().nullable(),
@@ -533,7 +533,7 @@ const DespesaSchema = z.object({
   competencia: z.string().optional().nullable(),
   vencimento: z.string().min(1, 'Vencimento obrigatório'),
   recorrente: z.boolean().default(false),
-  ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual'] as const).optional().nullable(),
+  ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual', 'projeto'] as const).optional().nullable(),
   observacoes: z.string().optional(),
 })
 

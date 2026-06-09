@@ -45,7 +45,7 @@ function formatBRL(value: number): string {
 function labelCiclo(ciclo: CicloCobranca): string {
   const map: Record<CicloCobranca, string> = {
     mensal: 'Mensal', trimestral: 'Trimestral',
-    semestral: 'Semestral', anual: 'Anual',
+    semestral: 'Semestral', anual: 'Anual', projeto: 'Projeto',
   }
   return map[ciclo] ?? ciclo
 }
@@ -453,6 +453,7 @@ function ModalNovaReceita({
                   <option value="trimestral">Trimestral</option>
                   <option value="semestral">Semestral</option>
                   <option value="anual">Anual</option>
+                  <option value="projeto">Projeto</option>
                 </select>
               </div>
             </div>
@@ -938,6 +939,7 @@ function ModalNovaDespesa({
                   <option value="trimestral">Trimestral</option>
                   <option value="semestral">Semestral</option>
                   <option value="anual">Anual</option>
+                  <option value="projeto">Projeto</option>
                 </select>
               )}
             </div>
