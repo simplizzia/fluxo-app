@@ -752,6 +752,7 @@ function ModalNovaDespesa({
     categoria: 'outros' as CategoriaDespesa,
     fornecedor: '',
     valor: '',
+    competencia: '',
     vencimento: '',
     recorrente: false,
     ciclo: 'mensal' as CicloCobranca,
@@ -771,6 +772,7 @@ function ModalNovaDespesa({
         categoria: form.categoria,
         fornecedor: form.fornecedor.trim() || undefined,
         valor,
+        competencia: form.competencia ? form.competencia + '-01' : null,
         vencimento: form.vencimento,
         recorrente: form.recorrente,
         ciclo: form.recorrente ? form.ciclo : null,
@@ -833,6 +835,20 @@ function ModalNovaDespesa({
                   onChange={(e) => setForm({ ...form, vencimento: e.target.value })}
                   className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
               </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-zinc-700">
+                Competência
+                <span className="ml-1.5 font-normal text-zinc-400">(opcional — mês contábil se diferente do vencimento)</span>
+              </label>
+              <input type="month" value={form.competencia}
+                onChange={(e) => setForm({ ...form, competencia: e.target.value })}
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+              {form.competencia && form.vencimento && form.competencia !== form.vencimento.slice(0, 7) && (
+                <p className="mt-1 text-[11px] text-blue-600">
+                  Aparece em {new Date(form.competencia + '-01T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}, vence em {new Date(form.vencimento + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => setForm({ ...form, recorrente: !form.recorrente })}
@@ -977,13 +993,13 @@ function AbaDespesas({
     setFiltroMes(mesStr(nova))
   }
 
-  // Filtra despesas pelo mês selecionado:
-  // pendente/vencida → mês do vencimento | paga → mês do pago_em (ou vencimento se não tiver)
+  // Filtra despesas pelo mês selecionado.
+  // Prioridade: competencia (campo contábil) > vencimento
+  // Para despesas pagas sem competencia: usa pago_em para refletir o fluxo real
   const doMes = despesas.filter((d) => {
-    const refMes = d.status === 'paga'
-      ? (d.pago_em ?? d.vencimento).slice(0, 7)
-      : d.vencimento.slice(0, 7)
-    return refMes === filtroMes
+    if (d.competencia) return d.competencia.slice(0, 7) === filtroMes
+    if (d.status === 'paga' && d.pago_em) return d.pago_em.slice(0, 7) === filtroMes
+    return d.vencimento.slice(0, 7) === filtroMes
   })
 
   const filtradas = doMes.filter((d) => {

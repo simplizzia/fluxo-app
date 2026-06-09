@@ -378,6 +378,7 @@ export interface Despesa {
   descricao: string
   fornecedor: string | null
   valor: number
+  competencia: string | null
   vencimento: string
   pago_em: string | null
   status: StatusDespesa
@@ -408,7 +409,7 @@ export async function buscarDespesas(): Promise<Despesa[]> {
   const { data, error } = await supabase
     .from('financeiro_despesas')
     .select(
-      'id, organization_id, categoria, descricao, fornecedor, valor, vencimento, pago_em, status, recorrente, ciclo, comprovante_path, observacoes, ativo, created_at',
+      'id, organization_id, categoria, descricao, fornecedor, valor, competencia, vencimento, pago_em, status, recorrente, ciclo, comprovante_path, observacoes, ativo, created_at',
     )
     .eq('ativo', true)
     .order('vencimento', { ascending: true })
@@ -488,6 +489,7 @@ const DespesaSchema = z.object({
   descricao: z.string().trim().min(1, 'Descrição obrigatória'),
   fornecedor: z.string().trim().optional(),
   valor: z.number().positive('Valor deve ser positivo'),
+  competencia: z.string().optional().nullable(),
   vencimento: z.string().min(1, 'Vencimento obrigatório'),
   recorrente: z.boolean().default(false),
   ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual'] as const).optional().nullable(),
@@ -509,6 +511,7 @@ export async function actionCriarDespesa(
       organization_id: profile.organization_id,
       ...validated.data,
       fornecedor: validated.data.fornecedor || null,
+      competencia: validated.data.competencia || null,
       ciclo: validated.data.ciclo ?? null,
       observacoes: validated.data.observacoes || null,
     })

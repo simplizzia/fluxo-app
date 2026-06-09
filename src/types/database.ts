@@ -1477,6 +1477,7 @@ export type Database = {
           ativo: boolean
           categoria: Database["public"]["Enums"]["categoria_despesa"]
           ciclo: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          competencia: string | null
           comprovante_path: string | null
           created_at: string
           descricao: string
@@ -1495,6 +1496,7 @@ export type Database = {
           ativo?: boolean
           categoria?: Database["public"]["Enums"]["categoria_despesa"]
           ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          competencia?: string | null
           comprovante_path?: string | null
           created_at?: string
           descricao: string
@@ -1513,6 +1515,7 @@ export type Database = {
           ativo?: boolean
           categoria?: Database["public"]["Enums"]["categoria_despesa"]
           ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          competencia?: string | null
           comprovante_path?: string | null
           created_at?: string
           descricao?: string
