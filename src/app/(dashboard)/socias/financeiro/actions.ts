@@ -472,18 +472,28 @@ export async function buscarFluxoCaixa(meses = 6): Promise<FluxoCaixaMes[]> {
   const inicioData = new Date(hoje.getFullYear(), hoje.getMonth() - (meses - 1), 1)
   const inicioISO = inicioData.toISOString().split('T')[0]
 
-  const [{ data: historico }, { data: despesasPagas }] = await Promise.all([
+  const [{ data: historico }, { data: despesasPagas }, { data: receitasPagas }] = await Promise.all([
+    // Receitas registradas via modal de Histórico (mês a mês)
     supabase
       .from('financeiro_historico')
       .select('competencia, valor_cobrado')
       .eq('status', 'pago')
       .gte('competencia', inicioISO),
+    // Despesas pagas
     supabase
       .from('financeiro_despesas')
       .select('pago_em, valor')
       .eq('status', 'paga')
       .eq('ativo', true)
       .gte('pago_em', inicioISO + 'T00:00:00'),
+    // Receitas pagas diretamente (via campo recebimento na receita)
+    supabase
+      .from('financeiro_receitas')
+      .select('competencia, recebimento, valor_mensal')
+      .eq('status', 'pago')
+      .eq('ativo', true)
+      .not('recebimento', 'is', null)
+      .gte('recebimento', inicioISO),
   ])
 
   // Monta buckets para cada mês no intervalo
@@ -493,11 +503,24 @@ export async function buscarFluxoCaixa(meses = 6): Promise<FluxoCaixaMes[]> {
     buckets.set(d.toISOString().split('T')[0], { receitas: 0, despesas: 0 })
   }
 
+  // Fonte 1: historico (quem usa o modal de histórico mês a mês)
   for (const h of historico ?? []) {
     const b = buckets.get(h.competencia)
     if (b) b.receitas += Number(h.valor_cobrado)
   }
 
+  // Fonte 2: receitas com recebimento direto
+  // Prioridade: competencia (mês contábil) > recebimento (data real)
+  for (const r of receitasPagas ?? []) {
+    if (!r.recebimento) continue
+    const dataRef = r.competencia ?? r.recebimento
+    const dt = new Date(dataRef + 'T12:00:00')
+    const key = new Date(dt.getFullYear(), dt.getMonth(), 1).toISOString().split('T')[0]
+    const b = buckets.get(key)
+    if (b) b.receitas += Number(r.valor_mensal)
+  }
+
+  // Despesas pagas
   for (const d of despesasPagas ?? []) {
     if (!d.pago_em) continue
     const dt = new Date(d.pago_em)
