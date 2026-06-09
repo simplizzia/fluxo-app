@@ -480,13 +480,14 @@ export async function buscarFluxoCaixa(meses = 6): Promise<FluxoCaixaMes[]> {
       .select('competencia, valor_cobrado')
       .eq('status', 'pago')
       .gte('competencia', inicioISO),
-    // Despesas pagas
+    // Despesas pagas — OR para não perder despesas com competencia no período
+    // mas pago_em fora dele (ou nulo)
     supabase
       .from('financeiro_despesas')
-      .select('pago_em, valor')
+      .select('pago_em, competencia, valor')
       .eq('status', 'paga')
       .eq('ativo', true)
-      .gte('pago_em', inicioISO + 'T00:00:00'),
+      .or(`pago_em.gte.${inicioISO}T00:00:00,competencia.gte.${inicioISO}`),
     // Receitas pagas diretamente (via campo recebimento na receita)
     supabase
       .from('financeiro_receitas')
@@ -521,10 +522,12 @@ export async function buscarFluxoCaixa(meses = 6): Promise<FluxoCaixaMes[]> {
     if (b) b.receitas += Number(r.valor_mensal)
   }
 
-  // Despesas pagas
+  // Despesas pagas — prioridade: competencia (mês contábil) > pago_em (data real)
   for (const d of despesasPagas ?? []) {
-    if (!d.pago_em) continue
-    const dt = new Date(d.pago_em)
+    if (!d.competencia && !d.pago_em) continue
+    const dt = d.competencia
+      ? new Date(d.competencia + 'T12:00:00')
+      : new Date(d.pago_em!)
     const key = new Date(dt.getFullYear(), dt.getMonth(), 1).toISOString().split('T')[0]
     const b = buckets.get(key)
     if (b) b.despesas += Number(d.valor)
