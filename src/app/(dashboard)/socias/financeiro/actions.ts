@@ -25,6 +25,8 @@ export interface Receita {
   ativo: boolean
   ultima_atualizacao_status: string
   observacoes: string | null
+  competencia: string | null
+  recebimento: string | null
   created_at: string
   cliente?: { id: string; nome: string } | null
 }
@@ -74,7 +76,8 @@ export async function buscarReceitasFinanceiro(): Promise<Receita[]> {
     .from('financeiro_receitas')
     .select(`
       id, cliente_id, descricao, valor_mensal, ciclo, status,
-      data_cobranca_dia, ativo, ultima_atualizacao_status, observacoes, created_at,
+      data_cobranca_dia, ativo, ultima_atualizacao_status, observacoes,
+      competencia, recebimento, created_at,
       cliente:clientes!cliente_id(id, nome)
     `)
     .order('ativo', { ascending: false })
@@ -167,6 +170,8 @@ const ReceitaSchema = z.object({
   ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual'] as const),
   data_cobranca_dia: z.number().int().min(1).max(28),
   observacoes: z.string().optional(),
+  competencia: z.string().optional().nullable(),
+  recebimento: z.string().optional().nullable(),
 })
 
 export async function actionCriarReceita(
@@ -184,7 +189,9 @@ export async function actionCriarReceita(
       organization_id: profile.organization_id,
       ...validated.data,
       cliente_id: validated.data.cliente_id ?? null,
-      observacoes: validated.data.observacoes ?? null,
+      observacoes: validated.data.observacoes || null,
+      competencia: validated.data.competencia || null,
+      recebimento: validated.data.recebimento || null,
     })
     .select('id')
     .single()
@@ -196,6 +203,40 @@ export async function actionCriarReceita(
 
   revalidatePath('/socias/financeiro')
   return { id: data.id }
+}
+
+export async function actionEditarReceita(
+  id: string,
+  input: z.infer<typeof ReceitaSchema>,
+): Promise<{ error?: string }> {
+  await requirePapel('socia')
+  const supabase = await createClient()
+
+  const validated = ReceitaSchema.safeParse(input)
+  if (!validated.success) return { error: 'Dados inválidos.' }
+
+  const { error } = await supabase
+    .from('financeiro_receitas')
+    .update({
+      descricao: validated.data.descricao,
+      cliente_id: validated.data.cliente_id ?? null,
+      valor_mensal: validated.data.valor_mensal,
+      ciclo: validated.data.ciclo,
+      data_cobranca_dia: validated.data.data_cobranca_dia,
+      observacoes: validated.data.observacoes || null,
+      competencia: validated.data.competencia || null,
+      recebimento: validated.data.recebimento || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('[actionEditarReceita]', error.message)
+    return { error: 'Erro ao editar receita.' }
+  }
+
+  revalidatePath('/socias/financeiro')
+  return {}
 }
 
 export async function actionAtualizarStatusReceita(

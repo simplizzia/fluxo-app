@@ -1545,12 +1545,14 @@ export type Database = {
           ativo: boolean
           ciclo: Database["public"]["Enums"]["ciclo_cobranca"]
           cliente_id: string | null
+          competencia: string | null
           created_at: string
           data_cobranca_dia: number
           descricao: string
           id: string
           observacoes: string | null
           organization_id: string
+          recebimento: string | null
           status: Database["public"]["Enums"]["status_pagamento"]
           ultima_atualizacao_status: string
           updated_at: string
@@ -1560,12 +1562,14 @@ export type Database = {
           ativo?: boolean
           ciclo?: Database["public"]["Enums"]["ciclo_cobranca"]
           cliente_id?: string | null
+          competencia?: string | null
           created_at?: string
           data_cobranca_dia: number
           descricao: string
           id?: string
           observacoes?: string | null
           organization_id: string
+          recebimento?: string | null
           status?: Database["public"]["Enums"]["status_pagamento"]
           ultima_atualizacao_status?: string
           updated_at?: string
@@ -1575,12 +1579,14 @@ export type Database = {
           ativo?: boolean
           ciclo?: Database["public"]["Enums"]["ciclo_cobranca"]
           cliente_id?: string | null
+          competencia?: string | null
           created_at?: string
           data_cobranca_dia?: number
           descricao?: string
           id?: string
           observacoes?: string | null
           organization_id?: string
+          recebimento?: string | null
           status?: Database["public"]["Enums"]["status_pagamento"]
           ultima_atualizacao_status?: string
           updated_at?: string

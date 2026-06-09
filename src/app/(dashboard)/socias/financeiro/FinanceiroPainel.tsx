@@ -14,7 +14,7 @@ import type {
   Despesa, CategoriaDespesa, StatusDespesa, FluxoCaixaMes,
 } from './actions'
 import {
-  actionCriarReceita, actionAtualizarStatusReceita, actionArquivarReceita,
+  actionCriarReceita, actionEditarReceita, actionAtualizarStatusReceita, actionArquivarReceita,
   actionRegistrarHistorico, actionUploadDocFinanceiro, actionExcluirDocFinanceiro,
   buscarHistoricoReceita,
   actionCriarDespesa, actionEditarDespesa, actionAtualizarStatusDespesa, actionArquivarDespesa,
@@ -353,23 +353,28 @@ function AbaVisaoGeral({
 // ---------------------------------------------------------------------------
 
 function ModalNovaReceita({
+  receita,
   clientes,
   onClose,
   onSuccess,
 }: {
+  receita?: Receita
   clientes: { id: string; nome: string }[]
   onClose: () => void
   onSuccess: () => void
 }) {
+  const editando = !!receita
   const [isPending, startTransition] = useTransition()
   const [erro, setErro] = useState<string | null>(null)
   const [form, setForm] = useState({
-    descricao: '',
-    cliente_id: '',
-    valor_mensal: '',
-    ciclo: 'mensal' as CicloCobranca,
-    data_cobranca_dia: '5',
-    observacoes: '',
+    descricao: receita?.descricao ?? '',
+    cliente_id: receita?.cliente_id ?? '',
+    valor_mensal: receita ? String(Number(receita.valor_mensal).toFixed(2)).replace('.', ',') : '',
+    ciclo: (receita?.ciclo ?? 'mensal') as CicloCobranca,
+    data_cobranca_dia: receita ? String(receita.data_cobranca_dia) : '5',
+    observacoes: receita?.observacoes ?? '',
+    competencia: receita?.competencia ? receita.competencia.slice(0, 7) : '',
+    recebimento: receita?.recebimento ? receita.recebimento.slice(0, 10) : '',
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -380,15 +385,21 @@ function ModalNovaReceita({
     const dia = parseInt(form.data_cobranca_dia)
     if (isNaN(dia) || dia < 1 || dia > 28) { setErro('Dia de cobrança deve ser entre 1 e 28.'); return }
 
+    const payload = {
+      descricao: form.descricao.trim(),
+      cliente_id: form.cliente_id || null,
+      valor_mensal: valor,
+      ciclo: form.ciclo,
+      data_cobranca_dia: dia,
+      observacoes: form.observacoes.trim() || undefined,
+      competencia: form.competencia ? form.competencia + '-01' : null,
+      recebimento: form.recebimento || null,
+    }
+
     startTransition(async () => {
-      const res = await actionCriarReceita({
-        descricao: form.descricao.trim(),
-        cliente_id: form.cliente_id || null,
-        valor_mensal: valor,
-        ciclo: form.ciclo,
-        data_cobranca_dia: dia,
-        observacoes: form.observacoes.trim() || undefined,
-      })
+      const res = editando
+        ? await actionEditarReceita(receita.id, payload)
+        : await actionCriarReceita(payload)
       if (res.error) { setErro(res.error); return }
       onSuccess()
     })
@@ -398,14 +409,16 @@ function ModalNovaReceita({
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
-            <h2 className="font-display text-base font-semibold text-zinc-900">Nova Receita Recorrente</h2>
+        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 flex-none">
+            <h2 className="font-display text-base font-semibold text-zinc-900">
+              {editando ? 'Editar Receita' : 'Nova Receita Recorrente'}
+            </h2>
             <button onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
               <X className="h-4 w-4" />
             </button>
           </div>
-          <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-700">Descrição *</label>
               <input type="text" required value={form.descricao}
@@ -451,6 +464,33 @@ function ModalNovaReceita({
                 onChange={(e) => setForm({ ...form, data_cobranca_dia: e.target.value })}
                 className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20" />
             </div>
+            {/* Competência e Recebimento */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-zinc-700">
+                  Competência
+                  <span className="ml-1 font-normal text-zinc-400">(mês contábil)</span>
+                </label>
+                <input type="month" value={form.competencia}
+                  onChange={(e) => setForm({ ...form, competencia: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-zinc-700">
+                  Recebimento
+                  <span className="ml-1 font-normal text-zinc-400">(data)</span>
+                </label>
+                <input type="date" value={form.recebimento}
+                  onChange={(e) => setForm({ ...form, recebimento: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+              </div>
+            </div>
+            {form.competencia && form.recebimento && form.competencia !== form.recebimento.slice(0, 7) && (
+              <p className="text-[11px] text-blue-600">
+                Competência: {new Date(form.competencia + '-01T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                {' · '}Recebido em {new Date(form.recebimento + 'T12:00:00').toLocaleDateString('pt-BR')}
+              </p>
+            )}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-700">Observações</label>
               <textarea rows={2} value={form.observacoes}
@@ -467,7 +507,7 @@ function ModalNovaReceita({
               <button type="submit" disabled={isPending}
                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 transition">
                 {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Criar receita
+                {editando ? 'Salvar alterações' : 'Criar receita'}
               </button>
             </div>
           </form>
@@ -621,6 +661,7 @@ function AbaReceitas({
 }) {
   const [mostrarInativas, setMostrarInativas] = useState(false)
   const [modalNova, setModalNova] = useState(false)
+  const [editando, setEditando] = useState<Receita | null>(null)
   const [receitaHistorico, setReceitaHistorico] = useState<Receita | null>(null)
   const [atualizandoStatus, setAtualizandoStatus] = useState<string | null>(null)
   const [arquivando, setArquivando] = useState<string | null>(null)
@@ -686,7 +727,14 @@ function AbaReceitas({
                 <tr key={r.id} className={`transition hover:bg-zinc-50/50 ${!r.ativo ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-zinc-800">{r.descricao}</p>
-                    {r.observacoes && <p className="mt-0.5 max-w-[180px] truncate text-xs text-zinc-400">{r.observacoes}</p>}
+                    {r.competencia && (
+                      <span className="mt-0.5 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
+                        Comp. {new Date(r.competencia + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                      </span>
+                    )}
+                    {r.observacoes && !r.competencia && (
+                      <p className="mt-0.5 max-w-[180px] truncate text-xs text-zinc-400">{r.observacoes}</p>
+                    )}
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-zinc-500 sm:table-cell">{r.cliente?.nome ?? '—'}</td>
                   <td className="px-4 py-3 text-right font-semibold text-zinc-800">{formatBRL(Number(r.valor_mensal))}</td>
@@ -694,12 +742,19 @@ function AbaReceitas({
                   <td className="hidden px-4 py-3 text-center text-xs text-zinc-500 md:table-cell">dia {r.data_cobranca_dia}</td>
                   <td className="px-4 py-3 text-center">
                     {r.ativo ? (
-                      <button onClick={() => toggleStatus(r)} disabled={atualizandoStatus === r.id}
-                        title="Clique para alterar status"
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition hover:opacity-75 disabled:opacity-50 ${STATUS_CFG[r.status].cls}`}>
-                        {atualizandoStatus === r.id && <Loader2 className="h-3 w-3 animate-spin" />}
-                        {STATUS_CFG[r.status].label}
-                      </button>
+                      <div>
+                        <button onClick={() => toggleStatus(r)} disabled={atualizandoStatus === r.id}
+                          title="Clique para alterar status"
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition hover:opacity-75 disabled:opacity-50 ${STATUS_CFG[r.status].cls}`}>
+                          {atualizandoStatus === r.id && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {STATUS_CFG[r.status].label}
+                        </button>
+                        {r.recebimento && (
+                          <p className="mt-0.5 text-[10px] text-zinc-400">
+                            Rec. {new Date(r.recebimento + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-xs text-zinc-400">Arquivada</span>
                     )}
@@ -711,10 +766,16 @@ function AbaReceitas({
                         <History className="h-3.5 w-3.5" />
                       </button>
                       {r.ativo && (
-                        <button onClick={() => arquivar(r)} disabled={arquivando === r.id} title="Arquivar receita"
-                          className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 disabled:opacity-50 transition">
-                          {arquivando === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
-                        </button>
+                        <>
+                          <button onClick={() => setEditando(r)} title="Editar receita"
+                            className="rounded-lg p-1.5 text-zinc-400 hover:bg-blue-50 hover:text-blue-600 transition">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={() => arquivar(r)} disabled={arquivando === r.id} title="Arquivar receita"
+                            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 disabled:opacity-50 transition">
+                            {arquivando === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
@@ -727,6 +788,10 @@ function AbaReceitas({
       {modalNova && (
         <ModalNovaReceita clientes={clientes} onClose={() => setModalNova(false)}
           onSuccess={() => { setModalNova(false); onRefresh() }} />
+      )}
+      {editando && (
+        <ModalNovaReceita receita={editando} clientes={clientes}
+          onClose={() => setEditando(null)} onSuccess={() => { setEditando(null); onRefresh() }} />
       )}
       {receitaHistorico && (
         <ModalHistorico receita={receitaHistorico} onClose={() => setReceitaHistorico(null)} onRefresh={onRefresh} />
