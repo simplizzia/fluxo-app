@@ -527,6 +527,37 @@ export async function actionCriarDespesa(
   return { id: data.id }
 }
 
+export async function actionEditarDespesa(
+  id: string,
+  input: z.infer<typeof DespesaSchema>,
+): Promise<{ error?: string }> {
+  await requirePapel('socia')
+  const supabase = await createClient()
+
+  const validated = DespesaSchema.safeParse(input)
+  if (!validated.success) return { error: 'Dados inválidos.' }
+
+  const { error } = await supabase
+    .from('financeiro_despesas')
+    .update({
+      ...validated.data,
+      fornecedor: validated.data.fornecedor || null,
+      competencia: validated.data.competencia || null,
+      ciclo: validated.data.ciclo ?? null,
+      observacoes: validated.data.observacoes || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('[actionEditarDespesa]', error.message)
+    return { error: 'Erro ao editar despesa.' }
+  }
+
+  revalidatePath('/socias/financeiro')
+  return {}
+}
+
 export async function actionAtualizarStatusDespesa(
   id: string,
   status: StatusDespesa,

@@ -6,7 +6,7 @@ import {
   AlertTriangle, DollarSign, TrendingUp, TrendingDown,
   FileText, Upload, Trash2, Download, Plus, X,
   Loader2, History, Archive, CheckCircle2, Receipt,
-  Calendar, Filter, ChevronLeft, ChevronRight,
+  Calendar, Filter, ChevronLeft, ChevronRight, Pencil,
 } from 'lucide-react'
 import type {
   Receita, FinanceiroVisaoGeral, DocFinanceiro, HistoricoItem,
@@ -17,7 +17,7 @@ import {
   actionCriarReceita, actionAtualizarStatusReceita, actionArquivarReceita,
   actionRegistrarHistorico, actionUploadDocFinanceiro, actionExcluirDocFinanceiro,
   buscarHistoricoReceita,
-  actionCriarDespesa, actionAtualizarStatusDespesa, actionArquivarDespesa,
+  actionCriarDespesa, actionEditarDespesa, actionAtualizarStatusDespesa, actionArquivarDespesa,
   actionExportarCSV,
 } from './actions'
 
@@ -740,23 +740,27 @@ function AbaReceitas({
 // ---------------------------------------------------------------------------
 
 function ModalNovaDespesa({
-  onClose, onSuccess,
+  despesa,
+  onClose,
+  onSuccess,
 }: {
+  despesa?: Despesa
   onClose: () => void
   onSuccess: () => void
 }) {
+  const editando = !!despesa
   const [isPending, startTransition] = useTransition()
   const [erro, setErro] = useState<string | null>(null)
   const [form, setForm] = useState({
-    descricao: '',
-    categoria: 'outros' as CategoriaDespesa,
-    fornecedor: '',
-    valor: '',
-    competencia: '',
-    vencimento: '',
-    recorrente: false,
-    ciclo: 'mensal' as CicloCobranca,
-    observacoes: '',
+    descricao: despesa?.descricao ?? '',
+    categoria: (despesa?.categoria ?? 'outros') as CategoriaDespesa,
+    fornecedor: despesa?.fornecedor ?? '',
+    valor: despesa ? String(Number(despesa.valor).toFixed(2)).replace('.', ',') : '',
+    competencia: despesa?.competencia ? despesa.competencia.slice(0, 7) : '',
+    vencimento: despesa?.vencimento ?? '',
+    recorrente: despesa?.recorrente ?? false,
+    ciclo: (despesa?.ciclo ?? 'mensal') as CicloCobranca,
+    observacoes: despesa?.observacoes ?? '',
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -766,18 +770,22 @@ function ModalNovaDespesa({
     if (isNaN(valor) || valor <= 0) { setErro('Informe um valor válido.'); return }
     if (!form.vencimento) { setErro('Informe a data de vencimento.'); return }
 
+    const payload = {
+      descricao: form.descricao.trim(),
+      categoria: form.categoria,
+      fornecedor: form.fornecedor.trim() || undefined,
+      valor,
+      competencia: form.competencia ? form.competencia + '-01' : null,
+      vencimento: form.vencimento,
+      recorrente: form.recorrente,
+      ciclo: form.recorrente ? form.ciclo : null,
+      observacoes: form.observacoes.trim() || undefined,
+    }
+
     startTransition(async () => {
-      const res = await actionCriarDespesa({
-        descricao: form.descricao.trim(),
-        categoria: form.categoria,
-        fornecedor: form.fornecedor.trim() || undefined,
-        valor,
-        competencia: form.competencia ? form.competencia + '-01' : null,
-        vencimento: form.vencimento,
-        recorrente: form.recorrente,
-        ciclo: form.recorrente ? form.ciclo : null,
-        observacoes: form.observacoes.trim() || undefined,
-      })
+      const res = editando
+        ? await actionEditarDespesa(despesa.id, payload)
+        : await actionCriarDespesa(payload)
       if (res.error) { setErro(res.error); return }
       onSuccess()
     })
@@ -789,7 +797,9 @@ function ModalNovaDespesa({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
           <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 flex-none">
-            <h2 className="font-display text-base font-semibold text-zinc-900">Nova Despesa</h2>
+            <h2 className="font-display text-base font-semibold text-zinc-900">
+              {editando ? 'Editar Despesa' : 'Nova Despesa'}
+            </h2>
             <button onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
               <X className="h-4 w-4" />
             </button>
@@ -882,7 +892,7 @@ function ModalNovaDespesa({
               <button type="submit" disabled={isPending}
                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 transition">
                 {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Criar despesa
+                {editando ? 'Salvar alterações' : 'Criar despesa'}
               </button>
             </div>
           </form>
@@ -982,6 +992,7 @@ function AbaDespesas({
   const hoje = new Date()
   const [filtroMes, setFiltroMes] = useState(() => mesStr(hoje))
   const [modalNova, setModalNova] = useState(false)
+  const [editando, setEditando] = useState<Despesa | null>(null)
   const [pagando, setPagando] = useState<Despesa | null>(null)
   const [arquivando, setArquivando] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<StatusDespesa | 'todas'>('todas')
@@ -1193,6 +1204,10 @@ function AbaDespesas({
                             <CheckCircle2 className="h-3.5 w-3.5" />
                           </button>
                         )}
+                        <button onClick={() => setEditando(d)} title="Editar despesa"
+                          className="rounded-lg p-1.5 text-zinc-400 hover:bg-blue-50 hover:text-blue-600 transition">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
                         <button onClick={() => arquivar(d)} disabled={arquivando === d.id} title="Arquivar despesa"
                           className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 disabled:opacity-50 transition">
                           {arquivando === d.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />}
@@ -1209,6 +1224,9 @@ function AbaDespesas({
 
       {modalNova && (
         <ModalNovaDespesa onClose={() => setModalNova(false)} onSuccess={() => { setModalNova(false); onRefresh() }} />
+      )}
+      {editando && (
+        <ModalNovaDespesa despesa={editando} onClose={() => setEditando(null)} onSuccess={() => { setEditando(null); onRefresh() }} />
       )}
       {pagando && (
         <ModalPagarDespesa despesa={pagando} onClose={() => setPagando(null)} onSuccess={() => { setPagando(null); onRefresh() }} />
