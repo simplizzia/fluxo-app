@@ -135,9 +135,9 @@ function AbaVisaoGeral({
   const mesCorrente = fluxoCaixa.find((m) => m.mes === mesAtualKey)
   const resultadoMes = mesCorrente ? mesCorrente.resultado : visaoGeral.mrr - valorAPagar
 
-  // Próximas cobranças (receitas)
+  // Próximas cobranças (receitas recorrentes — projetos são pagamento único, não entram aqui)
   const proxCobrancas = receitas
-    .filter((r) => r.ativo && r.status !== 'em_atraso' && r.data_cobranca_dia >= hoje.getDate())
+    .filter((r) => r.ativo && r.ciclo !== 'projeto' && r.status !== 'em_atraso' && r.data_cobranca_dia >= hoje.getDate())
     .sort((a, b) => a.data_cobranca_dia - b.data_cobranca_dia)
     .slice(0, 5)
 
@@ -382,8 +382,14 @@ function ModalNovaReceita({
     setErro(null)
     const valor = parseFloat(form.valor_mensal.replace(',', '.'))
     if (isNaN(valor) || valor <= 0) { setErro('Informe um valor válido.'); return }
-    const dia = parseInt(form.data_cobranca_dia)
-    if (isNaN(dia) || dia < 1 || dia > 28) { setErro('Dia de cobrança deve ser entre 1 e 28.'); return }
+
+    // Dia de cobrança só faz sentido para receitas recorrentes
+    const isprojeto = form.ciclo === 'projeto'
+    const dia = isprojeto ? 1 : parseInt(form.data_cobranca_dia)
+    if (!isprojeto && (isNaN(dia) || dia < 1 || dia > 28)) {
+      setErro('Dia de cobrança deve ser entre 1 e 28.')
+      return
+    }
 
     const payload = {
       descricao: form.descricao.trim(),
@@ -423,7 +429,7 @@ function ModalNovaReceita({
               <label className="mb-1.5 block text-xs font-medium text-zinc-700">Descrição *</label>
               <input type="text" required value={form.descricao}
                 onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                placeholder="Ex: Gestão de Redes Sociais"
+                placeholder={form.ciclo === 'projeto' ? 'Ex: Landing Page Cliente X' : 'Ex: Gestão de Redes Sociais'}
                 className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20" />
             </div>
             <div>
@@ -436,7 +442,9 @@ function ModalNovaReceita({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-700">Valor mensal *</label>
+                <label className="mb-1.5 block text-xs font-medium text-zinc-700">
+                  {form.ciclo === 'projeto' ? 'Valor do projeto *' : 'Valor mensal *'}
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">R$</span>
                   <input type="text" inputMode="decimal" required value={form.valor_mensal}
@@ -446,25 +454,27 @@ function ModalNovaReceita({
                 </div>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-700">Ciclo</label>
+                <label className="mb-1.5 block text-xs font-medium text-zinc-700">Tipo</label>
                 <select value={form.ciclo} onChange={(e) => setForm({ ...form, ciclo: e.target.value as CicloCobranca })}
                   className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none">
                   <option value="mensal">Mensal</option>
                   <option value="trimestral">Trimestral</option>
                   <option value="semestral">Semestral</option>
                   <option value="anual">Anual</option>
-                  <option value="projeto">Projeto</option>
+                  <option value="projeto">Projeto (único)</option>
                 </select>
               </div>
             </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-700">
-                Dia de cobrança <span className="text-zinc-400">(1 – 28)</span>
-              </label>
-              <input type="number" min={1} max={28} required value={form.data_cobranca_dia}
-                onChange={(e) => setForm({ ...form, data_cobranca_dia: e.target.value })}
-                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20" />
-            </div>
+            {form.ciclo !== 'projeto' && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-zinc-700">
+                  Dia de cobrança <span className="text-zinc-400">(1 – 28)</span>
+                </label>
+                <input type="number" min={1} max={28} required value={form.data_cobranca_dia}
+                  onChange={(e) => setForm({ ...form, data_cobranca_dia: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20" />
+              </div>
+            )}
             {/* Competência e Recebimento */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -739,8 +749,14 @@ function AbaReceitas({
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-zinc-500 sm:table-cell">{r.cliente?.nome ?? '—'}</td>
                   <td className="px-4 py-3 text-right font-semibold text-zinc-800">{formatBRL(Number(r.valor_mensal))}</td>
-                  <td className="hidden px-4 py-3 text-center text-xs text-zinc-500 md:table-cell">{labelCiclo(r.ciclo)}</td>
-                  <td className="hidden px-4 py-3 text-center text-xs text-zinc-500 md:table-cell">dia {r.data_cobranca_dia}</td>
+                  <td className="hidden px-4 py-3 text-center md:table-cell">
+                    {r.ciclo === 'projeto'
+                      ? <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">Projeto</span>
+                      : <span className="text-xs text-zinc-500">{labelCiclo(r.ciclo)}</span>}
+                  </td>
+                  <td className="hidden px-4 py-3 text-center text-xs text-zinc-500 md:table-cell">
+                    {r.ciclo === 'projeto' ? '—' : `dia ${r.data_cobranca_dia}`}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     {r.ativo ? (
                       <div>

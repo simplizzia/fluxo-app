@@ -9,7 +9,7 @@ export interface ReceitaRow {
   cliente_id: string | null
   descricao: string
   valor_mensal: number
-  ciclo: 'mensal' | 'trimestral' | 'semestral' | 'anual'
+  ciclo: 'mensal' | 'trimestral' | 'semestral' | 'anual' | 'projeto'
   status: 'pago' | 'pendente' | 'em_atraso'
   data_cobranca_dia: number
   ativo: boolean
@@ -17,10 +17,10 @@ export interface ReceitaRow {
   cliente?: { nome: string } | null
 }
 
-/** MRR = soma das receitas ativas em valor mensal equivalente. */
+/** MRR = soma das receitas recorrentes ativas (projetos são excluídos). */
 export function calcMRR(receitas: ReceitaRow[]): number {
   return receitas
-    .filter((r) => r.ativo)
+    .filter((r) => r.ativo && r.ciclo !== 'projeto')
     .reduce((sum, r) => sum + (Number(r.valor_mensal) || 0), 0)
 }
 

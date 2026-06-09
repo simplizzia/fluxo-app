@@ -93,13 +93,14 @@ export async function buscarReceitasFinanceiro(): Promise<Receita[]> {
 }
 
 export async function buscarVisaoGeral(receitas: Receita[]): Promise<FinanceiroVisaoGeral> {
-  const ativas = receitas.filter((r) => r.ativo)
-  const atrasadas = ativas.filter((r) => r.status === 'em_atraso')
-  const pendentes = ativas.filter((r) => r.status === 'pendente')
+  // Apenas receitas recorrentes entram no MRR e nos KPIs principais
+  const recorrentes = receitas.filter((r) => r.ativo && r.ciclo !== 'projeto')
+  const atrasadas = recorrentes.filter((r) => r.status === 'em_atraso')
+  const pendentes = recorrentes.filter((r) => r.status === 'pendente')
 
   return {
     mrr: calcMRR(receitas as ReceitaRow[]),
-    total_receitas_ativas: ativas.length,
+    total_receitas_ativas: recorrentes.length,
     em_atraso: atrasadas.length,
     valor_em_atraso: atrasadas.reduce((s, r) => s + Number(r.valor_mensal), 0),
     pendentes: pendentes.length,
