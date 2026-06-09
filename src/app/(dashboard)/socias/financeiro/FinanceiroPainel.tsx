@@ -6,7 +6,7 @@ import {
   AlertTriangle, DollarSign, TrendingUp, TrendingDown,
   FileText, Upload, Trash2, Download, Plus, X,
   Loader2, History, Archive, CheckCircle2, Receipt,
-  Calendar, Filter,
+  Calendar, Filter, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import type {
   Receita, FinanceiroVisaoGeral, DocFinanceiro, HistoricoItem,
@@ -948,26 +948,60 @@ function ModalPagarDespesa({
 // AbaDespesas
 // ---------------------------------------------------------------------------
 
+function mesStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function labelMes(ym: string): string {
+  const [ano, mes] = ym.split('-').map(Number)
+  return new Date(ano, mes - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+}
+
 function AbaDespesas({
   despesas, onRefresh,
 }: {
   despesas: Despesa[]
   onRefresh: () => void
 }) {
+  const hoje = new Date()
+  const [filtroMes, setFiltroMes] = useState(() => mesStr(hoje))
   const [modalNova, setModalNova] = useState(false)
   const [pagando, setPagando] = useState<Despesa | null>(null)
   const [arquivando, setArquivando] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<StatusDespesa | 'todas'>('todas')
   const [filtroCategoria, setFiltroCategoria] = useState<CategoriaDespesa | ''>('')
 
-  const filtradas = despesas.filter((d) => {
+  function navMes(delta: number) {
+    const [ano, mes] = filtroMes.split('-').map(Number)
+    const nova = new Date(ano, mes - 1 + delta, 1)
+    setFiltroMes(mesStr(nova))
+  }
+
+  // Filtra despesas pelo mês selecionado:
+  // pendente/vencida → mês do vencimento | paga → mês do pago_em (ou vencimento se não tiver)
+  const doMes = despesas.filter((d) => {
+    const refMes = d.status === 'paga'
+      ? (d.pago_em ?? d.vencimento).slice(0, 7)
+      : d.vencimento.slice(0, 7)
+    return refMes === filtroMes
+  })
+
+  const filtradas = doMes.filter((d) => {
     if (filtroStatus !== 'todas' && d.status !== filtroStatus) return false
     if (filtroCategoria && d.categoria !== filtroCategoria) return false
     return true
   })
 
-  const vencidas = despesas.filter((d) => d.status === 'vencida').length
-  const valorVencido = despesas.filter((d) => d.status === 'vencida').reduce((s, d) => s + Number(d.valor), 0)
+  // Resumo do mês
+  const resumo = {
+    pendente: doMes.filter((d) => d.status === 'pendente'),
+    paga:     doMes.filter((d) => d.status === 'paga'),
+    vencida:  doMes.filter((d) => d.status === 'vencida'),
+  }
+
+  // Alerta global de vencidas (todos os meses, não só o atual)
+  const totalVencidas = despesas.filter((d) => d.status === 'vencida').length
+  const valorTotalVencido = despesas.filter((d) => d.status === 'vencida').reduce((s, d) => s + Number(d.valor), 0)
 
   async function arquivar(d: Despesa) {
     if (!confirm(`Arquivar "${d.descricao}"?`)) return
@@ -982,16 +1016,68 @@ function AbaDespesas({
 
   return (
     <div className="space-y-4">
-      {/* Alerta de vencidas */}
-      {vencidas > 0 && (
+      {/* Alerta global de vencidas */}
+      {totalVencidas > 0 && (
         <div className="flex items-center gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
           <AlertTriangle className="h-4 w-4 text-red-500 flex-none" />
           <p className="text-sm text-red-800">
-            <span className="font-semibold">{vencidas} despesa{vencidas > 1 ? 's' : ''} vencida{vencidas > 1 ? 's' : ''}</span>
-            {' — '}{formatBRL(valorVencido)} a regularizar
+            <span className="font-semibold">{totalVencidas} despesa{totalVencidas > 1 ? 's' : ''} vencida{totalVencidas > 1 ? 's' : ''}</span>
+            {' — '}{formatBRL(valorTotalVencido)} a regularizar
           </p>
         </div>
       )}
+
+      {/* Navegação de mês */}
+      <div className="flex items-center justify-between gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+        <button onClick={() => navMes(-1)}
+          className="rounded-xl p-1.5 text-zinc-500 hover:bg-white hover:shadow-sm transition">
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-zinc-800 capitalize">{labelMes(filtroMes)}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          {filtroMes !== mesStr(hoje) && (
+            <button onClick={() => setFiltroMes(mesStr(hoje))}
+              className="rounded-lg px-2.5 py-1 text-[11px] font-medium text-zinc-500 hover:bg-white hover:shadow-sm transition">
+              Hoje
+            </button>
+          )}
+          <button onClick={() => navMes(1)}
+            className="rounded-xl p-1.5 text-zinc-500 hover:bg-white hover:shadow-sm transition">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Resumo do mês */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-center">
+          <p className="text-[10px] font-semibold text-amber-600 mb-0.5">A pagar</p>
+          <p className="text-sm font-bold text-amber-700">
+            {formatBRL(resumo.pendente.reduce((s, d) => s + Number(d.valor), 0))}
+          </p>
+          <p className="text-[10px] text-amber-500">{resumo.pendente.length} despesa{resumo.pendente.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2.5 text-center">
+          <p className="text-[10px] font-semibold text-emerald-600 mb-0.5">Pagas</p>
+          <p className="text-sm font-bold text-emerald-700">
+            {formatBRL(resumo.paga.reduce((s, d) => s + Number(d.valor), 0))}
+          </p>
+          <p className="text-[10px] text-emerald-500">{resumo.paga.length} despesa{resumo.paga.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className={`rounded-xl border px-3 py-2.5 text-center ${resumo.vencida.length > 0 ? 'border-red-100 bg-red-50' : 'border-zinc-100 bg-zinc-50'}`}>
+          <p className={`text-[10px] font-semibold mb-0.5 ${resumo.vencida.length > 0 ? 'text-red-600' : 'text-zinc-500'}`}>Vencidas</p>
+          <p className={`text-sm font-bold ${resumo.vencida.length > 0 ? 'text-red-700' : 'text-zinc-400'}`}>
+            {resumo.vencida.length > 0
+              ? formatBRL(resumo.vencida.reduce((s, d) => s + Number(d.valor), 0))
+              : '—'}
+          </p>
+          <p className={`text-[10px] ${resumo.vencida.length > 0 ? 'text-red-500' : 'text-zinc-400'}`}>
+            {resumo.vencida.length} despesa{resumo.vencida.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+      </div>
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1032,10 +1118,12 @@ function AbaDespesas({
         <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center">
           <Receipt className="mx-auto h-10 w-10 text-zinc-200 mb-3" />
           <p className="text-sm font-medium text-zinc-400">
-            {filtroStatus !== 'todas' || filtroCategoria ? 'Nenhuma despesa com estes filtros.' : 'Nenhuma despesa cadastrada.'}
+            {filtroStatus !== 'todas' || filtroCategoria
+              ? 'Nenhuma despesa com estes filtros.'
+              : `Nenhuma despesa em ${labelMes(filtroMes)}.`}
           </p>
           {filtroStatus === 'todas' && !filtroCategoria && (
-            <p className="text-xs text-zinc-400 mt-1">Clique em &quot;Nova despesa&quot; para migrar sua planilha.</p>
+            <p className="text-xs text-zinc-400 mt-1">Clique em &quot;Nova despesa&quot; para adicionar.</p>
           )}
         </div>
       ) : (
@@ -1055,7 +1143,7 @@ function AbaDespesas({
             <tbody className="divide-y divide-zinc-100">
               {filtradas.map((d) => {
                 const venc = new Date(d.vencimento + 'T12:00:00')
-                const isHoje = new Date().toDateString() === venc.toDateString()
+                const isHoje = hoje.toDateString() === venc.toDateString()
                 return (
                   <tr key={d.id} className="transition hover:bg-zinc-50/50">
                     <td className="px-4 py-3">
@@ -1120,15 +1208,19 @@ function AbaDespesas({
 function AbaFluxoCaixa({ fluxoCaixa }: { fluxoCaixa: FluxoCaixaMes[] }) {
   const [exportando, setExportando] = useState(false)
   const agora = new Date()
-  const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`
-  const mesSeis = new Date(agora.getFullYear(), agora.getMonth() - 5, 1)
-  const mesSeisStr = `${mesSeis.getFullYear()}-${String(mesSeis.getMonth() + 1).padStart(2, '0')}`
+  const mesAtual = mesStr(agora)
+  const mesInicioDefault = mesStr(new Date(agora.getFullYear(), agora.getMonth() - 5, 1))
 
-  const [mesInicio, setMesInicio] = useState(mesSeisStr)
+  const [mesInicio, setMesInicio] = useState(mesInicioDefault)
   const [mesFim, setMesFim] = useState(mesAtual)
 
-  const totalReceitas = fluxoCaixa.reduce((s, m) => s + m.receitas, 0)
-  const totalDespesas = fluxoCaixa.reduce((s, m) => s + m.despesas, 0)
+  // Filtra a tabela pelo range selecionado (os mesmos pickers do export)
+  const dadosExibidos = fluxoCaixa.filter(
+    (m) => m.mes >= mesInicio + '-01' && m.mes <= mesFim + '-01',
+  )
+
+  const totalReceitas = dadosExibidos.reduce((s, m) => s + m.receitas, 0)
+  const totalDespesas = dadosExibidos.reduce((s, m) => s + m.despesas, 0)
   const totalResultado = totalReceitas - totalDespesas
 
   async function handleExportar() {
@@ -1153,6 +1245,24 @@ function AbaFluxoCaixa({ fluxoCaixa }: { fluxoCaixa: FluxoCaixaMes[] }) {
 
   return (
     <div className="space-y-6">
+      {/* Seletores de período — controlam tabela E exportação */}
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-600">De</label>
+          <input type="month" value={mesInicio} onChange={(e) => setMesInicio(e.target.value)}
+            className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-600">Até</label>
+          <input type="month" value={mesFim} onChange={(e) => setMesFim(e.target.value)}
+            min={mesInicio}
+            className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+        </div>
+        <p className="text-[11px] text-zinc-400 self-end pb-2">
+          {dadosExibidos.length} mês{dadosExibidos.length !== 1 ? 'es' : ''} exibido{dadosExibidos.length !== 1 ? 's' : ''}
+        </p>
+      </div>
+
       {/* Tabela de fluxo de caixa */}
       <div className="overflow-hidden rounded-2xl border border-zinc-200">
         <table className="w-full text-sm">
@@ -1165,33 +1275,45 @@ function AbaFluxoCaixa({ fluxoCaixa }: { fluxoCaixa: FluxoCaixaMes[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
-            {fluxoCaixa.map((m) => (
-              <tr key={m.mes} className="hover:bg-zinc-50/50 transition">
-                <td className="px-4 py-3 font-medium text-zinc-800 capitalize">{m.label}</td>
-                <td className="px-4 py-3 text-right text-emerald-700 font-medium">
-                  {m.receitas > 0 ? formatBRL(m.receitas) : <span className="text-zinc-300">—</span>}
-                </td>
-                <td className="px-4 py-3 text-right text-red-600 font-medium">
-                  {m.despesas > 0 ? formatBRL(m.despesas) : <span className="text-zinc-300">—</span>}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <span className={`font-semibold ${m.resultado >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                    {m.resultado >= 0 ? '+' : ''}{formatBRL(m.resultado)}
-                  </span>
+            {dadosExibidos.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-sm text-zinc-400">
+                  Nenhum dado para o período selecionado.
                 </td>
               </tr>
-            ))}
+            ) : (
+              dadosExibidos.map((m) => (
+                <tr key={m.mes} className="hover:bg-zinc-50/50 transition">
+                  <td className="px-4 py-3 font-medium text-zinc-800 capitalize">{m.label}</td>
+                  <td className="px-4 py-3 text-right text-emerald-700 font-medium">
+                    {m.receitas > 0 ? formatBRL(m.receitas) : <span className="text-zinc-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-right text-red-600 font-medium">
+                    {m.despesas > 0 ? formatBRL(m.despesas) : <span className="text-zinc-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className={`font-semibold ${m.resultado >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {m.resultado >= 0 ? '+' : ''}{formatBRL(m.resultado)}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-zinc-200 bg-zinc-50">
-              <td className="px-4 py-3 text-xs font-semibold text-zinc-600">Total (6 meses)</td>
-              <td className="px-4 py-3 text-right text-xs font-semibold text-emerald-700">{formatBRL(totalReceitas)}</td>
-              <td className="px-4 py-3 text-right text-xs font-semibold text-red-600">{formatBRL(totalDespesas)}</td>
-              <td className={`px-4 py-3 text-right text-xs font-bold ${totalResultado >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                {totalResultado >= 0 ? '+' : ''}{formatBRL(totalResultado)}
-              </td>
-            </tr>
-          </tfoot>
+          {dadosExibidos.length > 0 && (
+            <tfoot>
+              <tr className="border-t-2 border-zinc-200 bg-zinc-50">
+                <td className="px-4 py-3 text-xs font-semibold text-zinc-600">
+                  Total ({dadosExibidos.length} mês{dadosExibidos.length !== 1 ? 'es' : ''})
+                </td>
+                <td className="px-4 py-3 text-right text-xs font-semibold text-emerald-700">{formatBRL(totalReceitas)}</td>
+                <td className="px-4 py-3 text-right text-xs font-semibold text-red-600">{formatBRL(totalDespesas)}</td>
+                <td className={`px-4 py-3 text-right text-xs font-bold ${totalResultado >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  {totalResultado >= 0 ? '+' : ''}{formatBRL(totalResultado)}
+                </td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
@@ -1202,29 +1324,18 @@ function AbaFluxoCaixa({ fluxoCaixa }: { fluxoCaixa: FluxoCaixaMes[] }) {
       </p>
 
       {/* Export para contabilidade */}
-      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 space-y-4">
+      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 space-y-3">
         <div>
           <p className="text-sm font-semibold text-zinc-800 mb-1">Exportar para Contabilidade</p>
-          <p className="text-xs text-zinc-500">Gera um arquivo CSV com receitas e despesas do período selecionado.</p>
+          <p className="text-xs text-zinc-500">
+            Gera um CSV com receitas e despesas do mesmo período exibido acima.
+          </p>
         </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-600">De</label>
-            <input type="month" value={mesInicio} onChange={(e) => setMesInicio(e.target.value)}
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-600">Até</label>
-            <input type="month" value={mesFim} onChange={(e) => setMesFim(e.target.value)}
-              min={mesInicio}
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
-          </div>
-          <button onClick={handleExportar} disabled={exportando}
-            className="flex items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 transition">
-            {exportando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            {exportando ? 'Gerando...' : 'Exportar CSV'}
-          </button>
-        </div>
+        <button onClick={handleExportar} disabled={exportando || dadosExibidos.length === 0}
+          className="flex items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 transition">
+          {exportando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          {exportando ? 'Gerando...' : `Exportar CSV (${mesInicio} a ${mesFim})`}
+        </button>
       </div>
     </div>
   )

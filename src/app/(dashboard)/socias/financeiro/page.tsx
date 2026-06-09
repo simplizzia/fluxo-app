@@ -26,7 +26,7 @@ export default async function FinanceiroPage() {
       .order('nome')
       .limit(200),
     buscarDespesas(),
-    buscarFluxoCaixa(6),
+    buscarFluxoCaixa(13),
   ])
 
   const visaoGeral = await buscarVisaoGeral(receitas)
