@@ -24,17 +24,20 @@ interface Props {
   marcas: { id: string; nome: string }[]
 }
 
-const CATEGORIAS_TEXTO = [
+const CATEGORIAS_ESTRATEGIA = [
   { value: 'brand_system', label: 'Posicionamento & Marca', placeholder: 'Descreva o posicionamento, diferencial, promessa de marca...' },
   { value: 'personas', label: 'Personas', placeholder: 'Descreva o público-alvo, personas, segmentos...' },
   { value: 'diagnostico', label: 'Diagnóstico', placeholder: 'Diagnóstico de marca, análise digital, concorrência...' },
-  { value: 'parametros', label: 'Parâmetros de Conteúdo', placeholder: 'Tom de voz, pilares, frequência, formatos...' },
-  { value: 'campanhas', label: 'Campanhas', placeholder: 'Plataforma de marca, campanha mestre, estrutura Hero/Hub/Help, ativações do ano...' },
-  { value: 'calendario', label: 'Calendário Editorial', placeholder: 'Calendário mensal aprovado, momentos-chave, ativações por período...' },
   { value: 'outros', label: 'Notas & Observações', placeholder: 'Anotações estratégicas, decisões, histórico...' },
 ]
 
-type SubTab = 'estrategia' | 'identidade' | 'moodboard' | 'aprendizados'
+const CATEGORIAS_CONTEUDO = [
+  { value: 'parametros', label: 'Parâmetros de Conteúdo', placeholder: 'Tom de voz, pilares, frequência, formatos...' },
+  { value: 'campanhas', label: 'Campanhas', placeholder: 'Plataforma de marca, campanha mestre, estrutura Hero/Hub/Help, ativações do ano...' },
+  { value: 'calendario', label: 'Calendário Editorial', placeholder: 'Calendário mensal aprovado, momentos-chave, ativações por período...' },
+]
+
+type SubTab = 'estrategia' | 'conteudo' | 'identidade' | 'moodboard' | 'aprendizados'
 
 export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEditar, insights, marcas }: Props) {
   const [subTab, setSubTab] = useState<SubTab>('estrategia')
@@ -42,6 +45,7 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
 
   const SUB_TABS: { id: SubTab; label: string }[] = [
     { id: 'estrategia', label: 'Estratégia' },
+    { id: 'conteudo', label: 'Conteúdo' },
     { id: 'identidade', label: 'Identidade Visual' },
     { id: 'moodboard', label: 'Moodboard' },
     { id: 'aprendizados', label: 'Aprendizados' },
@@ -109,7 +113,28 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
       {/* Estratégia */}
       {subTab === 'estrategia' && (
         <div className="space-y-4">
-          {CATEGORIAS_TEXTO.map((cat) => {
+          {CATEGORIAS_ESTRATEGIA.map((cat) => {
+            const secao = secoesDaMarca.find((s) => s.categoria === cat.value) ?? null
+            return (
+              <SecaoEditor
+                key={cat.value}
+                clienteId={clienteId}
+                marcaId={marcaAtiva}
+                categoria={cat.value}
+                label={cat.label}
+                placeholder={cat.placeholder}
+                secao={secao}
+                podeEditar={podeEditar}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      {/* Conteúdo */}
+      {subTab === 'conteudo' && (
+        <div className="space-y-4">
+          {CATEGORIAS_CONTEUDO.map((cat) => {
             const secao = secoesDaMarca.find((s) => s.categoria === cat.value) ?? null
             return (
               <SecaoEditor
