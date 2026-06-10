@@ -4055,6 +4055,7 @@ export type Database = {
         | "diagnostico"
         | "parametros"
         | "calendario"
+        | "campanhas"
         | "outros"
       categoria_despesa:
         | "impostos"
@@ -4307,6 +4308,7 @@ export const Constants = {
         "diagnostico",
         "parametros",
         "calendario",
+        "campanhas",
         "outros",
       ],
       categoria_despesa: [

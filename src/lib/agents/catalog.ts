@@ -76,6 +76,21 @@ export const AGENTES: AgenteDef[] = [
     papeisPermitidos: ['socia', 'gestao', 'atendimento'],
     inputsSchema: [{ chave: 'descricao_ativo', label: 'Descrição do ativo a validar', tipo: 'textarea', obrigatorio: true }],
   },
+  {
+    chave: 'brand-system.campanhas',
+    nome: 'Conceito de Campanha',
+    descricao: 'Gera sugestões de brand platform e conceito de campanha mestre com estrutura Hero/Hub/Help e ativações do ano.',
+    time: 'Brand System',
+    timeNumero: 0,
+    padrao: 'C',
+    tipoDemandaSlug: 'conceito-de-campanha',
+    papeisPermitidos: ['socia', 'gestao'],
+    inputsSchema: [
+      { chave: 'marca', label: 'Marca', tipo: 'text', obrigatorio: true },
+      { chave: 'periodo', label: 'Período da campanha', tipo: 'text', obrigatorio: true },
+      { chave: 'contexto', label: 'Diagnóstico e personas resumidos (cole o conteúdo do universo da marca)', tipo: 'textarea', obrigatorio: true },
+    ],
+  },
 
   // ── Time 1: Briefing ──────────────────────────────────────────────────────
   {

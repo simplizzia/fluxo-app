@@ -29,6 +29,8 @@ const CATEGORIAS_TEXTO = [
   { value: 'personas', label: 'Personas', placeholder: 'Descreva o público-alvo, personas, segmentos...' },
   { value: 'diagnostico', label: 'Diagnóstico', placeholder: 'Diagnóstico de marca, análise digital, concorrência...' },
   { value: 'parametros', label: 'Parâmetros de Conteúdo', placeholder: 'Tom de voz, pilares, frequência, formatos...' },
+  { value: 'campanhas', label: 'Campanhas', placeholder: 'Plataforma de marca, campanha mestre, estrutura Hero/Hub/Help, ativações do ano...' },
+  { value: 'calendario', label: 'Calendário Editorial', placeholder: 'Calendário mensal aprovado, momentos-chave, ativações por período...' },
   { value: 'outros', label: 'Notas & Observações', placeholder: 'Anotações estratégicas, decisões, histórico...' },
 ]
 
