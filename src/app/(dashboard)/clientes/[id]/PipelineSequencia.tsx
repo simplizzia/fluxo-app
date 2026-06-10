@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
-  CheckCircle2, Clock, Loader2, Lock, Sparkles, RefreshCw, ChevronDown, ChevronUp, AlertTriangle,
+  CheckCircle2, Clock, Loader2, Lock, Sparkles, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, Play,
 } from 'lucide-react'
 import type { PipelineEtapa } from './onboarding-actions'
 
 // Metadados das etapas (espelha src/lib/onboarding/pipeline.ts — client-safe)
 const ETAPAS_META: Record<string, { label: string; requerInput: boolean; inputLabel?: string }> = {
   personas:             { label: 'Personas', requerInput: false },
-  diagnostico_digital:  { label: 'Diagnóstico Digital', requerInput: true, inputLabel: 'Cole os links das redes sociais, site e o que encontrou (prints/descrições). A Izzi analisa com base nisso.' },
+  diagnostico_digital:  { label: 'Diagnóstico Digital', requerInput: false },
+  analise_concorrencia: { label: 'Análise de Concorrência', requerInput: false },
   posicionamento_marca: { label: 'Posicionamento & Marca', requerInput: false },
   diagnostico_marca:    { label: 'Diagnóstico de Marca', requerInput: false },
   parametros_conteudo:  { label: 'Parâmetros de Conteúdo', requerInput: false },
@@ -44,6 +45,9 @@ export default function PipelineSequencia({ clienteId, etapas, marcas, podeEdita
   // Marcas que têm linhas no pipeline (na ordem de `marcas`)
   const marcasComPipeline = marcas.filter((m) => etapas.some((e) => e.marca_id === m.id))
   const [marcaAtiva, setMarcaAtiva] = useState(marcasComPipeline[0]?.id ?? '')
+  const [gerandoTudo, setGerandoTudo] = useState(false)
+  const [progressoGeracao, setProgressoGeracao] = useState<string | null>(null)
+  const router = useRouter()
 
   if (etapas.length === 0 || marcasComPipeline.length === 0) {
     return (
@@ -66,8 +70,55 @@ export default function PipelineSequencia({ clienteId, etapas, marcas, podeEdita
     return `${aprovadas}/${linhas.length}`
   }
 
+  const pendentes = etapas.filter((e) => e.status === 'pendente' || e.status === 'erro')
+
+  async function gerarTodosPendentes() {
+    if (pendentes.length === 0 || gerandoTudo) return
+    setGerandoTudo(true)
+    for (let i = 0; i < pendentes.length; i++) {
+      const etapa = pendentes[i]
+      const marcaNome = marcas.find((m) => m.id === etapa.marca_id)?.nome ?? ''
+      const etapaMeta = ETAPAS_META[etapa.etapa] ?? { label: etapa.etapa }
+      setProgressoGeracao(`Gerando ${i + 1}/${pendentes.length} — ${marcaNome} · ${etapaMeta.label}…`)
+      await fetch('/api/pipeline/gerar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clienteId, marcaId: etapa.marca_id, etapaKey: etapa.etapa }),
+      })
+    }
+    setGerandoTudo(false)
+    setProgressoGeracao(null)
+    router.refresh()
+  }
+
   return (
     <div className="space-y-4">
+      {/* Cabeçalho com botão Gerar todos */}
+      {podeEditar && pendentes.length > 0 && (
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+          <div className="min-w-0">
+            {gerandoTudo && progressoGeracao ? (
+              <p className="flex items-center gap-2 text-sm text-amber-700">
+                <Loader2 className="h-3.5 w-3.5 flex-none animate-spin" />
+                {progressoGeracao}
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-600">
+                <span className="font-medium">{pendentes.length}</span> etapa{pendentes.length !== 1 ? 's' : ''} pendente{pendentes.length !== 1 ? 's' : ''} em {marcasComPipeline.length} marca{marcasComPipeline.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={gerarTodosPendentes}
+            disabled={gerandoTudo}
+            className="flex flex-none items-center gap-1.5 rounded-xl bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:opacity-50"
+          >
+            {gerandoTudo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            Gerar todos os pendentes
+          </button>
+        </div>
+      )}
+
       {/* Sub-abas por marca */}
       {marcasComPipeline.length > 1 && (
         <div className="flex flex-wrap gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 w-fit">

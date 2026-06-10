@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server'
 import { requirePapel } from '@/lib/dal'
 import { gerarEtapa } from '@/lib/onboarding/pipeline'
 
-export const maxDuration = 60
+export const maxDuration = 120
 
 export async function POST(request: NextRequest) {
   const profile = await requirePapel('socia', 'gestao')

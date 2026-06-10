@@ -19,6 +19,7 @@ export interface EtapaDef {
   subcategoria: string
   requerInput: boolean           // precisa de input manual antes de gerar
   inputLabel?: string
+  maxTokens?: number             // override por etapa (default 4096)
 }
 
 export const ETAPAS_PIPELINE: EtapaDef[] = [
@@ -27,31 +28,42 @@ export const ETAPAS_PIPELINE: EtapaDef[] = [
     agenteChave: 'personas.personas',
     categoria: 'personas', subcategoria: 'personas',
     requerInput: false,
+    maxTokens: 4096,
   },
   {
     key: 'diagnostico_digital', ordem: 2, label: 'Diagnóstico Digital',
     agenteChave: 'diagnostico.digital',
     categoria: 'diagnostico', subcategoria: 'digital',
-    requerInput: true,
-    inputLabel: 'Cole os links das redes sociais, site e o que encontrou (prints/descrições). A Izzi analisa com base nisso.',
+    requerInput: false,
+    maxTokens: 8192,
   },
   {
-    key: 'posicionamento_marca', ordem: 3, label: 'Posicionamento & Marca',
+    key: 'analise_concorrencia', ordem: 3, label: 'Análise de Concorrência',
+    agenteChave: 'analise-concorrencia.analise',
+    categoria: 'diagnostico', subcategoria: 'concorrencia',
+    requerInput: false,
+    maxTokens: 8192,
+  },
+  {
+    key: 'posicionamento_marca', ordem: 4, label: 'Posicionamento & Marca',
     agenteChave: 'brand-system.principal',
     categoria: 'brand_system', subcategoria: 'posicionamento',
     requerInput: false,
+    maxTokens: 4096,
   },
   {
-    key: 'diagnostico_marca', ordem: 4, label: 'Diagnóstico de Marca',
+    key: 'diagnostico_marca', ordem: 5, label: 'Diagnóstico de Marca',
     agenteChave: 'diagnostico-marca.diagnostico',
     categoria: 'diagnostico', subcategoria: 'marca',
     requerInput: false,
+    maxTokens: 8192,
   },
   {
-    key: 'parametros_conteudo', ordem: 5, label: 'Parâmetros de Conteúdo',
+    key: 'parametros_conteudo', ordem: 6, label: 'Parâmetros de Conteúdo',
     agenteChave: 'inteligencia.parametrizador',
     categoria: 'parametros', subcategoria: 'parametros',
     requerInput: false,
+    maxTokens: 4096,
   },
 ]
 
@@ -144,10 +156,36 @@ export async function gerarEtapa(opts: {
     .update({ status: 'gerando', erro: null, updated_at: new Date().toISOString() })
     .eq('cliente_id', clienteId).eq('marca_id', marcaId).eq('etapa', etapaKey)
 
+  // Busca dados da marca para auto-popular inputs de etapas que não requerem input manual
+  let marcaData: { instagram?: string | null; linkedin?: string | null; site?: string | null; concorrentes?: string | null } | null = null
+  if (def.key === 'diagnostico_digital' || def.key === 'analise_concorrencia') {
+    const { data: m } = await service
+      .from('onboarding_marcas')
+      .select('instagram, linkedin, site, concorrentes')
+      .eq('id', marcaId)
+      .single()
+    marcaData = m
+  }
+
   const input: Record<string, unknown> = {
     instrucao: `Gere a etapa "${def.label}" para a marca em foco, com base no contexto já fornecido (briefing geral, briefing da marca e documentos aprovados desta marca).`,
   }
-  if (inputManual) input.presenca_digital = inputManual
+
+  if (def.key === 'diagnostico_digital') {
+    const canais = [
+      marcaData?.instagram ? `Instagram: ${marcaData.instagram}` : null,
+      marcaData?.linkedin  ? `LinkedIn: ${marcaData.linkedin}`   : null,
+      marcaData?.site      ? `Site: ${marcaData.site}`           : null,
+    ].filter(Boolean).join('\n')
+    if (canais) input.canais = canais
+    else if (inputManual) input.canais = inputManual
+  } else if (def.key === 'analise_concorrencia') {
+    if (marcaData?.concorrentes) input.concorrentes = marcaData.concorrentes
+    else if (inputManual) input.concorrentes = inputManual
+  } else {
+    if (inputManual) input.presenca_digital = inputManual
+  }
+
   if (ajuste) input.ajuste_solicitado = ajuste
 
   const result = await executarAgente({
@@ -156,6 +194,7 @@ export async function gerarEtapa(opts: {
     clienteId,
     marcaId,
     input,
+    maxTokens: def.maxTokens ?? 4096,
   })
 
   if (!result.output) {
