@@ -26,6 +26,7 @@ const LoginSchema = z.object({
 export type LoginState = {
   errors?: { email?: string[]; password?: string[] }
   message?: string
+  type?: 'invalid_credentials' | 'rate_limit'
 } | null
 
 // ---------------------------------------------------------------------------
@@ -83,8 +84,7 @@ export async function actionLogin(
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    // Não revelar se o e-mail existe ou não (evita user enumeration)
-    return { message: 'E-mail ou senha incorretos.' }
+    return { message: 'E-mail ou senha incorretos.', type: 'invalid_credentials' }
   }
 
   // 4. Redirecionar para o dashboard (ou para o redirect param se existir)
