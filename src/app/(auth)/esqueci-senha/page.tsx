@@ -7,14 +7,15 @@ export const metadata: Metadata = {
 
 export default function EsqueciSenhaPage() {
   return (
-    <div className="space-y-8">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <div className="w-full max-w-sm space-y-8">
       <div className="text-center">
         <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900">
           <span className="text-lg font-bold text-white">S</span>
         </div>
-        <h1 className="text-xl font-semibold text-zinc-900">Recuperar acesso</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Definir ou recuperar senha</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Informe seu e-mail e enviaremos um link para redefinir a senha
+          Primeiro acesso ou esqueceu a senha? Informe seu e-mail e enviaremos um link.
         </p>
       </div>
 
@@ -28,6 +29,7 @@ export default function EsqueciSenhaPage() {
           Voltar ao login
         </a>
       </p>
+    </div>
     </div>
   )
 }

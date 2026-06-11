@@ -16,7 +16,8 @@ export default async function RedefinirSenhaPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <div className="w-full max-w-sm space-y-8">
       <div className="text-center">
         <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900">
           <span className="text-lg font-bold text-white">S</span>
@@ -30,6 +31,7 @@ export default async function RedefinirSenhaPage() {
       <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
         <RedefinirSenhaForm />
       </div>
+    </div>
     </div>
   )
 }
