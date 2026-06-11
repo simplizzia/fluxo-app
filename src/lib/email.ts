@@ -483,8 +483,7 @@ export function emailConviteApp(opts: {
         Oi, ${primeiroNome}! 👋
       </p>
       <p style="margin:0 0 16px;font-size:14px;color:#4B5563;line-height:1.6">
-        Você foi convidada para acessar a <strong>Simplizzia</strong> como
-        <strong>${papelLabel[opts.papel]}</strong>.
+        Você foi convidada para acessar a <strong>Simplizzia</strong>.
         Clique no botão abaixo para definir sua senha e entrar na plataforma.
       </p>
       ${btn(opts.link, 'Definir senha e acessar →')}

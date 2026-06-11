@@ -95,8 +95,8 @@ const NAV_GROUPS: NavGroupDef[] = [
       { href: '/socias/social',       label: 'Redes Sociais',     iconKey: 'Share2'     },
       { href: '/socias/gamificacao',  label: 'Gamificação',       iconKey: 'Trophy'     },
       { href: '/lgpd',                label: 'LGPD & Segurança', iconKey: 'Shield'     },
-      { href: '/admin/tipos-demanda', label: 'SLA por Demanda',  iconKey: 'Zap'        },
-      { href: '/admin/convidar',      label: 'Convidar usuário', iconKey: 'Settings'   },
+      { href: '/admin/tipos-demanda', label: 'SLA por Demanda', iconKey: 'Zap'     },
+      { href: '/admin/usuarios',      label: 'Usuários',         iconKey: 'Settings' },
     ],
   },
 ]
