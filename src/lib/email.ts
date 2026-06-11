@@ -462,6 +462,43 @@ export function emailOnboardingCliente(opts: {
 // Pessoas & Cultura — Convite de parceiro e avisos em popup
 // ---------------------------------------------------------------------------
 
+/** Convite de acesso ao app para equipe ou cliente. */
+export function emailConviteApp(opts: {
+  nome: string
+  papel: 'socia' | 'gestao' | 'atendimento' | 'executor' | 'cliente'
+  link: string
+}): { subject: string; html: string } {
+  const primeiroNome = opts.nome.split(' ')[0]
+  const papelLabel: Record<typeof opts.papel, string> = {
+    socia: 'sócia',
+    gestao: 'gestão',
+    atendimento: 'atendimento',
+    executor: 'executora',
+    cliente: 'cliente',
+  }
+  return {
+    subject: `Seu acesso à Simplizzia está pronto, ${primeiroNome}!`,
+    html: layout(`
+      <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#1E1E1E">
+        Oi, ${primeiroNome}! 👋
+      </p>
+      <p style="margin:0 0 16px;font-size:14px;color:#4B5563;line-height:1.6">
+        Você foi convidada para acessar a <strong>Simplizzia</strong> como
+        <strong>${papelLabel[opts.papel]}</strong>.
+        Clique no botão abaixo para definir sua senha e entrar na plataforma.
+      </p>
+      ${btn(opts.link, 'Definir senha e acessar →')}
+      <p style="margin:16px 0 0;font-size:12px;color:#9CA3AF;line-height:1.5">
+        Se o botão não funcionar, copie e cole este link no navegador:<br/>
+        <a href="${opts.link}" style="color:#A046C6;word-break:break-all">${opts.link}</a>
+      </p>
+      <p style="margin:12px 0 0;font-size:11px;color:#D1D5DB">
+        Se você não esperava este convite, pode ignorar este email com segurança.
+      </p>
+    `),
+  }
+}
+
 /** E-mail de convite enviado a um parceiro para fazer o onboarding com a Izzi. */
 export function emailConviteParceiro(opts: {
   nome: string

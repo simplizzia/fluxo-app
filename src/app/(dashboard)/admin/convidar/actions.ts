@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { requireSocia } from '@/lib/dal'
 import { createServiceClient } from '@/lib/supabase/server'
+import { enviarEmail, emailConviteApp } from '@/lib/email'
 
 const InviteSchema = z.object({
   nome: z
@@ -28,7 +29,6 @@ export async function actionConvidarUsuario(
   _prevState: InviteState,
   formData: FormData,
 ): Promise<InviteState> {
-  // Somente sócias podem convidar usuários
   const socia = await requireSocia()
 
   const validated = InviteSchema.safeParse({
@@ -43,30 +43,35 @@ export async function actionConvidarUsuario(
 
   const { nome, email, papel } = validated.data
 
-  // Usar service client (admin) para criar o convite
-  // O service role bypassa RLS — usar apenas para operações admin controladas
   const supabase = createServiceClient()
 
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    // Metadados lidos pelo trigger handle_new_user para criar o profile
-    data: {
-      nome,
-      papel,
-      organization_id: socia.organization_id,
+  // Gera o link de convite sem disparar o email do Supabase
+  const { data, error } = await supabase.auth.admin.generateLink({
+    type: 'invite',
+    email,
+    options: {
+      data: {
+        nome,
+        papel,
+        organization_id: socia.organization_id,
+      },
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?type=invite`,
     },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?type=invite`,
   })
 
   if (error) {
-    // Não revelar detalhes do erro ao frontend (ex: email já cadastrado)
-    console.error('[actionConvidarUsuario] invite error:', error.message)
+    console.error('[actionConvidarUsuario] generateLink error:', error.message)
     return {
       message:
         error.message.includes('already registered')
           ? 'Este e-mail já possui um acesso cadastrado.'
-          : 'Erro ao enviar convite. Tente novamente.',
+          : 'Erro ao gerar convite. Tente novamente.',
     }
   }
+
+  const inviteLink = data.properties.action_link
+  const { subject, html } = emailConviteApp({ nome, papel, link: inviteLink })
+  await enviarEmail(email, subject, html)
 
   return { success: true }
 }
