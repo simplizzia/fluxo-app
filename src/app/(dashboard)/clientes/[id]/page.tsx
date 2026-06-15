@@ -14,7 +14,9 @@ import {
 import MarcaTab from './MarcaTab'
 import OnboardingConfig from './OnboardingConfig'
 import PipelineSequencia from './PipelineSequencia'
+import ApresentacoesSection from './ApresentacoesSection'
 import { buscarOnboardingConfig, buscarPipeline } from './onboarding-actions'
+import { actionListarApresentacoes } from './apresentacao-actions'
 import { ClienteNomeEditor } from './ClienteNomeEditor'
 import { ClienteAcoes } from './ClienteAcoes'
 
@@ -41,6 +43,7 @@ export default async function ClienteDetalhePage({ params }: Props) {
     { insights },
     { data: onboardingConfig },
     pipeline,
+    { data: apresentacoes },
   ] = await Promise.all([
     buscarClienteDetalhe(id),
     buscarSecoesMarca(id),
@@ -49,6 +52,7 @@ export default async function ClienteDetalhePage({ params }: Props) {
     buscarInsightsCliente(id),
     buscarOnboardingConfig(id),
     buscarPipeline(id),
+    actionListarApresentacoes(id),
   ])
 
   if (error || !cliente) {
@@ -202,6 +206,18 @@ export default async function ClienteDetalhePage({ params }: Props) {
             etapas={pipeline}
             marcas={(onboardingConfig?.marcas ?? []).map((m) => ({ id: m.id, nome: m.nome }))}
             podeEditar={podeEditar}
+          />
+        </div>
+      )}
+
+      {/* Apresentações web */}
+      {podeEditar && (
+        <div>
+          <h2 className="mb-4 font-display text-lg font-bold text-ink">Apresentações</h2>
+          <ApresentacoesSection
+            clienteId={id}
+            apresentacoes={apresentacoes ?? []}
+            appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ''}
           />
         </div>
       )}

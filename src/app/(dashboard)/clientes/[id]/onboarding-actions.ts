@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase/server'
 import { requirePapel } from '@/lib/dal'
 import { enviarEmail, emailOnboardingCliente } from '@/lib/email'
+import { gerarModo3 } from '@/lib/onboarding/geradores'
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -44,6 +45,7 @@ export interface OnboardingMarca {
   concorrentes: string | null
   contexto_estrategico: string | null
   cenario_atual: string | null
+  notas_complementares: string | null
   ordem: number
   status: 'pending' | 'done'
   briefing_output: string | null
@@ -95,7 +97,7 @@ export async function buscarOnboardingConfig(
       .select(`
         id, nome, publico, site, instagram, linkedin,
         posicionamento_atual, concorrentes, contexto_estrategico,
-        cenario_atual, ordem, status, briefing_output, briefing_salvo_em
+        cenario_atual, notas_complementares, ordem, status, briefing_output, briefing_salvo_em
       `)
       .eq('token', session.token)
       .order('ordem', { ascending: true }),
@@ -348,4 +350,93 @@ export async function actionEnviarLinkOnboarding(
 
   revalidatePath(`/clientes/${clienteId}`)
   return {}
+}
+
+// ---------------------------------------------------------------------------
+// actionSalvarNotasComplementares — salva notas por marca (substitui reunião)
+// ---------------------------------------------------------------------------
+
+export async function actionSalvarNotasComplementares(
+  clienteId: string,
+  marcaId: string,
+  notas: string,
+): Promise<{ error?: string }> {
+  await requirePapel('socia', 'gestao', 'atendimento')
+  const service = createServiceClient()
+
+  // Garante que a marca pertence a este cliente (via token da sessão)
+  const { data: sessao } = await service
+    .from('onboarding_clientes')
+    .select('token')
+    .eq('cliente_id', clienteId)
+    .maybeSingle()
+
+  if (!sessao?.token) return { error: 'Sessão de onboarding não encontrada.' }
+
+  const { error } = await service
+    .from('onboarding_marcas')
+    .update({ notas_complementares: notas || null })
+    .eq('id', marcaId)
+    .eq('token', sessao.token)
+
+  if (error) return { error: 'Erro ao salvar: ' + error.message }
+  revalidatePath(`/clientes/${clienteId}`)
+  return {}
+}
+
+// ---------------------------------------------------------------------------
+// actionGerarModo3SemReuniao — gera Briefing Completo usando notas complementares
+// ---------------------------------------------------------------------------
+
+export async function actionGerarModo3SemReuniao(
+  clienteId: string,
+): Promise<{ error?: string; ok?: boolean }> {
+  await requirePapel('socia', 'gestao')
+  const service = createServiceClient()
+
+  const { data: cliente } = await service
+    .from('clientes')
+    .select('organization_id')
+    .eq('id', clienteId)
+    .single()
+
+  if (!cliente) return { error: 'Cliente não encontrado.' }
+
+  const { data: sessao } = await service
+    .from('onboarding_clientes')
+    .select('token')
+    .eq('cliente_id', clienteId)
+    .maybeSingle()
+
+  if (!sessao?.token) return { error: 'Sessão de onboarding não encontrada.' }
+
+  const { data: marcas } = await service
+    .from('onboarding_marcas')
+    .select('nome, notas_complementares')
+    .eq('token', sessao.token)
+    .not('notas_complementares', 'is', null)
+    .order('ordem', { ascending: true })
+
+  const marcasComNotas = ((marcas ?? []) as { nome: string; notas_complementares: string | null }[])
+    .filter((m) => m.notas_complementares?.trim())
+  if (marcasComNotas.length === 0) {
+    return { error: 'Preencha as notas complementares de pelo menos uma marca antes de gerar.' }
+  }
+
+  const transcricao = marcasComNotas
+    .map((m) => `## Notas complementares — ${m.nome}\n${m.notas_complementares}`)
+    .join('\n\n---\n\n')
+
+  const resultado = await gerarModo3({
+    clienteId,
+    organizationId: cliente.organization_id,
+    transcricao,
+  })
+
+  if (!resultado.ok) {
+    return { error: resultado.agenteErro ?? resultado.insertErro ?? 'Erro ao gerar.' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
 }

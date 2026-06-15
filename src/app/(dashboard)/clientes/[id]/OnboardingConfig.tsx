@@ -8,6 +8,8 @@ import {
   actionEditarMarca,
   actionRemoverMarca,
   actionEnviarLinkOnboarding,
+  actionSalvarNotasComplementares,
+  actionGerarModo3SemReuniao,
   type OnboardingConfig,
   type OnboardingMarca,
 } from './onboarding-actions'
@@ -140,6 +142,7 @@ function MarcasSection({
         concorrentes:        novaForm.concorrentes ?? null,
         contexto_estrategico: novaForm.contexto_estrategico ?? null,
         cenario_atual:       novaForm.cenario_atual ?? null,
+        notas_complementares: null,
       })
       if (res.error) { setErro(res.error); return }
       setNovaForm({})
@@ -209,10 +212,15 @@ function MarcasSection({
 function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: string }) {
   const [removePending, startRemove] = useTransition()
   const [editPending, startEdit]     = useTransition()
-  const [open, setOpen]     = useState(false)
-  const [editando, setEditando] = useState(false)
-  const [erro, setErro]     = useState('')
-  const [form, setForm]     = useState({
+  const [notasPending, startNotas]   = useTransition()
+  const [open, setOpen]       = useState(false)
+  const [notasOpen, setNotasOpen] = useState(!!marca.notas_complementares)
+  const [editando, setEditando]   = useState(false)
+  const [erro, setErro]       = useState('')
+  const [notasSalvas, setNotasSalvas] = useState(false)
+  const [notasErro, setNotasErro] = useState('')
+  const [notas, setNotas]     = useState(marca.notas_complementares ?? '')
+  const [form, setForm]       = useState({
     nome:                marca.nome,
     publico:             marca.publico ?? '',
     site:                marca.site ?? '',
@@ -223,6 +231,16 @@ function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: str
     contexto_estrategico: marca.contexto_estrategico ?? '',
     cenario_atual:       marca.cenario_atual ?? '',
   })
+
+  function handleSalvarNotas() {
+    setNotasErro('')
+    startNotas(async () => {
+      const res = await actionSalvarNotasComplementares(clienteId, marca.id, notas)
+      if (res.error) { setNotasErro(res.error); return }
+      setNotasSalvas(true)
+      setTimeout(() => setNotasSalvas(false), 2000)
+    })
+  }
 
   function handleSalvarEdicao() {
     if (!form.nome.trim()) return
@@ -329,6 +347,42 @@ function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: str
           )}
         </div>
       )}
+
+      {/* Notas complementares (sem reunião) */}
+      <div className="mt-2 border-t border-zinc-100 pt-2">
+        <button
+          onClick={() => setNotasOpen((o) => !o)}
+          className="flex w-full items-center gap-1.5 text-left text-xs text-zinc-400 hover:text-zinc-600"
+        >
+          {notasOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          <span className="font-medium">
+            Respostas sem reunião
+            {notas.trim() && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" />}
+          </span>
+        </button>
+
+        {notasOpen && (
+          <div className="mt-2 space-y-2">
+            <textarea
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
+              rows={5}
+              placeholder="Cole aqui as respostas ou notas que substituem a reunião de kick-off para esta marca..."
+              className="w-full resize-none rounded-xl border border-zinc-200 px-3 py-2.5 text-xs outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10"
+            />
+            {notasErro && <p className="text-xs text-red-500">{notasErro}</p>}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSalvarNotas}
+                disabled={notasPending}
+                className="rounded-xl bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+              >
+                {notasSalvas ? '✓ Salvo' : notasPending ? 'Salvando...' : 'Salvar notas'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -410,7 +464,30 @@ function EnvioSection({
 // Status dos documentos gerados (Modo 2 e Modo 3)
 // ---------------------------------------------------------------------------
 
-function ModosSection({ modos }: { modos: { modo2: boolean; modo3: boolean } }) {
+function ModosSection({
+  clienteId,
+  modos,
+  marcas,
+}: {
+  clienteId: string
+  modos: { modo2: boolean; modo3: boolean }
+  marcas: OnboardingMarca[]
+}) {
+  const [gerando, startGerar] = useTransition()
+  const [geradoOk, setGeradoOk] = useState(false)
+  const [gerarErro, setGerarErro] = useState('')
+
+  const temNotasComplementares = marcas.some((m) => m.notas_complementares?.trim())
+
+  function handleGerarSemReuniao() {
+    setGerarErro('')
+    startGerar(async () => {
+      const res = await actionGerarModo3SemReuniao(clienteId)
+      if (res.error) { setGerarErro(res.error); return }
+      setGeradoOk(true)
+    })
+  }
+
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-4">
       <p className="mb-3 text-sm font-semibold text-zinc-800">Documentos gerados pela Izzi</p>
@@ -437,12 +514,12 @@ function ModosSection({ modos }: { modos: { modo2: boolean; modo3: boolean } }) 
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           {modos.modo3
-            ? <CheckCircle2 className="h-4 w-4 flex-none text-green-500" />
-            : <Hourglass className="h-4 w-4 flex-none text-zinc-300" />
+            ? <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-green-500" />
+            : <Hourglass className="mt-0.5 h-4 w-4 flex-none text-zinc-300" />
           }
-          <div>
+          <div className="flex-1 min-w-0">
             <p className={`text-sm font-medium ${modos.modo3 ? 'text-zinc-800' : 'text-zinc-400'}`}>
               Briefing Completo (Modo 3)
             </p>
@@ -451,9 +528,27 @@ function ModosSection({ modos }: { modos: { modo2: boolean; modo3: boolean } }) 
                 ? 'Gerado automaticamente — disponível em Posicionamento & Marca'
                 : 'Aguardando reunião de kickoff (importar notas Gemini do Meet)'}
             </p>
+
+            {/* Botão de gerar sem reunião — aparece quando há notas e Modo 3 ainda não foi gerado */}
+            {!modos.modo3 && !geradoOk && temNotasComplementares && (
+              <div className="mt-2">
+                <button
+                  onClick={handleGerarSemReuniao}
+                  disabled={gerando}
+                  className="flex items-center gap-1.5 rounded-xl border border-brand/30 bg-brand-light px-3 py-1.5 text-xs font-medium text-brand transition hover:bg-brand/10 disabled:opacity-50"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  {gerando ? 'Gerando Briefing Completo...' : 'Gerar Briefing Completo sem reunião'}
+                </button>
+                {gerarErro && <p className="mt-1 text-xs text-red-500">{gerarErro}</p>}
+              </div>
+            )}
+            {geradoOk && (
+              <p className="mt-1 text-xs text-green-600">✓ Briefing Completo gerado com sucesso!</p>
+            )}
           </div>
           {modos.modo3 && (
-            <span className="ml-auto flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
+            <span className="flex-none flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
               <FileText className="h-3 w-3" /> Gerado
             </span>
           )}
@@ -514,8 +609,12 @@ export default function OnboardingConfig({ clienteId, emailCliente, config, appU
           appUrl={appUrl}
         />
       )}
-      {config?.status === 'done' && config.modos && (
-        <ModosSection modos={config.modos} />
+      {config?.modos && (
+        <ModosSection
+          clienteId={clienteId}
+          modos={config.modos}
+          marcas={config.marcas ?? []}
+        />
       )}
     </div>
   )

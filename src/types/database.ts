@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -367,6 +367,111 @@ export type Database = {
           },
         ]
       }
+      apresentacao_slides: {
+        Row: {
+          apresentacao_id: string
+          conteudo: Json
+          created_at: string
+          id: string
+          ordem: number
+          organization_id: string
+          tipo: Database["public"]["Enums"]["tipo_slide"]
+          updated_at: string
+        }
+        Insert: {
+          apresentacao_id: string
+          conteudo?: Json
+          created_at?: string
+          id?: string
+          ordem: number
+          organization_id: string
+          tipo: Database["public"]["Enums"]["tipo_slide"]
+          updated_at?: string
+        }
+        Update: {
+          apresentacao_id?: string
+          conteudo?: Json
+          created_at?: string
+          id?: string
+          ordem?: number
+          organization_id?: string
+          tipo?: Database["public"]["Enums"]["tipo_slide"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apresentacao_slides_apresentacao_id_fkey"
+            columns: ["apresentacao_id"]
+            isOneToOne: false
+            referencedRelation: "apresentacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apresentacao_slides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apresentacoes: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          slug: string
+          status: Database["public"]["Enums"]["status_apresentacao"]
+          tema: Json
+          titulo: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          slug: string
+          status?: Database["public"]["Enums"]["status_apresentacao"]
+          tema?: Json
+          titulo: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["status_apresentacao"]
+          tema?: Json
+          titulo?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apresentacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apresentacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aprovacoes: {
         Row: {
           aprovado_por: string
@@ -499,6 +604,75 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_parceiros: {
+        Row: {
+          created_at: string
+          criado_por: string | null
+          custo_estimado: number | null
+          data_prevista: string | null
+          descricao: string | null
+          destinatario_tipo: string
+          gerado_por_ia: boolean
+          id: string
+          observacoes: string | null
+          organization_id: string
+          parceiro_ids: string[] | null
+          status: Database["public"]["Enums"]["status_atividade"]
+          tipo: Database["public"]["Enums"]["tipo_atividade"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por?: string | null
+          custo_estimado?: number | null
+          data_prevista?: string | null
+          descricao?: string | null
+          destinatario_tipo?: string
+          gerado_por_ia?: boolean
+          id?: string
+          observacoes?: string | null
+          organization_id: string
+          parceiro_ids?: string[] | null
+          status?: Database["public"]["Enums"]["status_atividade"]
+          tipo?: Database["public"]["Enums"]["tipo_atividade"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string | null
+          custo_estimado?: number | null
+          data_prevista?: string | null
+          descricao?: string | null
+          destinatario_tipo?: string
+          gerado_por_ia?: boolean
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          parceiro_ids?: string[] | null
+          status?: Database["public"]["Enums"]["status_atividade"]
+          tipo?: Database["public"]["Enums"]["tipo_atividade"]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_parceiros_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_parceiros_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
             referencedColumns: ["id"]
           },
         ]
@@ -755,6 +929,102 @@ export type Database = {
           {
             foreignKeyName: "avaliacoes_colaborador_registrado_por_fkey"
             columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avisos_equipe: {
+        Row: {
+          agendado_para: string | null
+          conteudo: string
+          created_at: string
+          criado_por: string
+          destinatarios: string
+          id: string
+          imagem_url: string | null
+          link_label: string | null
+          link_url: string | null
+          organization_id: string
+          parceiro_ids: string[] | null
+          publicado_em: string | null
+          titulo: string
+        }
+        Insert: {
+          agendado_para?: string | null
+          conteudo: string
+          created_at?: string
+          criado_por: string
+          destinatarios?: string
+          id?: string
+          imagem_url?: string | null
+          link_label?: string | null
+          link_url?: string | null
+          organization_id: string
+          parceiro_ids?: string[] | null
+          publicado_em?: string | null
+          titulo: string
+        }
+        Update: {
+          agendado_para?: string | null
+          conteudo?: string
+          created_at?: string
+          criado_por?: string
+          destinatarios?: string
+          id?: string
+          imagem_url?: string | null
+          link_label?: string | null
+          link_url?: string | null
+          organization_id?: string
+          parceiro_ids?: string[] | null
+          publicado_em?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_equipe_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avisos_equipe_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avisos_visualizacoes: {
+        Row: {
+          aviso_id: string
+          user_id: string
+          visualizado_em: string
+        }
+        Insert: {
+          aviso_id: string
+          user_id: string
+          visualizado_em?: string
+        }
+        Update: {
+          aviso_id?: string
+          user_id?: string
+          visualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_visualizacoes_aviso_id_fkey"
+            columns: ["aviso_id"]
+            isOneToOne: false
+            referencedRelation: "avisos_equipe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avisos_visualizacoes_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1357,6 +1627,74 @@ export type Database = {
           },
         ]
       }
+      financeiro_despesas: {
+        Row: {
+          ativo: boolean
+          categoria: Database["public"]["Enums"]["categoria_despesa"]
+          ciclo: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          competencia: string | null
+          comprovante_path: string | null
+          created_at: string
+          descricao: string
+          fornecedor: string | null
+          id: string
+          observacoes: string | null
+          organization_id: string
+          pago_em: string | null
+          recorrente: boolean
+          status: string
+          updated_at: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["categoria_despesa"]
+          ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          competencia?: string | null
+          comprovante_path?: string | null
+          created_at?: string
+          descricao: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id: string
+          pago_em?: string | null
+          recorrente?: boolean
+          status?: string
+          updated_at?: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["categoria_despesa"]
+          ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
+          competencia?: string | null
+          comprovante_path?: string | null
+          created_at?: string
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          pago_em?: string | null
+          recorrente?: boolean
+          status?: string
+          updated_at?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_despesas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_documentos: {
         Row: {
           cliente_id: string | null
@@ -1468,74 +1806,6 @@ export type Database = {
             columns: ["receita_id"]
             isOneToOne: false
             referencedRelation: "financeiro_receitas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      financeiro_despesas: {
-        Row: {
-          ativo: boolean
-          categoria: Database["public"]["Enums"]["categoria_despesa"]
-          ciclo: Database["public"]["Enums"]["ciclo_cobranca"] | null
-          competencia: string | null
-          comprovante_path: string | null
-          created_at: string
-          descricao: string
-          fornecedor: string | null
-          id: string
-          observacoes: string | null
-          organization_id: string
-          pago_em: string | null
-          recorrente: boolean
-          status: string
-          updated_at: string
-          valor: number
-          vencimento: string
-        }
-        Insert: {
-          ativo?: boolean
-          categoria?: Database["public"]["Enums"]["categoria_despesa"]
-          ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
-          competencia?: string | null
-          comprovante_path?: string | null
-          created_at?: string
-          descricao: string
-          fornecedor?: string | null
-          id?: string
-          observacoes?: string | null
-          organization_id: string
-          pago_em?: string | null
-          recorrente?: boolean
-          status?: string
-          updated_at?: string
-          valor: number
-          vencimento: string
-        }
-        Update: {
-          ativo?: boolean
-          categoria?: Database["public"]["Enums"]["categoria_despesa"]
-          ciclo?: Database["public"]["Enums"]["ciclo_cobranca"] | null
-          competencia?: string | null
-          comprovante_path?: string | null
-          created_at?: string
-          descricao?: string
-          fornecedor?: string | null
-          id?: string
-          observacoes?: string | null
-          organization_id?: string
-          pago_em?: string | null
-          recorrente?: boolean
-          status?: string
-          updated_at?: string
-          valor?: number
-          vencimento?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "financeiro_despesas_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
             referencedColumns: ["id"]
           },
         ]
@@ -1770,6 +2040,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "identidade_visual_ativos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "identidade_visual_ativos_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -1876,6 +2153,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "integracao_social_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "integracao_social_criado_por_fkey"
             columns: ["criado_por"]
@@ -2204,41 +2488,6 @@ export type Database = {
           },
         ]
       }
-      mrr_historico: {
-        Row: {
-          clientes_ativos: number
-          created_at: string
-          id: string
-          mes: string
-          mrr: number
-          organization_id: string
-        }
-        Insert: {
-          clientes_ativos?: number
-          created_at?: string
-          id?: string
-          mes: string
-          mrr?: number
-          organization_id: string
-        }
-        Update: {
-          clientes_ativos?: number
-          created_at?: string
-          id?: string
-          mes?: string
-          mrr?: number
-          organization_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mrr_historico_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       metricas_sociais: {
         Row: {
           alcance: number
@@ -2361,7 +2610,49 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "moodboard_items_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "moodboard_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mrr_historico: {
+        Row: {
+          clientes_ativos: number
+          created_at: string
+          id: string
+          mes: string
+          mrr: number
+          organization_id: string
+        }
+        Insert: {
+          clientes_ativos?: number
+          created_at?: string
+          id?: string
+          mes: string
+          mrr?: number
+          organization_id: string
+        }
+        Update: {
+          clientes_ativos?: number
+          created_at?: string
+          id?: string
+          mes?: string
+          mrr?: number
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mrr_historico_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizacoes"
@@ -2498,66 +2789,6 @@ export type Database = {
           },
         ]
       }
-      onboarding_pipeline: {
-        Row: {
-          ajustes: string | null
-          aprovado_em: string | null
-          aprovado_por: string | null
-          cliente_id: string
-          created_at: string
-          erro: string | null
-          etapa: string
-          gerado_em: string | null
-          id: string
-          input_manual: string | null
-          marca_id: string | null
-          ordem: number
-          organization_id: string
-          output: string | null
-          run_id: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          ajustes?: string | null
-          aprovado_em?: string | null
-          aprovado_por?: string | null
-          cliente_id: string
-          created_at?: string
-          erro?: string | null
-          etapa: string
-          gerado_em?: string | null
-          id?: string
-          input_manual?: string | null
-          marca_id?: string | null
-          ordem: number
-          organization_id: string
-          output?: string | null
-          run_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          ajustes?: string | null
-          aprovado_em?: string | null
-          aprovado_por?: string | null
-          cliente_id?: string
-          created_at?: string
-          erro?: string | null
-          etapa?: string
-          gerado_em?: string | null
-          id?: string
-          input_manual?: string | null
-          marca_id?: string | null
-          ordem?: number
-          organization_id?: string
-          output?: string | null
-          run_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       onboarding_feedback: {
         Row: {
           clarity_score: number | null
@@ -2618,6 +2849,7 @@ export type Database = {
           instagram: string | null
           linkedin: string | null
           nome: string
+          notas_complementares: string | null
           ordem: number
           organization_id: string
           posicionamento_atual: string | null
@@ -2637,6 +2869,7 @@ export type Database = {
           instagram?: string | null
           linkedin?: string | null
           nome: string
+          notas_complementares?: string | null
           ordem?: number
           organization_id: string
           posicionamento_atual?: string | null
@@ -2656,6 +2889,7 @@ export type Database = {
           instagram?: string | null
           linkedin?: string | null
           nome?: string
+          notas_complementares?: string | null
           ordem?: number
           organization_id?: string
           posicionamento_atual?: string | null
@@ -2720,6 +2954,136 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "onboarding_clientes"
             referencedColumns: ["token"]
+          },
+        ]
+      }
+      onboarding_pipeline: {
+        Row: {
+          ajustes: string | null
+          aprovado_em: string | null
+          aprovado_por: string | null
+          cliente_id: string
+          created_at: string
+          erro: string | null
+          etapa: string
+          gerado_em: string | null
+          id: string
+          input_manual: string | null
+          marca_id: string | null
+          ordem: number
+          organization_id: string
+          output: string | null
+          run_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ajustes?: string | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cliente_id: string
+          created_at?: string
+          erro?: string | null
+          etapa: string
+          gerado_em?: string | null
+          id?: string
+          input_manual?: string | null
+          marca_id?: string | null
+          ordem: number
+          organization_id: string
+          output?: string | null
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ajustes?: string | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cliente_id?: string
+          created_at?: string
+          erro?: string | null
+          etapa?: string
+          gerado_em?: string | null
+          id?: string
+          input_manual?: string | null
+          marca_id?: string | null
+          ordem?: number
+          organization_id?: string
+          output?: string | null
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_pipeline_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_pipeline_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_pipeline_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_pipeline_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          organization_id: string
+          parceiro_email: string
+          parceiro_nome: string
+          status: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          organization_id: string
+          parceiro_email: string
+          parceiro_nome: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          organization_id?: string
+          parceiro_email?: string
+          parceiro_nome?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2822,6 +3186,88 @@ export type Database = {
             columns: ["tipo_demanda_id"]
             isOneToOne: false
             referencedRelation: "tipos_demanda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parceiros_perfil: {
+        Row: {
+          cidade: string | null
+          colaborador_id: string | null
+          created_at: string
+          dados_pessoais: Json
+          dados_profissionais: Json
+          datas_importantes: Json
+          email: string
+          estado_civil: string | null
+          id: string
+          nascimento: string | null
+          nome: string
+          onboarding_completado_em: string | null
+          organization_id: string
+          perfil_markdown: string | null
+          token_id: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          colaborador_id?: string | null
+          created_at?: string
+          dados_pessoais?: Json
+          dados_profissionais?: Json
+          datas_importantes?: Json
+          email: string
+          estado_civil?: string | null
+          id?: string
+          nascimento?: string | null
+          nome: string
+          onboarding_completado_em?: string | null
+          organization_id: string
+          perfil_markdown?: string | null
+          token_id?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          colaborador_id?: string | null
+          created_at?: string
+          dados_pessoais?: Json
+          dados_profissionais?: Json
+          datas_importantes?: Json
+          email?: string
+          estado_civil?: string | null
+          id?: string
+          nascimento?: string | null
+          nome?: string
+          onboarding_completado_em?: string | null
+          organization_id?: string
+          perfil_markdown?: string | null
+          token_id?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parceiros_perfil_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_mapa"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parceiros_perfil_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parceiros_perfil_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tokens"
             referencedColumns: ["id"]
           },
         ]
@@ -3614,6 +4060,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "universo_marca_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "universo_marca_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -3621,215 +4074,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      atividades_parceiros: {
-        Row: {
-          id: string
-          organization_id: string
-          titulo: string
-          descricao: string | null
-          tipo: Database["public"]["Enums"]["tipo_atividade"]
-          status: Database["public"]["Enums"]["status_atividade"]
-          destinatario_tipo: string
-          parceiro_ids: string[] | null
-          data_prevista: string | null
-          custo_estimado: number | null
-          observacoes: string | null
-          gerado_por_ia: boolean
-          criado_por: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          titulo: string
-          descricao?: string | null
-          tipo?: Database["public"]["Enums"]["tipo_atividade"]
-          status?: Database["public"]["Enums"]["status_atividade"]
-          destinatario_tipo?: string
-          parceiro_ids?: string[] | null
-          data_prevista?: string | null
-          custo_estimado?: number | null
-          observacoes?: string | null
-          gerado_por_ia?: boolean
-          criado_por?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          titulo?: string
-          descricao?: string | null
-          tipo?: Database["public"]["Enums"]["tipo_atividade"]
-          status?: Database["public"]["Enums"]["status_atividade"]
-          destinatario_tipo?: string
-          parceiro_ids?: string[] | null
-          data_prevista?: string | null
-          custo_estimado?: number | null
-          observacoes?: string | null
-          gerado_por_ia?: boolean
-          criado_por?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      avisos_equipe: {
-        Row: {
-          id: string
-          organization_id: string
-          criado_por: string
-          titulo: string
-          conteudo: string
-          imagem_url: string | null
-          link_url: string | null
-          link_label: string | null
-          destinatarios: string
-          parceiro_ids: string[] | null
-          agendado_para: string | null
-          publicado_em: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          criado_por: string
-          titulo: string
-          conteudo: string
-          imagem_url?: string | null
-          link_url?: string | null
-          link_label?: string | null
-          destinatarios?: string
-          parceiro_ids?: string[] | null
-          agendado_para?: string | null
-          publicado_em?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          criado_por?: string
-          titulo?: string
-          conteudo?: string
-          imagem_url?: string | null
-          link_url?: string | null
-          link_label?: string | null
-          destinatarios?: string
-          parceiro_ids?: string[] | null
-          agendado_para?: string | null
-          publicado_em?: string | null
-        }
-        Relationships: []
-      }
-      avisos_visualizacoes: {
-        Row: {
-          aviso_id: string
-          user_id: string
-          visualizado_em: string
-        }
-        Insert: {
-          aviso_id: string
-          user_id: string
-          visualizado_em?: string
-        }
-        Update: {
-          aviso_id?: string
-          user_id?: string
-          visualizado_em?: string
-        }
-        Relationships: []
-      }
-      onboarding_tokens: {
-        Row: {
-          id: string
-          organization_id: string
-          token: string
-          parceiro_email: string
-          parceiro_nome: string
-          status: string
-          created_at: string
-          expires_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          token?: string
-          parceiro_email: string
-          parceiro_nome: string
-          status?: string
-          created_at?: string
-          expires_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          token?: string
-          parceiro_email?: string
-          parceiro_nome?: string
-          status?: string
-          expires_at?: string
-        }
-        Relationships: []
-      }
-      parceiros_perfil: {
-        Row: {
-          id: string
-          organization_id: string
-          colaborador_id: string | null
-          token_id: string | null
-          nome: string
-          email: string
-          whatsapp: string | null
-          cidade: string | null
-          nascimento: string | null
-          estado_civil: string | null
-          dados_pessoais: Json
-          dados_profissionais: Json
-          datas_importantes: Json
-          perfil_markdown: string | null
-          onboarding_completado_em: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          colaborador_id?: string | null
-          token_id?: string | null
-          nome: string
-          email: string
-          whatsapp?: string | null
-          cidade?: string | null
-          nascimento?: string | null
-          estado_civil?: string | null
-          dados_pessoais?: Json
-          dados_profissionais?: Json
-          datas_importantes?: Json
-          perfil_markdown?: string | null
-          onboarding_completado_em?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          colaborador_id?: string | null
-          token_id?: string | null
-          nome?: string
-          email?: string
-          whatsapp?: string | null
-          cidade?: string | null
-          nascimento?: string | null
-          estado_civil?: string | null
-          dados_pessoais?: Json
-          dados_profissionais?: Json
-          datas_importantes?: Json
-          perfil_markdown?: string | null
-          onboarding_completado_em?: string | null
-          updated_at?: string
-        }
-        Relationships: []
       }
       whatsapp_mensagens: {
         Row: {
@@ -4049,14 +4293,6 @@ export type Database = {
         | "apresentacao"
         | "relatorio"
         | "outros"
-      categoria_universo:
-        | "brand_system"
-        | "personas"
-        | "diagnostico"
-        | "parametros"
-        | "calendario"
-        | "campanhas"
-        | "outros"
       categoria_despesa:
         | "impostos"
         | "colaboradores"
@@ -4065,7 +4301,20 @@ export type Database = {
         | "marketing"
         | "escritorio"
         | "outros"
-      ciclo_cobranca: "mensal" | "trimestral" | "semestral" | "anual" | "projeto"
+      categoria_universo:
+        | "brand_system"
+        | "personas"
+        | "diagnostico"
+        | "parametros"
+        | "calendario"
+        | "campanhas"
+        | "outros"
+      ciclo_cobranca:
+        | "mensal"
+        | "trimestral"
+        | "semestral"
+        | "anual"
+        | "projeto"
       decisao_aprovacao: "aprovado" | "reprovado"
       entidade_pii: "card" | "arquivo" | "reuniao" | "proposta" | "contrato"
       origem_prospect: "indicacao" | "prospeccao_ativa" | "inbound" | "evento"
@@ -4090,6 +4339,13 @@ export type Database = {
         | "contrato_assinado"
         | "cliente_ativo"
         | "perdido"
+      status_apresentacao: "rascunho" | "publicada" | "arquivada"
+      status_atividade:
+        | "ideia"
+        | "planejada"
+        | "em_andamento"
+        | "executada"
+        | "cancelada"
       status_card:
         | "aguardando_info"
         | "a_fazer"
@@ -4105,6 +4361,14 @@ export type Database = {
       status_relatorio: "gerando" | "rascunho" | "aprovado" | "enviado"
       sub_papel_contato: "responsavel" | "colaborador" | "observador"
       tipo_arquivo: "entrega" | "referencia" | "revisao"
+      tipo_atividade:
+        | "atividade_equipe"
+        | "brinde"
+        | "mimo_individual"
+        | "reconhecimento"
+        | "evento"
+        | "celebracao"
+        | "outro"
       tipo_ativo_visual:
         | "logo"
         | "paleta"
@@ -4140,21 +4404,15 @@ export type Database = {
         | "action_item_pendente"
         | "geral"
         | "publicacao_falhou"
-      tipo_atividade:
-        | "atividade_equipe"
-        | "brinde"
-        | "mimo_individual"
-        | "reconhecimento"
-        | "evento"
-        | "celebracao"
-        | "outro"
       tipo_reuniao: "prospeccao" | "cliente" | "interna" | "onboarding"
-      status_atividade:
-        | "ideia"
-        | "planejada"
-        | "em_andamento"
-        | "executada"
-        | "cancelada"
+      tipo_slide:
+        | "capa"
+        | "titulo_secao"
+        | "texto"
+        | "imagem"
+        | "texto_imagem"
+        | "metricas"
+        | "citacao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4302,15 +4560,6 @@ export const Constants = {
         "relatorio",
         "outros",
       ],
-      categoria_universo: [
-        "brand_system",
-        "personas",
-        "diagnostico",
-        "parametros",
-        "calendario",
-        "campanhas",
-        "outros",
-      ],
       categoria_despesa: [
         "impostos",
         "colaboradores",
@@ -4318,6 +4567,15 @@ export const Constants = {
         "fornecedores",
         "marketing",
         "escritorio",
+        "outros",
+      ],
+      categoria_universo: [
+        "brand_system",
+        "personas",
+        "diagnostico",
+        "parametros",
+        "calendario",
+        "campanhas",
         "outros",
       ],
       ciclo_cobranca: ["mensal", "trimestral", "semestral", "anual", "projeto"],
@@ -4347,6 +4605,14 @@ export const Constants = {
         "cliente_ativo",
         "perdido",
       ],
+      status_apresentacao: ["rascunho", "publicada", "arquivada"],
+      status_atividade: [
+        "ideia",
+        "planejada",
+        "em_andamento",
+        "executada",
+        "cancelada",
+      ],
       status_card: [
         "aguardando_info",
         "a_fazer",
@@ -4363,6 +4629,15 @@ export const Constants = {
       status_relatorio: ["gerando", "rascunho", "aprovado", "enviado"],
       sub_papel_contato: ["responsavel", "colaborador", "observador"],
       tipo_arquivo: ["entrega", "referencia", "revisao"],
+      tipo_atividade: [
+        "atividade_equipe",
+        "brinde",
+        "mimo_individual",
+        "reconhecimento",
+        "evento",
+        "celebracao",
+        "outro",
+      ],
       tipo_ativo_visual: [
         "logo",
         "paleta",
@@ -4402,22 +4677,15 @@ export const Constants = {
         "geral",
         "publicacao_falhou",
       ],
-      tipo_atividade: [
-        "atividade_equipe",
-        "brinde",
-        "mimo_individual",
-        "reconhecimento",
-        "evento",
-        "celebracao",
-        "outro",
-      ],
       tipo_reuniao: ["prospeccao", "cliente", "interna", "onboarding"],
-      status_atividade: [
-        "ideia",
-        "planejada",
-        "em_andamento",
-        "executada",
-        "cancelada",
+      tipo_slide: [
+        "capa",
+        "titulo_secao",
+        "texto",
+        "imagem",
+        "texto_imagem",
+        "metricas",
+        "citacao",
       ],
     },
   },
