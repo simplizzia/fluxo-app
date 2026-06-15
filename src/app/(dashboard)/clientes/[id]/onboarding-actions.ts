@@ -423,9 +423,12 @@ export async function actionGerarModo3SemReuniao(
     return { error: 'Preencha as notas complementares de pelo menos uma marca antes de gerar.' }
   }
 
-  const transcricao = marcasComNotas
-    .map((m) => `## Notas complementares — ${m.nome}\n${m.notas_complementares}`)
-    .join('\n\n---\n\n')
+  const transcricao = [
+    '⚠️ ATENÇÃO: Não houve reunião de kickoff presencial. As informações abaixo substituem a transcrição.',
+    'Use-as para preencher todas as seções do Briefing Completo — inclusive "Diretrizes Estratégicas" e "Próximos Passos" — sem mencionar reunião ou validação presencial.',
+    '',
+    ...marcasComNotas.map((m) => `## Notas complementares — ${m.nome}\n${m.notas_complementares}`),
+  ].join('\n\n---\n\n')
 
   const resultado = await gerarModo3({
     clienteId,
