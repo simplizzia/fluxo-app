@@ -36,11 +36,16 @@ jobs:
     needs: lint-and-typecheck
 
     env:
-      # Valores fictícios só para o build não falhar por falta de env vars
+      # Valores fictícios só para o build não falhar por falta de env vars.
+      # Vários módulos instanciam clients (Resend, Anthropic) no topo do arquivo,
+      # então precisam de uma chave não-vazia já na coleta de page data do build.
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder_anon_key
       NEXT_PUBLIC_APP_URL: https://app.simplizzia.com.br
       NEXT_PUBLIC_ORGANIZATION_ID: 00000000-0000-0000-0000-000000000001
+      SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
+      RESEND_API_KEY: re_placeholder_ci
+      ANTHROPIC_API_KEY: sk-ant-placeholder-ci
 
     steps:
       - name: Checkout

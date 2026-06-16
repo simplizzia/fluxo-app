@@ -4,7 +4,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { Lock, Calendar, User, Timer } from 'lucide-react'
 import { PriorityBadge } from '@/components/shared/PriorityBadge'
-import { slaParaCard, slaLabel } from '@/lib/sla'
+import { slaParaCard, slaLabel, slaChipClass } from '@/lib/sla'
 import type { BoardCard } from '@/app/(dashboard)/board/actions'
 
 interface KanbanCardProps {
@@ -55,12 +55,7 @@ export function KanbanCard({ card, isOverlay = false, onDetalhes, isSelected = f
     sla_iniciado_em: card.sla_iniciado_em,
     tipo: card.tipo,
   })
-  const slaBadgeClass =
-    slaInfo?.status === 'violado'
-      ? 'bg-red-50 text-red-600 font-medium'
-      : slaInfo?.status === 'atencao'
-        ? 'bg-amber-50 text-amber-600'
-        : null
+  const slaBadgeClass = slaInfo ? slaChipClass(slaInfo.status) : null
 
   return (
     <div
@@ -93,6 +88,7 @@ export function KanbanCard({ card, isOverlay = false, onDetalhes, isSelected = f
             type="checkbox"
             checked={isSelected}
             onChange={() => {}}
+            aria-label={`Selecionar demanda: ${card.titulo}`}
             className="h-3.5 w-3.5 cursor-pointer rounded accent-brand"
           />
         </div>

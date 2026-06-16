@@ -42,3 +42,9 @@ body {
 .label-form {
   @apply block text-[11px] font-medium text-zinc-500 mb-1;
 }
+
+/* ── Animação de entrada de toasts ─────────────────────────── */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
