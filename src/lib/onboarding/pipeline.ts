@@ -71,6 +71,56 @@ export function etapaDef(key: string): EtapaDef | undefined {
   return ETAPAS_PIPELINE.find((e) => e.key === key)
 }
 
+// ---------------------------------------------------------------------------
+// continuarTextoMarkdown — emenda um documento markdown cortado por limite de
+// tamanho, SEM regerar. Usa um prompt mínimo de continuação: o modelo apenas
+// devolve a parte que falta, a partir de onde o texto parou. Compartilhado
+// entre as etapas do pipeline e o Briefing Geral (Modo 3).
+// ---------------------------------------------------------------------------
+
+const MARCADOR_COMPLETO = '[DOCUMENTO_COMPLETO]'
+
+export async function continuarTextoMarkdown(
+  textoAtual: string,
+  maxTokens = 2000,
+): Promise<{ continuacao?: string; completo?: boolean; error?: string }> {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+
+  let continuacaoRaw = ''
+  try {
+    const resp = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: maxTokens,
+      system:
+        'Você CONTINUA documentos markdown que foram cortados no fim por limite de tamanho. ' +
+        'Você recebe o documento atual e devolve APENAS a continuação — começando exatamente na palavra/frase onde o texto parou. ' +
+        'NUNCA repita, reescreva ou reintroduza nada que já está no documento. NUNCA recomece do título. ' +
+        'Mantenha o mesmo formato markdown, tom e idioma. ' +
+        `Se o documento já está visivelmente completo e bem encerrado, responda APENAS com ${MARCADOR_COMPLETO} e nada mais.`,
+      messages: [{
+        role: 'user',
+        content: `Documento atual (continue a partir do final dele):\n\n<documento>\n${textoAtual}\n</documento>\n\nDevolva apenas a continuação a partir de onde o texto para (ou ${MARCADOR_COMPLETO} se já estiver completo).`,
+      }],
+    })
+    continuacaoRaw = resp.content
+      .filter((b) => b.type === 'text')
+      .map((b) => (b as { type: 'text'; text: string }).text)
+      .join('')
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Falha ao continuar' }
+  }
+
+  // Documento já estava completo
+  if (continuacaoRaw.includes(MARCADOR_COMPLETO) && continuacaoRaw.replace(MARCADOR_COMPLETO, '').trim().length < 40) {
+    return { completo: true }
+  }
+
+  const continuacao = continuacaoRaw.replace(MARCADOR_COMPLETO, '').trimStart()
+  if (!continuacao) return { completo: true }
+
+  return { continuacao }
+}
+
 // Marcas configuradas do cliente (via onboarding)
 async function getMarcas(clienteId: string): Promise<{ id: string; nome: string }[]> {
   const service = createServiceClient()
@@ -235,7 +285,7 @@ export async function continuarEtapa(opts: {
   marcaId: string
   etapaKey: string
 }): Promise<{ ok: boolean; error?: string; completo?: boolean }> {
-  const { clienteId, organizationId, marcaId, etapaKey } = opts
+  const { clienteId, marcaId, etapaKey } = opts
   const def = etapaDef(etapaKey)
   if (!def) return { ok: false, error: 'Etapa inválida' }
 
@@ -249,43 +299,12 @@ export async function continuarEtapa(opts: {
 
   if (!row?.output) return { ok: false, error: 'Nada para continuar.' }
 
-  // IMPORTANTE: a continuação NÃO usa o prompt do agente (que mandaria refazer o
-  // documento inteiro). Usa um prompt mínimo de "continuação de texto", então o
+  // A continuação NÃO usa o prompt do agente (que mandaria refazer o documento
+  // inteiro). O helper usa um prompt mínimo de "continuação de texto", então o
   // modelo apenas emenda de onde parou — sem reiniciar nem repetir.
-  const MARCADOR_COMPLETO = '[DOCUMENTO_COMPLETO]'
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-
-  let continuacaoRaw = ''
-  try {
-    const resp = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 2000,
-      system:
-        'Você CONTINUA documentos markdown que foram cortados no fim por limite de tamanho. ' +
-        'Você recebe o documento atual e devolve APENAS a continuação — começando exatamente na palavra/frase onde o texto parou. ' +
-        'NUNCA repita, reescreva ou reintroduza nada que já está no documento. NUNCA recomece do título. ' +
-        'Mantenha o mesmo formato markdown, tom e idioma. ' +
-        `Se o documento já está visivelmente completo e bem encerrado, responda APENAS com ${MARCADOR_COMPLETO} e nada mais.`,
-      messages: [{
-        role: 'user',
-        content: `Documento atual (continue a partir do final dele):\n\n<documento>\n${row.output}\n</documento>\n\nDevolva apenas a continuação a partir de onde o texto para (ou ${MARCADOR_COMPLETO} se já estiver completo).`,
-      }],
-    })
-    continuacaoRaw = resp.content
-      .filter((b) => b.type === 'text')
-      .map((b) => (b as { type: 'text'; text: string }).text)
-      .join('')
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Falha ao continuar' }
-  }
-
-  // Documento já estava completo
-  if (continuacaoRaw.includes(MARCADOR_COMPLETO) && continuacaoRaw.replace(MARCADOR_COMPLETO, '').trim().length < 40) {
-    return { ok: true, completo: true }
-  }
-
-  const continuacao = continuacaoRaw.replace(MARCADOR_COMPLETO, '').trimStart()
-  if (!continuacao) return { ok: true, completo: true }
+  const { continuacao, completo, error } = await continuarTextoMarkdown(row.output)
+  if (error) return { ok: false, error }
+  if (completo || !continuacao) return { ok: true, completo: true }
 
   const sep = row.output.endsWith('\n') ? '' : '\n'
   const novoOutput = `${row.output}${sep}${continuacao}`

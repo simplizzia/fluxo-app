@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase/server'
 import { requirePapel } from '@/lib/dal'
 import { enviarEmail, emailOnboardingCliente } from '@/lib/email'
-import { gerarModo3 } from '@/lib/onboarding/geradores'
+import { gerarModo3, continuarBriefingGeral } from '@/lib/onboarding/geradores'
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -442,4 +442,33 @@ export async function actionGerarModo3SemReuniao(
 
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// actionContinuarBriefingGeral — emenda o Briefing Completo truncado
+// ---------------------------------------------------------------------------
+
+export async function actionContinuarBriefingGeral(
+  clienteId: string,
+): Promise<{ error?: string; ok?: boolean; completo?: boolean }> {
+  await requirePapel('socia', 'gestao')
+  const service = createServiceClient()
+
+  const { data: cliente } = await service
+    .from('clientes')
+    .select('organization_id')
+    .eq('id', clienteId)
+    .single()
+
+  if (!cliente) return { error: 'Cliente não encontrado.' }
+
+  const r = await continuarBriefingGeral({
+    clienteId,
+    organizationId: cliente.organization_id,
+  })
+
+  if (!r.ok) return { error: r.error ?? 'Erro ao continuar.' }
+
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true, completo: r.completo }
 }

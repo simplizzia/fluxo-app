@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
   Edit2, Check, X, ExternalLink,
-  Brain, Loader2, TrendingUp, TrendingDown, Lightbulb,
+  Brain, Loader2, TrendingUp, TrendingDown, Lightbulb, ArrowDownToLine,
 } from 'lucide-react'
 import { actionSalvarSecaoMarca } from './actions'
+import { actionContinuarBriefingGeral } from './onboarding-actions'
 import type { InsightAgente } from './actions'
 import MoodboardSection from './MoodboardSection'
 import IdentidadeSection from './IdentidadeSection'
@@ -67,7 +69,9 @@ export default function MarcaTab({ clienteId, secoes, ativos, moodboard, podeEdi
       {docsCliente.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Documentos gerais do cliente</p>
-          {docsCliente.map((doc) => <DocumentoIzzi key={doc.id} secao={doc} />)}
+          {docsCliente.map((doc) => (
+            <DocumentoIzzi key={doc.id} secao={doc} clienteId={clienteId} podeEditar={podeEditar} />
+          ))}
         </div>
       )}
 
@@ -402,29 +406,136 @@ const MD_COMPONENTS = {
   hr: () => <hr className="my-4 border-zinc-100" />,
 }
 
-function DocumentoIzzi({ secao }: { secao: SecaoMarca }) {
-  const [aberto, setAberto] = useState(false)
-  const texto = (secao.conteudo?.texto as string) ?? ''
+function DocumentoIzzi({
+  secao,
+  clienteId,
+  podeEditar,
+}: {
+  secao: SecaoMarca
+  clienteId: string
+  podeEditar: boolean
+}) {
+  const router = useRouter()
+  const textoAtual = (secao.conteudo?.texto as string) ?? ''
   const isPrep = secao.subcategoria === 'prep_reuniao'
+  const isBriefing = secao.subcategoria === 'briefing_completo'
+
+  const [aberto, setAberto] = useState(false)
+  const [editando, setEditando] = useState(false)
+  const [texto, setTexto] = useState(textoAtual)
+  const [erro, setErro] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [salvando, startSalvar] = useTransition()
+  const [continuando, startContinuar] = useTransition()
+
+  function abrirEdicao() {
+    setTexto(textoAtual)
+    setErro(null)
+    setAviso(null)
+    setEditando(true)
+    setAberto(true)
+  }
+
+  function handleSalvar() {
+    setErro(null)
+    startSalvar(async () => {
+      const res = await actionSalvarSecaoMarca({
+        clienteId,
+        marcaId: null,
+        categoria: secao.categoria,
+        subcategoria: secao.subcategoria ?? undefined,
+        titulo: secao.titulo,
+        conteudo: { texto },
+        visivelParaCliente: secao.visivelParaCliente,
+      })
+      if (res.error) { setErro(res.error); return }
+      setEditando(false)
+      router.refresh()
+    })
+  }
+
+  function handleContinuar() {
+    setErro(null)
+    setAviso(null)
+    startContinuar(async () => {
+      const res = await actionContinuarBriefingGeral(clienteId)
+      if (res.error) { setErro(res.error); return }
+      if (res.completo) { setAviso('O briefing já parece completo — nada a acrescentar.'); return }
+      router.refresh()
+    })
+  }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-violet-200 bg-violet-50/40">
-      <button
-        onClick={() => setAberto((a) => !a)}
-        className="flex w-full items-center justify-between px-5 py-3.5 text-left"
-      >
-        <div className="flex items-center gap-2">
+      <div className="flex w-full items-center justify-between px-5 py-3.5">
+        <button onClick={() => setAberto((a) => !a)} className="flex items-center gap-2 text-left">
           <Brain className="h-4 w-4 text-violet-500" />
           <span className="text-sm font-semibold text-zinc-800">{secao.titulo}</span>
           <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">
             {isPrep ? 'Modo 2 · Prep de Reunião' : 'Modo 3 · Briefing Completo'}
           </span>
+        </button>
+        <div className="flex items-center gap-3">
+          {podeEditar && !editando && (
+            <>
+              {isBriefing && (
+                <button
+                  onClick={handleContinuar}
+                  disabled={continuando}
+                  className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 disabled:opacity-50"
+                  title="Emenda o briefing de onde parou, caso tenha sido cortado"
+                >
+                  {continuando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowDownToLine className="h-3.5 w-3.5" />}
+                  {continuando ? 'Continuando...' : 'Continuar'}
+                </button>
+              )}
+              <button
+                onClick={abrirEdicao}
+                className="flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-800"
+              >
+                <Edit2 className="h-3.5 w-3.5" /> Editar
+              </button>
+            </>
+          )}
+          <button onClick={() => setAberto((a) => !a)} className="text-xs text-zinc-400">
+            {aberto ? 'Recolher' : 'Abrir'}
+          </button>
         </div>
-        <span className="text-xs text-zinc-400">{aberto ? 'Recolher' : 'Abrir'}</span>
-      </button>
+      </div>
+
+      {aviso && <p className="px-5 pb-2 text-xs text-amber-600">{aviso}</p>}
+      {erro && <p className="px-5 pb-2 text-xs text-red-500">{erro}</p>}
+
       {aberto && (
         <div className="border-t border-violet-100 bg-white px-5 py-4 text-sm leading-relaxed text-zinc-700">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD_COMPONENTS}>{texto}</ReactMarkdown>
+          {editando ? (
+            <div className="space-y-3">
+              <textarea
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                rows={24}
+                className="w-full rounded-lg border border-zinc-300 p-3 font-mono text-xs leading-relaxed focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSalvar}
+                  disabled={salvando}
+                  className="flex items-center gap-1 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {salvando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  Salvar
+                </button>
+                <button
+                  onClick={() => { setEditando(false); setErro(null) }}
+                  className="flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+                >
+                  <X className="h-3.5 w-3.5" /> Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD_COMPONENTS}>{textoAtual}</ReactMarkdown>
+          )}
         </div>
       )}
     </div>

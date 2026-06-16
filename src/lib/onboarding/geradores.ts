@@ -1,7 +1,7 @@
 import 'server-only'
 import { createServiceClient } from '@/lib/supabase/server'
 import { executarAgente } from '@/lib/agents/executor'
-import { inicializarPipeline } from '@/lib/onboarding/pipeline'
+import { inicializarPipeline, continuarTextoMarkdown } from '@/lib/onboarding/pipeline'
 
 // ---------------------------------------------------------------------------
 // gerarModo2 — Prep de Reunião (auto-gerado ao concluir onboarding)
@@ -213,15 +213,17 @@ export async function gerarModo3(opts: {
     ].filter(Boolean).join('\n')
 
     if (!briefingRows?.length) {
-      // Fallback: buscar direto das onboarding_marcas (contexto da equipe + briefing)
+      // Fallback: buscar direto das onboarding_marcas (contexto da equipe + briefing).
+      // Inclui marcas sem briefing_output (ex.: cliente não fez o chat da Izzi, mas a
+      // equipe preencheu posicionamento/estratégia na aba de marcas) — esse contexto
+      // precisa ser cruzado com a transcrição da reunião.
       const { data: marcas } = await service
         .from('onboarding_marcas')
-        .select('nome, publico, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, briefing_output')
+        .select('nome, publico, posicionamento_atual, concorrentes, contexto_estrategico, cenario_atual, notas_complementares, briefing_output')
         .eq('token', onboardingSession.token)
         .order('ordem', { ascending: true })
 
       briefingsTexto = (marcas ?? [])
-        .filter((m) => m.briefing_output)
         .map((m) => {
           const contextoEquipe = [
             m.publico ? `Público: ${m.publico}` : null,
@@ -230,12 +232,18 @@ export async function gerarModo3(opts: {
             m.contexto_estrategico ? `Contexto estratégico: ${m.contexto_estrategico}` : null,
             m.cenario_atual ? `Cenário atual: ${m.cenario_atual}` : null,
           ].filter(Boolean).join('\n')
-          return [
+          const blocos = [
             `## ${m.nome}`,
             contextoEquipe ? `### Contexto levantado pela equipe\n${contextoEquipe}` : null,
-            `### Briefing da conversa\n${m.briefing_output}`,
-          ].filter(Boolean).join('\n\n')
+            m.notas_complementares?.trim()
+              ? `### Notas complementares da equipe\n${m.notas_complementares}`
+              : null,
+            m.briefing_output ? `### Briefing da conversa\n${m.briefing_output}` : null,
+          ].filter(Boolean)
+          // Pula marcas sem nenhum conteúdo além do título
+          return blocos.length > 1 ? blocos.join('\n\n') : null
         })
+        .filter(Boolean)
         .join('\n\n---\n\n')
     }
   }
@@ -260,6 +268,10 @@ export async function gerarModo3(opts: {
       briefings: briefingsTexto || '(briefings não disponíveis)',
       transcricao,
     },
+    // Mantém o default (4096 ≈ ~27s) para a 1ª passada caber no limite de 60s da
+    // função. Em clientes com várias marcas o doc é longo e corta no meio — o
+    // restante é emendado pelo botão "Continuar" (continuarBriefingGeral), em
+    // chunks que também respeitam o timeout. Não subir aqui: 8192 leva ~90s.
   })
 
   if (!result.output) {
@@ -314,4 +326,47 @@ export async function gerarModo3(opts: {
     insertErro: insertError?.message,
     ok: !insertError,
   }
+}
+
+// ---------------------------------------------------------------------------
+// continuarBriefingGeral — emenda o Briefing Completo (Modo 3) quando o texto
+// foi cortado por limite de tamanho, sem regerar tudo do zero.
+// ---------------------------------------------------------------------------
+
+export async function continuarBriefingGeral(opts: {
+  clienteId: string
+  organizationId: string
+}): Promise<{ ok: boolean; completo?: boolean; error?: string; outputLen?: number }> {
+  const { clienteId, organizationId } = opts
+  const service = createServiceClient()
+
+  const { data: row } = await service
+    .from('universo_marca')
+    .select('id, conteudo')
+    .eq('cliente_id', clienteId)
+    .eq('organization_id', organizationId)
+    .eq('subcategoria', 'briefing_completo')
+    .is('marca_id', null)
+    .maybeSingle()
+
+  if (!row) return { ok: false, error: 'Briefing Completo não encontrado.' }
+
+  const textoAtual = (row.conteudo as { texto?: string })?.texto ?? ''
+  if (!textoAtual) return { ok: false, error: 'Briefing vazio.' }
+
+  const { continuacao, completo, error } = await continuarTextoMarkdown(textoAtual, 4096)
+  if (error) return { ok: false, error }
+  if (completo || !continuacao) return { ok: true, completo: true, outputLen: textoAtual.length }
+
+  const sep = textoAtual.endsWith('\n') ? '' : '\n'
+  const novoTexto = `${textoAtual}${sep}${continuacao}`
+
+  const { error: eUp } = await service
+    .from('universo_marca')
+    .update({ conteudo: { texto: novoTexto } })
+    .eq('id', row.id)
+
+  if (eUp) return { ok: false, error: eUp.message }
+
+  return { ok: true, outputLen: novoTexto.length }
 }
