@@ -195,22 +195,20 @@ function EtapaCard({
     }
   }
 
-  const StatusBadge = () => {
-    const map: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-      pendente:             { label: 'Pendente', cls: 'bg-zinc-100 text-zinc-500', icon: <Clock className="h-3 w-3" /> },
-      gerando:              { label: 'Gerando…', cls: 'bg-amber-100 text-amber-700', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
-      aguardando_aprovacao: { label: 'Aguardando aprovação', cls: 'bg-violet-100 text-violet-700', icon: <Sparkles className="h-3 w-3" /> },
-      aprovado:             { label: 'Aprovado', cls: 'bg-green-100 text-green-700', icon: <CheckCircle2 className="h-3 w-3" /> },
-      ajuste_solicitado:    { label: 'Ajustando…', cls: 'bg-amber-100 text-amber-700', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
-      erro:                 { label: 'Erro', cls: 'bg-red-100 text-red-600', icon: <AlertTriangle className="h-3 w-3" /> },
-    }
-    const cfg = map[etapa.status] ?? map.pendente
-    return (
-      <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${cfg.cls}`}>
-        {cfg.icon} {cfg.label}
-      </span>
-    )
+  const statusMap: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
+    pendente:             { label: 'Pendente', cls: 'bg-zinc-100 text-zinc-500', icon: <Clock className="h-3 w-3" /> },
+    gerando:              { label: 'Gerando…', cls: 'bg-amber-100 text-amber-700', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
+    aguardando_aprovacao: { label: 'Aguardando aprovação', cls: 'bg-violet-100 text-violet-700', icon: <Sparkles className="h-3 w-3" /> },
+    aprovado:             { label: 'Aprovado', cls: 'bg-green-100 text-green-700', icon: <CheckCircle2 className="h-3 w-3" /> },
+    ajuste_solicitado:    { label: 'Ajustando…', cls: 'bg-amber-100 text-amber-700', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
+    erro:                 { label: 'Erro', cls: 'bg-red-100 text-red-600', icon: <AlertTriangle className="h-3 w-3" /> },
   }
+  const statusCfg = statusMap[etapa.status] ?? statusMap.pendente
+  const statusBadge = (
+    <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusCfg.cls}`}>
+      {statusCfg.icon} {statusCfg.label}
+    </span>
+  )
 
   const temOutput = !!etapa.output
   // Os controles são guiados por "tem texto?" + loading — nunca pelo status do
@@ -233,7 +231,7 @@ function EtapaCard({
             : <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-violet-100 text-[10px] font-bold text-violet-700">{etapa.ordem}</span>
           }
           <span className={`text-sm font-semibold ${bloqueada ? 'text-zinc-400' : 'text-zinc-800'}`}>{meta.label}</span>
-          <StatusBadge />
+          {statusBadge}
         </div>
         {temOutput && (
           <button onClick={() => setAberto((a) => !a)} className="flex-none text-xs text-zinc-400 hover:text-zinc-600">
