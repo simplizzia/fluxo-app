@@ -143,6 +143,8 @@ function MarcasSection({
         contexto_estrategico: novaForm.contexto_estrategico ?? null,
         cenario_atual:       novaForm.cenario_atual ?? null,
         notas_complementares: null,
+        nivel:               'standalone',
+        marca_pai_id:        null,
       })
       if (res.error) { setErro(res.error); return }
       setNovaForm({})

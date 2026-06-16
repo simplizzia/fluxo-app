@@ -2,6 +2,7 @@ import 'server-only'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServiceClient } from '@/lib/supabase/server'
 import { executarAgente } from '@/lib/agents/executor'
+import { fetchSiteContent, fetchInstagramData } from '@/lib/onboarding/enrich'
 
 // ---------------------------------------------------------------------------
 // Definição das etapas do pipeline pós-kickoff (ordem por dependência).
@@ -229,6 +230,16 @@ export async function gerarEtapa(opts: {
     ].filter(Boolean).join('\n')
     if (canais) input.canais = canais
     else if (inputManual) input.canais = inputManual
+
+    // Enriquecimento com dados reais — busca em paralelo para minimizar latência
+    const [conteudoSite, dadosInstagram] = await Promise.all([
+      marcaData?.site
+        ? fetchSiteContent(marcaData.site)
+        : Promise.resolve('(sem site cadastrado para esta marca)'),
+      fetchInstagramData(clienteId, organizationId),
+    ])
+    input.conteudo_site     = conteudoSite
+    input.dados_performance = dadosInstagram
   } else if (def.key === 'analise_concorrencia') {
     if (marcaData?.concorrentes) input.concorrentes = marcaData.concorrentes
     else if (inputManual) input.concorrentes = inputManual

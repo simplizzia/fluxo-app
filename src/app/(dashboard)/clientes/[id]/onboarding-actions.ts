@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase/server'
 import { requirePapel } from '@/lib/dal'
 import { enviarEmail, emailOnboardingCliente } from '@/lib/email'
-import { gerarModo3, continuarBriefingGeral } from '@/lib/onboarding/geradores'
+import { gerarModo3, continuarBriefingGeral, continuarBriefingMarca } from '@/lib/onboarding/geradores'
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -37,6 +37,8 @@ export async function buscarPipeline(clienteId: string): Promise<PipelineEtapa[]
 export interface OnboardingMarca {
   id: string
   nome: string
+  nivel: 'mae' | 'sub' | 'standalone'
+  marca_pai_id: string | null
   publico: string | null
   site: string | null
   instagram: string | null
@@ -95,7 +97,7 @@ export async function buscarOnboardingConfig(
     service
       .from('onboarding_marcas')
       .select(`
-        id, nome, publico, site, instagram, linkedin,
+        id, nome, nivel, marca_pai_id, publico, site, instagram, linkedin,
         posicionamento_atual, concorrentes, contexto_estrategico,
         cenario_atual, notas_complementares, ordem, status, briefing_output, briefing_salvo_em
       `)
@@ -469,6 +471,38 @@ export async function actionContinuarBriefingGeral(
 
   if (!r.ok) return { error: r.error ?? 'Erro ao continuar.' }
 
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true, completo: r.completo }
+}
+
+// ---------------------------------------------------------------------------
+// actionContinuarBriefingMarca — emenda o briefing de uma marca específica
+// ---------------------------------------------------------------------------
+
+export async function actionContinuarBriefingMarca(
+  clienteId: string,
+  marcaId: string,
+): Promise<{ error?: string; ok?: boolean; completo?: boolean }> {
+  await requirePapel('socia', 'gestao')
+  const service = createServiceClient()
+
+  const { data: cliente } = await service
+    .from('clientes')
+    .select('organization_id')
+    .eq('id', clienteId)
+    .single()
+
+  if (!cliente) return { error: 'Cliente não encontrado.' }
+
+  const r = await continuarBriefingMarca({
+    clienteId,
+    organizationId: cliente.organization_id,
+    marcaId,
+  })
+
+  if (!r.ok) return { error: r.error ?? 'Erro ao continuar.' }
+
+  revalidatePath(`/clientes/${clienteId}/marcas/${marcaId}`)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true, completo: r.completo }
 }

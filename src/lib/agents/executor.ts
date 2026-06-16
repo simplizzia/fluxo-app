@@ -77,8 +77,12 @@ async function buildContextoCliente(
       }
     }
 
-    // Seções do universo de marca: documentos de nível cliente (marca_id null,
-    // ex: Briefing Geral) + os da marca em foco. Sem marca, traz tudo do cliente.
+    // Seções do universo de marca.
+    // Quando há marca em foco: inclui docs da marca + da marca mãe (se sub-marca)
+    // + docs de nível cliente que não misturam conteúdo de marcas (perfil_cliente,
+    // prep_reuniao). O briefing_completo monolítico é excluído intencionalmente
+    // para evitar contaminação cruzada entre marcas irmãs.
+    // Sem marca: traz tudo do cliente.
     let query = service
       .from('universo_marca')
       .select('categoria, titulo, conteudo, marca_id')
@@ -86,7 +90,24 @@ async function buildContextoCliente(
       .eq('organization_id', organizationId)
 
     if (marcaId) {
-      query = query.or(`marca_id.is.null,marca_id.eq.${marcaId}`)
+      // Verifica se a marca tem uma marca mãe (hierarquia)
+      const { data: marcaHierarquia } = await service
+        .from('onboarding_marcas')
+        .select('marca_pai_id')
+        .eq('id', marcaId)
+        .maybeSingle()
+
+      const idsRelevantes = [marcaId]
+      if (marcaHierarquia?.marca_pai_id) {
+        idsRelevantes.push(marcaHierarquia.marca_pai_id)
+      }
+
+      // Inclui: docs das marcas relevantes (marca + mãe) + perfil e prep do cliente
+      // Exclui: briefing_completo (monolítico com todas as marcas misturadas)
+      const idsStr = idsRelevantes.join(',')
+      query = query.or(
+        `marca_id.in.(${idsStr}),and(marca_id.is.null,subcategoria.in.(perfil_cliente,prep_reuniao))`,
+      )
     }
 
     const { data: secoes } = await query.order('categoria')

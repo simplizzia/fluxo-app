@@ -2848,6 +2848,8 @@ export type Database = {
           id: string
           instagram: string | null
           linkedin: string | null
+          marca_pai_id: string | null
+          nivel: string
           nome: string
           notas_complementares: string | null
           ordem: number
@@ -2868,6 +2870,8 @@ export type Database = {
           id?: string
           instagram?: string | null
           linkedin?: string | null
+          marca_pai_id?: string | null
+          nivel?: string
           nome: string
           notas_complementares?: string | null
           ordem?: number
@@ -2888,6 +2892,8 @@ export type Database = {
           id?: string
           instagram?: string | null
           linkedin?: string | null
+          marca_pai_id?: string | null
+          nivel?: string
           nome?: string
           notas_complementares?: string | null
           ordem?: number
@@ -2899,6 +2905,13 @@ export type Database = {
           token?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "onboarding_marcas_marca_pai_id_fkey"
+            columns: ["marca_pai_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "onboarding_marcas_organization_id_fkey"
             columns: ["organization_id"]

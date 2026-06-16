@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ChevronLeft, BarChart2, Heart, Kanban, Archive } from 'lucide-react'
+import { ChevronLeft, BarChart2, Heart, Kanban, Archive, Tag, ChevronRight, Layers } from 'lucide-react'
 import { getCurrentProfile } from '@/lib/dal'
 import { UsageBarra } from '@/components/plano/UsageBarra'
 import { ScoreChip } from '@/components/cs/ScoreBadge'
@@ -9,13 +9,11 @@ import {
   buscarSecoesMarca,
   buscarAtivosVisuais,
   buscarMoodboard,
-  buscarInsightsCliente,
 } from './actions'
-import MarcaTab from './MarcaTab'
 import OnboardingConfig from './OnboardingConfig'
 import PipelineSequencia from './PipelineSequencia'
 import ApresentacoesSection from './ApresentacoesSection'
-import { buscarOnboardingConfig, buscarPipeline } from './onboarding-actions'
+import { buscarOnboardingConfig, buscarPipeline, type OnboardingMarca } from './onboarding-actions'
 import { actionListarApresentacoes } from './apresentacao-actions'
 import { ClienteNomeEditor } from './ClienteNomeEditor'
 import { ClienteAcoes } from './ClienteAcoes'
@@ -40,7 +38,6 @@ export default async function ClienteDetalhePage({ params }: Props) {
     { secoes },
     { ativos },
     { items: moodboard },
-    { insights },
     { data: onboardingConfig },
     pipeline,
     { data: apresentacoes },
@@ -49,7 +46,6 @@ export default async function ClienteDetalhePage({ params }: Props) {
     buscarSecoesMarca(id),
     buscarAtivosVisuais(id),
     buscarMoodboard(id),
-    buscarInsightsCliente(id),
     buscarOnboardingConfig(id),
     buscarPipeline(id),
     actionListarApresentacoes(id),
@@ -222,19 +218,145 @@ export default async function ClienteDetalhePage({ params }: Props) {
         </div>
       )}
 
-      {/* Universo da Marca */}
-      <div>
-        <h2 className="mb-4 font-display text-lg font-bold text-ink">Universo da Marca</h2>
-        <MarcaTab
-          clienteId={id}
-          secoes={secoes ?? []}
-          ativos={ativos ?? []}
-          moodboard={moodboard ?? []}
-          podeEditar={podeEditar}
-          insights={insights ?? []}
-          marcas={(onboardingConfig?.marcas ?? []).map((m) => ({ id: m.id, nome: m.nome }))}
-        />
+      {/* Marcas — hierarquia com links para páginas individuais */}
+      {(onboardingConfig?.marcas ?? []).length > 0 && (
+        <div>
+          <h2 className="mb-4 font-display text-lg font-bold text-ink">Marcas</h2>
+          <HierarquiaMarcas
+            clienteId={id}
+            marcas={onboardingConfig!.marcas}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// HierarquiaMarcas — cards de marca com hierarquia e links para páginas
+// ---------------------------------------------------------------------------
+
+const NIVEL_LABEL: Record<string, string> = {
+  mae:        'Marca Mãe · B2B',
+  sub:        'Sub-marca · B2C',
+  standalone: 'Marca',
+}
+const NIVEL_COLOR: Record<string, string> = {
+  mae:        'bg-blue-100 text-blue-700',
+  sub:        'bg-violet-100 text-violet-700',
+  standalone: 'bg-zinc-100 text-zinc-600',
+}
+
+function HierarquiaMarcas({
+  clienteId,
+  marcas,
+}: {
+  clienteId: string
+  marcas: OnboardingMarca[]
+}) {
+  // Monta mapa de filhas por marca_pai_id
+  const filhasMap = new Map<string, OnboardingMarca[]>()
+  for (const m of marcas) {
+    if (m.nivel === 'sub' && m.marca_pai_id) {
+      const lista = filhasMap.get(m.marca_pai_id) ?? []
+      lista.push(m)
+      filhasMap.set(m.marca_pai_id, lista)
+    }
+  }
+
+  // Marcas standalone sem hierarquia definida (marca_pai_id null e nivel standalone)
+  const standalone = marcas.filter((m) => m.nivel === 'standalone' && !m.marca_pai_id)
+  const maes       = marcas.filter((m) => m.nivel === 'mae')
+
+  const renderMarcaCard = (m: OnboardingMarca, destaque = false) => (
+    <Link
+      key={m.id}
+      href={`/clientes/${clienteId}/marcas/${m.id}`}
+      className={`group flex items-center justify-between gap-3 rounded-2xl border bg-white px-5 py-4 transition hover:shadow-sm ${
+        destaque ? 'border-brand/20 hover:border-brand/40' : 'border-zinc-200 hover:border-zinc-300'
+      }`}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-gradient-brand text-sm font-bold text-white">
+          {m.nome[0].toUpperCase()}
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-zinc-900 truncate">{m.nome}</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${NIVEL_COLOR[m.nivel ?? 'standalone']}`}>
+              {NIVEL_LABEL[m.nivel ?? 'standalone']}
+            </span>
+            {m.status === 'done' && (
+              <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                Onboarding concluído
+              </span>
+            )}
+          </div>
+        </div>
       </div>
+      <ChevronRight className="h-4 w-4 flex-none text-zinc-300 group-hover:text-zinc-500 transition" />
+    </Link>
+  )
+
+  return (
+    <div className="space-y-4">
+      {/* Marcas mãe com suas sub-marcas */}
+      {maes.map((mae) => {
+        const filhas = filhasMap.get(mae.id) ?? []
+        return (
+          <div key={mae.id} className="space-y-2">
+            {renderMarcaCard(mae, true)}
+            {filhas.length > 0 && (
+              <div className="ml-6 space-y-2">
+                {filhas.map((f) => (
+                  <div key={f.id} className="flex items-start gap-2">
+                    <div className="mt-5 flex h-4 w-4 flex-none items-center">
+                      <Layers className="h-3 w-3 text-zinc-300" />
+                    </div>
+                    <div className="flex-1">{renderMarcaCard(f)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Marcas standalone (sem hierarquia definida) */}
+      {standalone.map((m) => {
+        const filhas = filhasMap.get(m.id) ?? []
+        return (
+          <div key={m.id} className="space-y-2">
+            {renderMarcaCard(m)}
+            {filhas.length > 0 && (
+              <div className="ml-6 space-y-2">
+                {filhas.map((f) => (
+                  <div key={f.id} className="flex items-start gap-2">
+                    <div className="mt-5 flex h-4 w-4 flex-none items-center">
+                      <Layers className="h-3 w-3 text-zinc-300" />
+                    </div>
+                    <div className="flex-1">{renderMarcaCard(f)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Fallback: sub-marcas órfãs (sem pai cadastrado) */}
+      {marcas
+        .filter((m) => m.nivel === 'sub' && (!m.marca_pai_id || !marcas.find((p) => p.id === m.marca_pai_id)))
+        .map((m) => renderMarcaCard(m))
+      }
+
+      {marcas.length === 0 && (
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-8 text-center">
+          <Tag className="mx-auto h-8 w-8 text-zinc-300" />
+          <p className="mt-3 text-sm font-medium text-zinc-600">Nenhuma marca cadastrada</p>
+          <p className="mt-1 text-xs text-zinc-400">Configure as marcas no onboarding abaixo.</p>
+        </div>
+      )}
     </div>
   )
 }
