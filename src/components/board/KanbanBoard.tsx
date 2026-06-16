@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
@@ -18,6 +19,7 @@ import { NewCardDialog } from './NewCardDialog'
 import { CardDetailDrawer } from './CardDetailDrawer'
 import { CardFilters } from './CardFilters'
 import { BulkActionsBar } from './BulkActionsBar'
+import { useToast } from '@/components/shared/Toast'
 import { actionMoverCard } from '@/app/(dashboard)/board/actions'
 import type { BoardCard } from '@/app/(dashboard)/board/actions'
 import type { StatusCard, PrioridadeCard, PapelUsuario } from '@/types/database'
@@ -75,6 +77,7 @@ export function KanbanBoard({
   filtrosIniciais,
   initialCardId,
 }: KanbanBoardProps) {
+  const { izzi: toastIzzi, error: toastError } = useToast()
   const [cards, setCards] = useState<BoardCard[]>(cardsIniciais)
   const [activeCard, setActiveCard] = useState<BoardCard | null>(null)
   const [dialogAberto, setDialogAberto] = useState(false)
@@ -108,23 +111,6 @@ export function KanbanBoard({
     // Só roda uma vez na montagem
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Toast da Izzi
-  const [izziToast, setIzziToast] = useState<string | null>(null)
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Limpa o timer ao desmontar para não atualizar estado em componente morto
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    }
-  }, [])
-
-  function mostrarIzziToast(mensagem: string) {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    setIzziToast(mensagem)
-    toastTimerRef.current = setTimeout(() => setIzziToast(null), 3500)
-  }
 
   // Supabase Realtime — sincroniza mudanças de outros usuários
   useEffect(() => {
@@ -222,10 +208,14 @@ export function KanbanBoard({
     return true
   })
 
-  // DnD sensors — requer movimento mínimo para iniciar o drag
+  // DnD sensors — requer movimento mínimo (mouse) ou toque longo (touch) para iniciar o drag.
+  // O delay no toque preserva o tap simples para abrir o card no mobile.
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
     }),
   )
 
@@ -259,15 +249,16 @@ export function KanbanBoard({
           setCards((prev) =>
             prev.map((c) => (c.id === cardId ? { ...c, status: statusAnterior } : c)),
           )
+          toastError('Não consegui mover a demanda. Tente novamente.')
         }
       })
     },
-    [cards],
+    [cards, toastError],
   )
 
   function handleCardCriado(card: BoardCard) {
     setCards((prev) => [card, ...prev])
-    mostrarIzziToast(`Demanda criada! Ela já está em Aguardando Informações.`)
+    toastIzzi('Demanda criada! Ela já está em Aguardando Informações.')
   }
 
   function handleCardUpdated(cardAtualizado: BoardCard) {
@@ -307,14 +298,14 @@ export function KanbanBoard({
           : `${cardsFiltrados.length} de ${cards.length} demanda${cards.length !== 1 ? 's' : ''} (filtrado)`}
       </p>
 
-      {/* Board Kanban com scroll horizontal */}
-      <div className="flex-1 overflow-x-auto pb-6">
+      {/* Board Kanban — empilha no mobile, scroll horizontal a partir de md */}
+      <div className="flex-1 overflow-y-auto pb-6 md:overflow-x-auto md:overflow-y-visible">
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+          <div className="flex flex-col gap-4 md:min-w-max md:flex-row">
             {COLUNAS.map((status) => (
               <KanbanColumn
                 key={status}
@@ -374,32 +365,6 @@ export function KanbanBoard({
         />
       )}
 
-      {/* Toast da Izzi */}
-      {izziToast && (
-        <div
-          className="fixed bottom-6 right-6 z-[60] flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-lg"
-          style={{ animation: 'fadeInUp 0.2s ease-out' }}
-        >
-          {/* Avatar da Izzi no toast */}
-          <div
-            className="flex h-7 w-7 flex-none items-center justify-center rounded-xl font-display text-xs font-bold text-white"
-            style={{ background: 'linear-gradient(135deg, #A046C6 0%, #F9267C 100%)' }}
-          >
-            I
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-brand">Izzi</p>
-            <p className="text-xs text-zinc-700">{izziToast}</p>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

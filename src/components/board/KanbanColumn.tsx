@@ -68,7 +68,7 @@ export function KanbanColumn({ status, cards, onNovaDemanada, onCardDetalhes, se
   const config = COLUMN_CONFIG[status]
 
   return (
-    <div className="flex w-72 flex-none flex-col rounded-2xl bg-zinc-50">
+    <div className="flex w-full flex-none flex-col rounded-2xl bg-zinc-50 md:w-72">
       {/* Cabeçalho da coluna — borda top 3px colorida */}
       <div
         className={`flex items-center justify-between rounded-t-2xl border-t-[3px] bg-white px-4 py-3 shadow-sm ${config.headerClass}`}

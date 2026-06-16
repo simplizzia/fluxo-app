@@ -11,6 +11,7 @@ import { BuscaGlobal } from '@/components/shared/BuscaGlobal'
 import { NotificationCenter } from '@/components/shared/NotificationCenter'
 import { AvisoPopupModal } from '@/components/pessoas/AvisoPopupModal'
 import { SidebarNav } from './SidebarNav'
+import { DashboardShell } from './DashboardShell'
 import type { NavItem, NavGroup, IconKey } from './SidebarNav'
 
 // Definição interna com roles (filtradas no Server Component antes de passar ao Client)
@@ -143,12 +144,10 @@ export default async function DashboardLayout({
     }))
     .filter((g) => g.items.length > 0)
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50">
-      {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="flex w-60 flex-none flex-col border-r border-zinc-200 bg-white">
-        {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-zinc-100 px-5">
+  const sidebarContent = (
+    <>
+      {/* Logo */}
+      <div className="flex h-16 items-center gap-3 border-b border-zinc-100 px-5">
           <div
             className="flex h-8 w-8 flex-none items-center justify-center rounded-xl text-sm font-bold text-white bg-gradient-brand"
           >
@@ -222,23 +221,25 @@ export default async function DashboardLayout({
             </div>
           </div>
         </div>
-      </aside>
+    </>
+  )
 
-      {/* ── Conteúdo principal ──────────────────────────────────── */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header com busca + notificações */}
-        <header className="flex h-14 flex-none items-center justify-between border-b border-zinc-200 bg-white px-6">
-          <BuscaGlobal />
-          <NotificationCenter
-            profileId={profile.id}
-            organizationId={profile.organization_id}
-          />
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1600px] px-6 py-6">{children}</div>
-        </main>
-      </div>
+  return (
+    <>
+      <DashboardShell
+        sidebar={sidebarContent}
+        headerContent={
+          <>
+            <BuscaGlobal />
+            <NotificationCenter
+              profileId={profile.id}
+              organizationId={profile.organization_id}
+            />
+          </>
+        }
+      >
+        {children}
+      </DashboardShell>
 
       {/* ── Izzi — floating widget apenas para clientes ─────────── */}
       {ehCliente && <IzziChatWidget />}
@@ -252,7 +253,7 @@ export default async function DashboardLayout({
           organizationId={profile.organization_id}
         />
       )}
-    </div>
+    </>
   )
 }
 

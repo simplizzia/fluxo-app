@@ -79,3 +79,23 @@ export function slaLabel(info: SlaInfo): string {
   const restantes = horasPrazo - horasDecorridas
   return `SLA ${restantes}h`
 }
+
+/** Classes Tailwind do chip de SLA por status — inclui o estado 'ok' (no prazo). */
+export function slaChipClass(status: SlaStatus): string {
+  if (status === 'violado') return 'bg-red-50 text-red-600 font-medium'
+  if (status === 'atencao') return 'bg-amber-50 text-amber-600'
+  return 'bg-emerald-50 text-emerald-600'
+}
+
+/** Texto descritivo do SLA para exibição em detalhe (drawer). */
+export function slaDescricao(info: SlaInfo): string {
+  const { horasDecorridas, horasPrazo, status } = info
+  if (status === 'violado') {
+    const atraso = horasDecorridas - horasPrazo
+    return atraso > 0
+      ? `Prazo de ${horasPrazo}h estourado há ${atraso}h`
+      : `Prazo de ${horasPrazo}h esgotado`
+  }
+  const restantes = horasPrazo - horasDecorridas
+  return `${restantes}h restantes de ${horasPrazo}h`
+}

@@ -1,6 +1,23 @@
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
+import { ApresentacaoNav, type NavSlide } from './ApresentacaoNav'
+
+/** Rótulo curto para o índice de navegação, a partir do conteúdo do slide. */
+function rotuloSlide(tipo: string, conteudo: Record<string, unknown>, n: number): string {
+  const titulo = typeof conteudo.titulo === 'string' ? conteudo.titulo.trim() : ''
+  if (titulo) return titulo
+  const padrao: Record<string, string> = {
+    capa: 'Capa',
+    titulo_secao: 'Seção',
+    texto: 'Texto',
+    imagem: 'Imagem',
+    texto_imagem: 'Texto e imagem',
+    metricas: 'Métricas',
+    citacao: 'Citação',
+  }
+  return padrao[tipo] ?? `Slide ${n}`
+}
 
 interface Props {
   params: Promise<{ token: string }>
@@ -51,11 +68,20 @@ export default async function ApresentacaoPublicaPage({ params }: Props) {
 
   const cor = tema.corPrimaria ?? '#7C3AED'
 
+  const navSlides: NavSlide[] = slidesComUrls.map((slide, i) => ({
+    n: i + 1,
+    label: rotuloSlide(slide.tipo, slide.conteudo, i + 1),
+  }))
+
   return (
     <div className="min-h-screen bg-white font-sans">
-      {/* Cada slide é uma section de altura mínima */}
+      <ApresentacaoNav slides={navSlides} cor={cor} />
+
+      {/* Cada slide é ancorado para navegação por índice */}
       {slidesComUrls.map((slide, i) => (
-        <SlidePublico key={slide.id} slide={slide} cor={cor} isFirst={i === 0} />
+        <div key={slide.id} id={`slide-${i + 1}`} className="scroll-mt-0">
+          <SlidePublico slide={slide} cor={cor} />
+        </div>
       ))}
 
       {/* Rodapé discreto */}
@@ -75,12 +101,11 @@ type ConteudoSlide = Record<string, string | number | boolean | null | undefined
 type SlidePublicoProps = {
   slide: { tipo: string; conteudo: ConteudoSlide }
   cor: string
-  isFirst: boolean
 }
 
 function str(v: unknown): string { return (v as string) ?? '' }
 
-function SlidePublico({ slide, cor, isFirst }: SlidePublicoProps) {
+function SlidePublico({ slide, cor }: SlidePublicoProps) {
   const c = slide.conteudo
   const baseClass = 'px-6 py-16 md:px-16 lg:px-32'
 

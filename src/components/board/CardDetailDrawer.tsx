@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from 'react'
 import {
-  X, Calendar, User, Tag, Clock, Lock, Send,
+  X, Calendar, User, Tag, Clock, Lock, Send, Timer,
   Paperclip, Download, FileImage, Film, FileText, Archive, File,
   RotateCcw, CheckCircle2, Sparkles, Loader2, Copy, Check,
   Share2, Plus, ExternalLink, CopyPlus,
@@ -34,6 +34,8 @@ import type { BoardCard, ArquivoComUrl } from '@/app/(dashboard)/board/actions'
 import type { StatusCard, PapelUsuario, CampoFormulario, Comentario, TipoArquivo } from '@/types/database'
 import { PriorityBadge } from '@/components/shared/PriorityBadge'
 import { STATUS_CONFIG } from '@/components/shared/StatusChip'
+import { slaParaCard, slaLabel, slaChipClass, slaDescricao } from '@/lib/sla'
+import { SkeletonLines } from '@/components/shared/Skeleton'
 
 interface CardDetailDrawerProps {
   card: BoardCard
@@ -117,6 +119,15 @@ export function CardDetailDrawer({
   const [iaExecutando, setIaExecutando] = useState(false)
   const [iaErro, setIaErro] = useState<string | null>(null)
   const [iaCopiado, setIaCopiado] = useState(false)
+
+  // Fecha o drawer com a tecla Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   // Duplicar card
   const [pendingDuplicar, setPendingDuplicar] = useState(false)
@@ -413,6 +424,14 @@ export function CardDetailDrawer({
 
   const podeAgendarEntrega = ['socia', 'gestao', 'atendimento'].includes(papelAtual)
 
+  // SLA do card conforme status atual (mesmo cálculo do KanbanCard)
+  const slaInfo = slaParaCard({
+    status: card.status,
+    created_at: card.created_at,
+    sla_iniciado_em: card.sla_iniciado_em,
+    tipo: card.tipo,
+  })
+
   async function salvarEntregaProgramada() {
     setPendingEntrega(true)
     setErroEntrega(null)
@@ -439,10 +458,16 @@ export function CardDetailDrawer({
       <div
         className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Drawer lateral */}
-      <aside className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Detalhes da demanda: ${card.titulo}`}
+        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+      >
         {/* Tira de identidade de marca no topo */}
         <div
           className="h-[3px] w-full flex-none"
@@ -585,6 +610,29 @@ export function CardDetailDrawer({
             <MetaRow icon={<Clock className="h-3.5 w-3.5" />} label="Criado em">
               {criadoEm}
             </MetaRow>
+            {slaInfo && (
+              <MetaRow icon={<Timer className="h-3.5 w-3.5" />} label="SLA">
+                <span className="flex flex-col gap-1.5">
+                  <span className={`flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${slaChipClass(slaInfo.status)}`}>
+                    <Timer className="h-3 w-3" />
+                    {slaLabel(slaInfo)}
+                  </span>
+                  <span className="text-[11px] text-zinc-400">{slaDescricao(slaInfo)}</span>
+                  <span className="h-1.5 w-40 overflow-hidden rounded-full bg-zinc-100">
+                    <span
+                      className={`block h-full rounded-full ${
+                        slaInfo.status === 'violado'
+                          ? 'bg-red-500'
+                          : slaInfo.status === 'atencao'
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.round(slaInfo.percentual * 100)}%` }}
+                    />
+                  </span>
+                </span>
+              </MetaRow>
+            )}
             {rodadasRevisao > 0 && (
               <MetaRow icon={<RotateCcw className="h-3.5 w-3.5" />} label="Revisões">
                 <span className="font-medium text-amber-600">
@@ -608,6 +656,7 @@ export function CardDetailDrawer({
                     key={s}
                     onClick={() => ehEquipe && handleMoverStatus(s)}
                     disabled={isPending || !ehEquipe}
+                    aria-current={isAtivo ? 'true' : undefined}
                     className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
                       isAtivo
                         ? `${config.className} ring-2 ring-offset-1 ring-brand/25`
@@ -901,7 +950,7 @@ export function CardDetailDrawer({
 
             {/* Lista de arquivos */}
             {loadingArquivos ? (
-              <p className="text-center text-xs text-zinc-400">Carregando…</p>
+              <SkeletonLines lines={2} />
             ) : arquivos.length === 0 && !arquivoPendente ? (
               <p className="text-center text-sm text-zinc-400">
                 <span className="font-medium text-brand">Izzi</span>
@@ -1181,7 +1230,7 @@ export function CardDetailDrawer({
 
             {/* Lista */}
             {loadingComentarios ? (
-              <p className="mb-4 text-center text-xs text-zinc-400">Carregando…</p>
+              <SkeletonLines lines={3} className="mb-4" />
             ) : comentarios.length === 0 ? (
               <p className="mb-4 text-center text-sm text-zinc-400">
                 <span className="font-medium text-brand">Izzi</span>
@@ -1263,8 +1312,8 @@ export function CardDetailDrawer({
 
           {/* Campos dinâmicos */}
           {loadingDetalhes ? (
-            <div className="px-6 py-8 text-center text-sm text-zinc-400">
-              Carregando campos…
+            <div className="px-6 py-6">
+              <SkeletonLines lines={4} />
             </div>
           ) : (
             <>
