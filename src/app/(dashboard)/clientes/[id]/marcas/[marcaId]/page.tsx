@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, Tag } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { getCurrentProfile } from '@/lib/dal'
 import MarcaTabSingle from './MarcaTabSingle'
+import PipelineSequencia from '../../PipelineSequencia'
+import { buscarPipeline } from '../../onboarding-actions'
 import {
   buscarMarcaDetalhe,
   buscarSecoesDaMarca,
@@ -45,17 +47,20 @@ export default async function MarcaPage({ params }: Props) {
     { ativos },
     { items: moodboard },
     { insights },
+    pipeline,
   ] = await Promise.all([
     buscarMarcaDetalhe(marcaId),
     buscarSecoesDaMarca(clienteId, marcaId),
     buscarAtivosDaMarca(clienteId, marcaId),
     buscarMoodboardDaMarca(clienteId, marcaId),
     buscarInsightsDaMarca(clienteId),
+    buscarPipeline(clienteId),
   ])
 
   if (error || !marca) notFound()
 
   const nivel = marca.nivel ?? 'standalone'
+  const etapasDaMarca = pipeline.filter((e) => e.marca_id === marcaId)
 
   return (
     <div className="space-y-6">
@@ -141,6 +146,22 @@ export default async function MarcaPage({ params }: Props) {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Sequência de onboarding pós-kickoff desta marca (Personas → ... → Parâmetros) */}
+      {podeEditar && etapasDaMarca.length > 0 && (
+        <div>
+          <h2 className="mb-1 font-display text-lg font-bold text-ink">Sequência pós-kickoff</h2>
+          <p className="mb-4 text-sm text-zinc-500">
+            Cada etapa é gerada pela Izzi, revisada e aprovada antes da próxima — os ajustes calibram o agente para esta marca.
+          </p>
+          <PipelineSequencia
+            clienteId={clienteId}
+            etapas={etapasDaMarca}
+            marcas={[{ id: marcaId, nome: marca.nome }]}
+            podeEditar={podeEditar}
+          />
         </div>
       )}
 

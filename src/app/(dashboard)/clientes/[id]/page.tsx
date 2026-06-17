@@ -11,9 +11,8 @@ import {
   buscarMoodboard,
 } from './actions'
 import OnboardingConfig from './OnboardingConfig'
-import PipelineSequencia from './PipelineSequencia'
 import ApresentacoesSection from './ApresentacoesSection'
-import { buscarOnboardingConfig, buscarPipeline, type OnboardingMarca } from './onboarding-actions'
+import { buscarOnboardingConfig, type OnboardingMarca } from './onboarding-actions'
 import { actionListarApresentacoes } from './apresentacao-actions'
 import { ClienteNomeEditor } from './ClienteNomeEditor'
 import { ClienteAcoes } from './ClienteAcoes'
@@ -39,7 +38,6 @@ export default async function ClienteDetalhePage({ params }: Props) {
     { ativos },
     { items: moodboard },
     { data: onboardingConfig },
-    pipeline,
     { data: apresentacoes },
   ] = await Promise.all([
     buscarClienteDetalhe(id),
@@ -47,7 +45,6 @@ export default async function ClienteDetalhePage({ params }: Props) {
     buscarAtivosVisuais(id),
     buscarMoodboard(id),
     buscarOnboardingConfig(id),
-    buscarPipeline(id),
     actionListarApresentacoes(id),
   ])
 
@@ -186,22 +183,6 @@ export default async function ClienteDetalhePage({ params }: Props) {
             clienteId={id}
             config={onboardingConfig}
             appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ''}
-          />
-        </div>
-      )}
-
-      {/* Sequência de onboarding pós-kickoff, por marca (Personas → ... → Parâmetros) */}
-      {podeEditar && pipeline.length > 0 && (
-        <div>
-          <h2 className="mb-1 font-display text-lg font-bold text-ink">Sequência pós-kickoff</h2>
-          <p className="mb-4 text-sm text-zinc-500">
-            Cada marca tem sua própria sequência. Cada etapa é gerada pela Izzi, revisada e aprovada antes da próxima — os ajustes calibram o agente para esta marca.
-          </p>
-          <PipelineSequencia
-            clienteId={id}
-            etapas={pipeline}
-            marcas={(onboardingConfig?.marcas ?? []).map((m) => ({ id: m.id, nome: m.nome }))}
-            podeEditar={podeEditar}
           />
         </div>
       )}
