@@ -11,6 +11,7 @@ import {
   buscarMoodboard,
 } from './actions'
 import OnboardingConfig from './OnboardingConfig'
+import DocumentosCliente from './DocumentosCliente'
 import ApresentacoesSection from './ApresentacoesSection'
 import { buscarOnboardingConfig, type OnboardingMarca } from './onboarding-actions'
 import { actionListarApresentacoes } from './apresentacao-actions'
@@ -196,6 +197,17 @@ export default async function ClienteDetalhePage({ params }: Props) {
             apresentacoes={apresentacoes ?? []}
             appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ''}
           />
+        </div>
+      )}
+
+      {/* Documentos de nível cliente: perfil do cliente + briefing legado */}
+      {podeEditar && (secoes ?? []).some((s) => s.marcaId === null && (s.subcategoria === 'perfil_cliente' || s.subcategoria === 'briefing_completo')) && (
+        <div>
+          <h2 className="mb-1 font-display text-lg font-bold text-ink">Documentos do cliente</h2>
+          <p className="mb-4 text-sm text-zinc-500">
+            Perfil do cliente e briefings de nível geral. Os briefings isolados por marca ficam na página de cada marca.
+          </p>
+          <DocumentosCliente clienteId={id} secoes={secoes ?? []} podeEditar={podeEditar} />
         </div>
       )}
 
