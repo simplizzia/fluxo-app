@@ -113,6 +113,62 @@ function DadosClienteForm({
 }
 
 // ---------------------------------------------------------------------------
+// Seletor de hierarquia (marca mãe / sub-marca / independente)
+// ---------------------------------------------------------------------------
+
+function HierarquiaSelector({
+  nivel,
+  marcaPaiId,
+  parentesElegiveis,
+  onChange,
+}: {
+  nivel: 'mae' | 'sub' | 'standalone'
+  marcaPaiId: string | null
+  parentesElegiveis: { id: string; nome: string }[]
+  onChange: (nivel: 'mae' | 'sub' | 'standalone', marcaPaiId: string | null) => void
+}) {
+  const selectCls =
+    'w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 bg-white'
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-medium text-zinc-500">Posição na hierarquia</label>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <select
+          value={nivel}
+          onChange={(e) => {
+            const nv = e.target.value as 'mae' | 'sub' | 'standalone'
+            onChange(nv, nv === 'sub' ? marcaPaiId : null)
+          }}
+          className={selectCls}
+        >
+          <option value="standalone">Marca independente</option>
+          <option value="mae">Marca mãe (grupo / B2B)</option>
+          <option value="sub">Sub-marca (B2C)</option>
+        </select>
+        {nivel === 'sub' && (
+          <select
+            value={marcaPaiId ?? ''}
+            onChange={(e) => onChange('sub', e.target.value || null)}
+            className={selectCls}
+          >
+            <option value="">Vincular à marca mãe…</option>
+            {parentesElegiveis.map((p) => (
+              <option key={p.id} value={p.id}>{p.nome}</option>
+            ))}
+          </select>
+        )}
+      </div>
+      {nivel === 'sub' && !marcaPaiId && (
+        <p className="text-[11px] text-amber-600">Escolha a marca mãe para vincular esta sub-marca.</p>
+      )}
+      {nivel === 'sub' && parentesElegiveis.length === 0 && (
+        <p className="text-[11px] text-amber-600">Cadastre uma marca mãe antes de vincular sub-marcas.</p>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Lista de marcas
 // ---------------------------------------------------------------------------
 
@@ -143,8 +199,8 @@ function MarcasSection({
         contexto_estrategico: novaForm.contexto_estrategico ?? null,
         cenario_atual:       novaForm.cenario_atual ?? null,
         notas_complementares: null,
-        nivel:               'standalone',
-        marca_pai_id:        null,
+        nivel:               novaForm.nivel ?? 'standalone',
+        marca_pai_id:        novaForm.nivel === 'sub' ? (novaForm.marca_pai_id ?? null) : null,
       })
       if (res.error) { setErro(res.error); return }
       setNovaForm({})
@@ -172,7 +228,7 @@ function MarcasSection({
       {marcas.length > 0 && (
         <div className="border-t border-zinc-100 divide-y divide-zinc-100">
           {marcas.map((m) => (
-            <MarcaRow key={m.id} marca={m} clienteId={clienteId} />
+            <MarcaRow key={m.id} marca={m} clienteId={clienteId} marcas={marcas} />
           ))}
         </div>
       )}
@@ -187,6 +243,12 @@ function MarcasSection({
             <Campo label="Instagram" value={novaForm.instagram ?? ''} onChange={(v) => setNovaForm((f) => ({ ...f, instagram: v }))} placeholder="@marca" />
             <Campo label="LinkedIn" value={novaForm.linkedin ?? ''} onChange={(v) => setNovaForm((f) => ({ ...f, linkedin: v }))} placeholder="linkedin.com/company/..." />
           </div>
+          <HierarquiaSelector
+            nivel={novaForm.nivel ?? 'standalone'}
+            marcaPaiId={novaForm.marca_pai_id ?? null}
+            parentesElegiveis={marcas.filter((m) => m.nivel !== 'sub').map((m) => ({ id: m.id, nome: m.nome }))}
+            onChange={(nivel, marcaPaiId) => setNovaForm((f) => ({ ...f, nivel, marca_pai_id: marcaPaiId }))}
+          />
           <CampoTexto label="Posicionamento atual" value={novaForm.posicionamento_atual ?? ''} onChange={(v) => setNovaForm((f) => ({ ...f, posicionamento_atual: v }))} placeholder="Como a marca se posiciona hoje? O que diz sobre si mesma?" rows={2} />
           <CampoTexto label="Concorrentes" value={novaForm.concorrentes ?? ''} onChange={(v) => setNovaForm((f) => ({ ...f, concorrentes: v }))} placeholder="Principais concorrentes diretos e indiretos" rows={2} />
           <CampoTexto label="Contexto estratégico" value={novaForm.contexto_estrategico ?? ''} onChange={(v) => setNovaForm((f) => ({ ...f, contexto_estrategico: v }))} placeholder="O que a Simplizzia precisa saber para conduzir o briefing desta marca com inteligência?" rows={3} />
@@ -211,7 +273,7 @@ function MarcasSection({
   )
 }
 
-function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: string }) {
+function MarcaRow({ marca, clienteId, marcas }: { marca: OnboardingMarca; clienteId: string; marcas: OnboardingMarca[] }) {
   const [removePending, startRemove] = useTransition()
   const [editPending, startEdit]     = useTransition()
   const [notasPending, startNotas]   = useTransition()
@@ -232,6 +294,8 @@ function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: str
     concorrentes:        marca.concorrentes ?? '',
     contexto_estrategico: marca.contexto_estrategico ?? '',
     cenario_atual:       marca.cenario_atual ?? '',
+    nivel:               (marca.nivel ?? 'standalone') as 'mae' | 'sub' | 'standalone',
+    marca_pai_id:        marca.marca_pai_id ?? null,
   })
 
   function handleSalvarNotas() {
@@ -258,6 +322,8 @@ function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: str
         concorrentes:        form.concorrentes || null,
         contexto_estrategico: form.contexto_estrategico || null,
         cenario_atual:       form.cenario_atual || null,
+        nivel:               form.nivel,
+        marca_pai_id:        form.nivel === 'sub' ? form.marca_pai_id : null,
       })
       if (res.error) { setErro(res.error); return }
       setEditando(false)
@@ -275,6 +341,12 @@ function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: str
           <Campo label="Instagram" value={form.instagram} onChange={(v) => setForm(f => ({ ...f, instagram: v }))} placeholder="@marca" />
           <Campo label="LinkedIn" value={form.linkedin} onChange={(v) => setForm(f => ({ ...f, linkedin: v }))} placeholder="linkedin.com/company/..." />
         </div>
+        <HierarquiaSelector
+          nivel={form.nivel}
+          marcaPaiId={form.marca_pai_id}
+          parentesElegiveis={marcas.filter((m) => m.id !== marca.id && m.nivel !== 'sub').map((m) => ({ id: m.id, nome: m.nome }))}
+          onChange={(nivel, marcaPaiId) => setForm((f) => ({ ...f, nivel, marca_pai_id: marcaPaiId }))}
+        />
         <CampoTexto label="Posicionamento atual" value={form.posicionamento_atual} onChange={(v) => setForm(f => ({ ...f, posicionamento_atual: v }))} rows={2} />
         <CampoTexto label="Concorrentes" value={form.concorrentes} onChange={(v) => setForm(f => ({ ...f, concorrentes: v }))} rows={2} />
         <CampoTexto label="Contexto estratégico" value={form.contexto_estrategico} onChange={(v) => setForm(f => ({ ...f, contexto_estrategico: v }))} rows={3} />
@@ -299,7 +371,17 @@ function MarcaRow({ marca, clienteId }: { marca: OnboardingMarca; clienteId: str
             : <Clock className="h-4 w-4 flex-none text-zinc-300" />
           }
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-zinc-800">{marca.nome}</p>
+            <p className="flex items-center gap-1.5 text-sm font-medium text-zinc-800">
+              <span className="truncate">{marca.nome}</span>
+              {marca.nivel === 'mae' && (
+                <span className="flex-none rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700">mãe</span>
+              )}
+              {marca.nivel === 'sub' && (
+                <span className="flex-none rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-semibold text-violet-700">
+                  sub{marca.marca_pai_id ? ` · ${marcas.find((p) => p.id === marca.marca_pai_id)?.nome ?? ''}` : ''}
+                </span>
+              )}
+            </p>
             {marca.publico && <p className="truncate text-xs text-zinc-400">{marca.publico}</p>}
           </div>
         </div>

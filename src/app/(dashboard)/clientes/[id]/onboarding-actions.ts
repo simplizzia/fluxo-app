@@ -253,6 +253,8 @@ export async function actionAdicionarMarca(
     concorrentes:        marca.concorrentes ?? null,
     contexto_estrategico: marca.contexto_estrategico ?? null,
     cenario_atual:       marca.cenario_atual ?? null,
+    nivel:               marca.nivel ?? 'standalone',
+    marca_pai_id:        marca.nivel === 'sub' ? (marca.marca_pai_id ?? null) : null,
     ordem:               proxOrdem,
   })
 
@@ -273,6 +275,12 @@ export async function actionEditarMarca(
   await requirePapel('socia', 'gestao')
   const service = createServiceClient()
 
+  // Hierarquia: só grava se o nível foi informado. Sub-marca exige pai;
+  // qualquer outro nível zera o pai para manter consistência.
+  const nivelHierarquia = dados.nivel
+  const marcaPaiId =
+    nivelHierarquia === 'sub' ? (dados.marca_pai_id ?? null) : nivelHierarquia ? null : undefined
+
   const { error } = await service
     .from('onboarding_marcas')
     .update({
@@ -285,6 +293,8 @@ export async function actionEditarMarca(
       concorrentes:        dados.concorrentes ?? null,
       contexto_estrategico: dados.contexto_estrategico ?? null,
       cenario_atual:       dados.cenario_atual ?? null,
+      nivel:               nivelHierarquia ?? undefined,
+      marca_pai_id:        marcaPaiId,
     })
     .eq('id', marcaId)
 
