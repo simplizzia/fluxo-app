@@ -35,10 +35,11 @@ interface Props {
 export default function DocumentosCliente({ clienteId, secoes, podeEditar }: Props) {
   const docs = secoes
     .filter((s) => s.marcaId === null)
-    .filter((s) => s.subcategoria === 'perfil_cliente' || s.subcategoria === 'briefing_completo')
+    .filter((s) => s.subcategoria === 'perfil_cliente' || s.subcategoria === 'prep_reuniao' || s.subcategoria === 'briefing_completo')
     .sort((a, b) => {
-      // perfil_cliente primeiro, briefing_completo depois
-      const ordem = (sub: string | null) => (sub === 'perfil_cliente' ? 0 : 1)
+      // perfil_cliente → prep_reuniao → briefing_completo
+      const ordem = (sub: string | null) =>
+        sub === 'perfil_cliente' ? 0 : sub === 'prep_reuniao' ? 1 : 2
       return ordem(a.subcategoria) - ordem(b.subcategoria)
     })
 
@@ -65,6 +66,7 @@ function DocumentoCard({
   const router = useRouter()
   const textoAtual = (secao.conteudo?.texto as string) ?? ''
   const isLegado = secao.subcategoria === 'briefing_completo'
+  const isPrep = secao.subcategoria === 'prep_reuniao'
 
   const [aberto, setAberto] = useState(false)
   const [editando, setEditando] = useState(false)
@@ -120,6 +122,10 @@ function DocumentoCard({
           {isLegado ? (
             <span className="flex-none rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
               Legado · todas as marcas
+            </span>
+          ) : isPrep ? (
+            <span className="flex-none rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+              Modo 2 · Prep de Reunião
             </span>
           ) : (
             <span className="flex-none rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-medium text-zinc-600">

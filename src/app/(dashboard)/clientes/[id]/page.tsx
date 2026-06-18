@@ -201,7 +201,7 @@ export default async function ClienteDetalhePage({ params }: Props) {
       )}
 
       {/* Documentos de nível cliente: perfil do cliente + briefing legado */}
-      {podeEditar && (secoes ?? []).some((s) => s.marcaId === null && (s.subcategoria === 'perfil_cliente' || s.subcategoria === 'briefing_completo')) && (
+      {podeEditar && (secoes ?? []).some((s) => s.marcaId === null && (s.subcategoria === 'perfil_cliente' || s.subcategoria === 'prep_reuniao' || s.subcategoria === 'briefing_completo')) && (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold text-ink">Documentos do cliente</h2>
           <p className="mb-4 text-sm text-zinc-500">
