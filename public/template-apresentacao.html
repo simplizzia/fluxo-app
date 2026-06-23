@@ -1,0 +1,2836 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>[MARCA_NOME] · Estratégia [ANO]</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500;1,9..144,600&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ── Token system — Trevo, calibrado pela identidade real ── */
+    --creme:        #FBF3E7; /* [MARCA_COR_FUNDO_CLARO] */
+    --creme-escuro: #F2E4CE; /* [MARCA_COR_FUNDO_MEDIO] */
+    --vermelho:     #D80000; /* [MARCA_COR_PRIMARIA] */   /* vermelho oficial Trevo (ref. paleta real) */
+    --vermelho-esc: #A30000; /* [MARCA_COR_PRIMARIA_ESC] */
+    --amarelo:      #F4B800; /* [MARCA_COR_DESTAQUE] */
+    --laranja:      #F2762A; /* [MARCA_COR_ACENTO2] */
+    --pink:         #E8198B; /* [MARCA_COR_ACENTO3] */
+    --azul:         #78C9EB; /* [MARCA_COR_ACENTO4] */
+    --oliva:        #2E3620; /* [MARCA_COR_ESCURO] */
+    --tinta:        #241A14; /* [MARCA_COR_TEXTO] */
+    --papel:        #FFFDF8; /* [MARCA_COR_PAPEL] */
+
+    --display:  'Baloo 2', sans-serif; /* [MARCA_FONTE_HEADLINE] */
+    --serif:    'Fraunces', serif; /* [MARCA_FONTE_SERIF] */
+    --corpo:    'Nunito', system-ui, sans-serif; /* [MARCA_FONTE_CORPO] */
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--corpo);
+    background: #15100c;
+  }
+
+  #presentation {
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+
+  #presentation::-webkit-scrollbar { display: none; }
+  #presentation { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .slide {
+    height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 6vh 8vw;
+    box-sizing: border-box;
+    background: var(--papel);
+    color: var(--tinta);
+    position: relative;
+    overflow: hidden;
+    contain: layout;
+  }
+
+  .slide--vermelho { background: var(--vermelho); color: var(--papel); }
+  .slide--oliva     { background: var(--oliva); color: var(--creme); }
+  .slide--creme     { background: var(--creme); color: var(--tinta); }
+  .slide--creme2    { background: var(--creme-escuro); color: var(--tinta); }
+
+  /* ── Marca d'água de continuidade: logo mini + onda em todo slide ── */
+  .marca-corner {
+    position: absolute;
+    top: 2.2rem;
+    right: 8vw;
+    height: 26px;
+    width: auto;
+    opacity: 0.92;
+    z-index: 5;
+  }
+
+  .onda-marca {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* ── Rodapé Simplizzia: frase + logo, canto inferior direito, em todo slide ── */
+  .simplizzia-rodape {
+    position: absolute;
+    bottom: 2.2rem;
+    right: 8vw;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    max-width: 84vw;
+  }
+
+  .simplizzia-rodape p {
+    font-family: var(--corpo);
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: right;
+    color: rgba(36,26,20,0.4);
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .slide--vermelho .simplizzia-rodape p,
+  .slide--oliva .simplizzia-rodape p { color: rgba(255,253,248,0.45); }
+
+  .simplizzia-rodape img { height: 28px; width: auto; flex-shrink: 0; }
+
+  .simplizzia-rodape .logo-clara  { display: none; }
+  .simplizzia-rodape .logo-escura { display: block; }
+
+  .slide--vermelho .simplizzia-rodape .logo-clara,
+  .slide--oliva .simplizzia-rodape .logo-clara       { display: block; }
+  .slide--vermelho .simplizzia-rodape .logo-escura,
+  .slide--oliva .simplizzia-rodape .logo-escura      { display: none; }
+
+  /* ── Texturas de fundo ── */
+  .grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.045;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .mancha {
+    position: absolute;
+    border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+    pointer-events: none;
+  }
+  .mancha-clip {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* ── Tipografia ── */
+  .eyebrow {
+    font-family: var(--corpo);
+    font-size: clamp(0.68rem, 0.95vw, 0.8rem);
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papel);
+    background: var(--vermelho);
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    margin-bottom: 1.3rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .slide--vermelho .eyebrow { background: var(--amarelo); color: var(--tinta); }
+  .slide--oliva .eyebrow    { background: var(--amarelo); color: var(--tinta); }
+  .slide--creme .eyebrow,
+  .slide--creme2 .eyebrow   { background: var(--vermelho-esc); color: var(--papel); }
+
+  .titulo-grande {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2.2rem, 4.7vw, 4.1rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    color: var(--vermelho-esc);
+  }
+
+  .slide--vermelho .titulo-grande { color: var(--papel); }
+  .slide--oliva .titulo-grande { color: var(--creme); }
+  .slide--creme .titulo-grande,
+  .slide--creme2 .titulo-grande { color: var(--vermelho-esc); }
+
+  .titulo-grande em {
+    font-style: normal;
+    color: var(--vermelho);
+  }
+
+  .slide--vermelho .titulo-grande em { color: var(--amarelo); }
+  .slide--oliva .titulo-grande em { color: var(--amarelo); }
+
+  .corpo-grande {
+    font-family: var(--corpo);
+    font-weight: 700;
+    font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+    line-height: 1.5;
+    color: var(--tinta);
+    opacity: 0.78;
+  }
+
+  .slide--vermelho .corpo-grande,
+  .slide--oliva .corpo-grande { color: var(--creme); opacity: 0.82; }
+
+  /* ── Bullets ── */
+  .bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .bullets li {
+    font-size: clamp(1rem, 1.5vw, 1.18rem);
+    font-weight: 700;
+    padding-left: 1.7rem;
+    position: relative;
+    line-height: 1.45;
+  }
+
+  .bullets li::before {
+    content: '';
+    width: 9px; height: 9px;
+    background: var(--amarelo);
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    top: 0.45rem;
+  }
+
+  .slide--vermelho .bullets li::before,
+  .slide--oliva .bullets li::before { background: var(--amarelo); }
+
+  /* ── Cards ── */
+  .cards {
+    display: grid;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .cards--2x2  { grid-template-columns: repeat(2, 1fr); }
+  .cards--4col { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--papel);
+    border-radius: 4px 16px 4px 16px;
+    padding: 1.5rem 1.4rem;
+    box-shadow: 0 2px 0 rgba(36,26,20,0.06), 0 10px 24px rgba(36,26,20,0.06);
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 1.4rem;
+    width: 36px; height: 8px;
+    background: var(--amarelo);
+    border-radius: 0 0 4px 4px;
+  }
+
+  .card:nth-child(2)::before { background: var(--laranja); }
+  .card:nth-child(3)::before { background: var(--pink); }
+  .card:nth-child(4)::before { background: #5A9BC2; }
+
+  .card-title {
+    font-family: var(--display);
+    font-size: clamp(0.95rem, 1.3vw, 1.12rem);
+    font-weight: 700;
+    color: var(--vermelho-esc);
+    margin: 0.5rem 0 0.5rem;
+    line-height: 1.15;
+  }
+
+  .card-text  { font-size: clamp(0.82rem, 1.05vw, 0.92rem); color: #555; line-height: 1.48; font-weight: 600; }
+
+  /* ── Placeholder ── */
+  .placeholder {
+    border: 2px dashed rgba(36,26,20,0.18);
+    border-radius: 16px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: rgba(36,26,20,0.4);
+    font-size: 0.85rem;
+    background: rgba(36,26,20,0.025);
+    line-height: 1.4;
+    font-weight: 700;
+  }
+
+  .placeholder span:first-child { font-size: 2.2rem; }
+
+  /* ── Logo (imagem oficial) ── */
+  .logo-img { height: clamp(34px, 5vh, 54px); width: auto; object-fit: contain; display: block; }
+
+  /* ── Navigation ── */
+  #slide-nav {
+    position: fixed;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 200;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(36,26,20,0.15);
+    border: none;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.25s;
+    padding: 0;
+  }
+
+  .dot.active {
+    background: var(--vermelho);
+    transform: scale(1.5);
+  }
+
+  .dot.on-dark        { background: rgba(255,253,248,0.3); }
+  .dot.on-dark.active { background: var(--amarelo); }
+
+  #slide-counter {
+    position: fixed;
+    top: 1.2rem;
+    right: 1.5rem;
+    font-family: var(--corpo);
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: rgba(36,26,20,0.35);
+    z-index: 200;
+    transition: color 0.3s;
+    letter-spacing: 0.05em;
+  }
+
+  #nav-arrows {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 200;
+  }
+
+  #nav-arrows button {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(36,26,20,0.07);
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  #nav-arrows button:hover {
+    background: var(--vermelho);
+    color: #fff;
+  }
+
+  /* ── Presenter notes ── */
+  #notes-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10,8,6,0.92);
+    color: #eee;
+    padding: 0.8rem 2rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    max-height: 28vh;
+    overflow-y: auto;
+    z-index: 300;
+    font-family: var(--corpo);
+    display: none;
+  }
+
+  /* ════════ Estilos específicos por slide ════════ */
+
+  /* S1 — Capa */
+  .capa-img-wrap {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 42vw;
+    overflow: hidden;
+  }
+
+  .capa-img-wrap img {
+    width: 100%; height: 100%;
+    max-height: 100vh;
+    object-fit: cover;
+    object-position: 38% 65%;
+  }
+
+  .capa-img-fade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--vermelho) 0%, rgba(216,0,0,0.55) 28%, rgba(216,0,0,0) 60%);
+  }
+
+  .capa-content { position: relative; z-index: 2; max-width: 56%; }
+
+  /* S2 — Provocação */
+  .provocacao-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2.4rem, 5.8vw, 4.8rem);
+    line-height: 1.08;
+    color: var(--tinta);
+    max-width: 88%;
+  }
+
+  .provocacao-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4vw;
+    width: 100%;
+  }
+
+  .provocacao-texto { flex: 1 1 50%; min-width: 0; }
+
+  .mosaico-placeholder {
+    flex: 1 1 44%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr) 0.7fr;
+    gap: 0.8rem;
+    aspect-ratio: 0.82;
+  }
+
+  .mosaico-placeholder .mp-item {
+    border-radius: 4px 16px 4px 16px;
+    background: repeating-linear-gradient(135deg, rgba(36,26,20,0.07) 0px, rgba(36,26,20,0.07) 2px, transparent 2px, transparent 10px), rgba(36,26,20,0.04);
+    border: 1.5px dashed rgba(36,26,20,0.22);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    color: rgba(36,26,20,0.38);
+    text-align: center;
+    padding: 0.35rem;
+  }
+
+  .mosaico-placeholder .mp-item svg { width: 26px; height: 26px; opacity: 0.7; }
+
+  .mosaico-placeholder .mp-item span {
+    font-family: var(--corpo);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+  .mosaico-placeholder .mp-wide { grid-column: span 2; }
+
+  .mosaico-mumu {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .mosaico-mumu .mp-item {
+    aspect-ratio: 0.85;
+    border-radius: 4px 16px 4px 16px;
+    background: repeating-linear-gradient(135deg, rgba(36,26,20,0.07) 0px, rgba(36,26,20,0.07) 2px, transparent 2px, transparent 10px), rgba(36,26,20,0.04);
+    border: 1.5px dashed rgba(36,26,20,0.22);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: rgba(36,26,20,0.38);
+    text-align: center;
+    padding: 0.4rem;
+  }
+
+  .mosaico-mumu .mp-item svg { width: 20px; height: 20px; opacity: 0.7; }
+
+  .mosaico-mumu .mp-item span {
+    font-family: var(--corpo);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+  }
+
+  @media (max-width: 768px) {
+    .mosaico-mumu { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .mosaico-legenda {
+    margin-top: 0.5rem;
+    font-family: var(--corpo);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(36,26,20,0.4);
+    text-align: center;
+  }
+
+  /* S6 — Plataforma: 3 camadas */
+  .camadas {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+
+  .camada {
+    flex: 1;
+    min-width: 180px;
+    padding-left: 1.3rem;
+    border-left: 3px solid;
+  }
+
+  .camada-label {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.92rem;
+    letter-spacing: 0;
+    margin-bottom: 0.5rem;
+    line-height: 1.15;
+  }
+
+  .camada-text {
+    font-size: clamp(0.85rem, 1.2vw, 1rem);
+    color: rgba(255,253,248,0.78);
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
+  /* S7 — Copy-key */
+  .copykey {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(1.9rem, 4.2vw, 3.4rem);
+    color: var(--vermelho-esc);
+    line-height: 1.25;
+    max-width: 84%;
+    margin: 0 0 1.6rem;
+  }
+
+  /* S10 — Critério criativo */
+  .steps {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    max-width: 86%;
+    margin-top: 1.2rem;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .step {
+    flex: 1;
+    padding: 2.2rem 1.6rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .step-num {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 2.6rem;
+    opacity: 0.28;
+    line-height: 1;
+  }
+
+  .step-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+
+  .step-desc {
+    font-size: 0.84rem;
+    line-height: 1.5;
+    opacity: 0.85;
+    font-weight: 600;
+  }
+
+  .step-arrow {
+    display: flex;
+    align-items: center;
+    color: rgba(36,26,20,0.2);
+    font-size: 1.6rem;
+    padding: 0 0.4rem;
+  }
+
+  /* S16 — Performance: funil pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* S18 — Metas */
+  .meta-card {
+    background: var(--papel);
+    border-radius: 4px 18px 4px 18px;
+    padding: 1.3rem 1.5rem;
+    box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 10px 24px rgba(36,26,20,0.05);
+    position: relative;
+  }
+
+  .meta-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 1.5rem;
+    width: 32px; height: 7px;
+    border-radius: 0 0 4px 4px;
+    background: var(--amarelo);
+  }
+
+  .meta-card:nth-child(2)::before { background: var(--laranja); }
+  .meta-card:nth-child(3)::before { background: var(--pink); }
+  .meta-card:nth-child(4)::before { background: #5A9BC2; }
+
+  .meta-label { font-size: 0.74rem; font-weight: 800; color: #999; text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-num   { font-family: var(--display); font-weight: 700; font-size: 2rem; line-height: 1.2; margin: 0.3rem 0; }
+  .meta-sub   { font-size: 0.78rem; color: #999; font-weight: 600; }
+
+  /* S19 — Próximos passos */
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: 1.3rem;
+  }
+
+  .step-badge {
+    width: 44px; height: 44px;
+    border-radius: 50% 50% 50% 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+    color: #fff;
+  }
+
+  .step-info p:first-child  { font-family: var(--display); font-weight: 700; font-size: 1.08rem; }
+  .step-info p:last-child   { font-size: 0.84rem; color: #999; margin-top: 0.15rem; font-weight: 600; }
+
+  .step-date { margin-left: auto; font-size: 0.82rem; color: #ccc; white-space: nowrap; font-weight: 700; }
+
+  .divider { height: 1px; background: rgba(36,26,20,0.08); margin-left: 57px; }
+
+  /* S20 — Encerramento */
+  .enc-img-wrap {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 38vw;
+    overflow: hidden;
+  }
+
+  .enc-img-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: 60% 30%;
+  }
+
+  .enc-img-fade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(270deg, var(--vermelho) 0%, rgba(216,0,0,0.5) 30%, rgba(216,0,0,0) 65%);
+  }
+
+  .enc-content { position: relative; z-index: 2; max-width: 60%; margin-left: auto; text-align: right; }
+
+  .enc-quote {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(2rem, 4.2vw, 3.2rem);
+    color: var(--creme);
+    line-height: 1.25;
+    margin-bottom: 1.8rem;
+  }
+
+  /* ── S12 — Roadmap interativo de fases (substitui calendário sazonal) ── */
+  .fase-tabs {
+    display: flex;
+    gap: 0.7rem;
+    width: 100%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 3;
+  }
+
+  .fase-tab {
+    flex: 1;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0.85rem 1.2rem;
+    border-radius: 4px 16px 4px 16px;
+    background: var(--papel);
+    color: rgba(36,26,20,0.4);
+    font-family: var(--corpo);
+    text-align: left;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 0 rgba(36,26,20,0.04), 0 6px 16px rgba(36,26,20,0.04);
+  }
+
+  .fase-tab .ft-num {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+
+  .fase-tab .ft-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(0.88rem, 1.1vw, 1.1rem);
+    color: var(--tinta);
+    display: block;
+    line-height: 1.15;
+  }
+
+  .fase-tab .ft-periodo {
+    font-size: 0.74rem;
+    font-weight: 700;
+    opacity: 0.6;
+    display: block;
+    margin-top: 0.2rem;
+  }
+
+  .fase-tab.active { box-shadow: 0 4px 0 rgba(36,26,20,0.06), 0 14px 28px rgba(36,26,20,0.1); }
+  .fase-tab[data-fase="1"].active { border-color: var(--vermelho); }
+  .fase-tab[data-fase="1"].active .ft-num { color: var(--vermelho-esc); }
+  .fase-tab[data-fase="2"].active { border-color: var(--laranja); }
+  .fase-tab[data-fase="2"].active .ft-num { color: var(--laranja); }
+  .fase-tab[data-fase="3"].active { border-color: var(--pink); }
+  .fase-tab[data-fase="3"].active .ft-num { color: var(--pink); }
+
+  .fase-painel { display: none; position: relative; z-index: 3; width: 100%; }
+  .fase-painel.active { display: flex; flex-direction: column; gap: 1rem; }
+
+  .fp-objetivo {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    line-height: 1.36;
+    color: var(--tinta);
+    max-width: 92%;
+  }
+
+  .fp-duas-colunas { display: flex; gap: 4rem; }
+
+  .fp-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+
+  .fp-block-title {
+    font-family: var(--corpo);
+    font-weight: 800;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(36,26,20,0.42);
+    margin-bottom: 0.35rem;
+  }
+
+  .fp-list { list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
+  .fp-list li {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.45;
+    padding-left: 1.3rem;
+    position: relative;
+  }
+  .fp-list li::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--amarelo);
+    position: absolute;
+    left: 0; top: 0.5rem;
+  }
+
+  /* ── S-novo — Produção de conteúdo ── */
+  .prod-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    width: 100%;
+    margin-top: 1rem;
+    position: relative;
+    z-index: 3;
+  }
+
+  .prod-card {
+    background: var(--papel);
+    border-radius: 4px 18px 4px 18px;
+    padding: 0.75rem 1.1rem;
+    box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 10px 24px rgba(36,26,20,0.05);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .prod-badge {
+    width: 50px; height: 50px;
+    border-radius: 50% 50% 50% 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+    color: #fff;
+    text-align: center;
+    line-height: 1.05;
+  }
+
+  .badge-tiobrother { background: var(--vermelho); }
+  .badge-parceiro   { background: var(--laranja); }
+  .badge-ia         { background: var(--pink); }
+  .badge-mumu       { background: #5A9BC2; }
+
+  .prod-info { flex: 1.3; min-width: 0; }
+  .prod-tipo { flex: 1.5; min-width: 0; }
+  .prod-invest { flex: 1; min-width: 0; text-align: right; }
+
+  .prod-fonte-tag {
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(36,26,20,0.42);
+    margin-bottom: 0.15rem;
+  }
+
+  .prod-fonte-nome {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.02rem;
+    color: var(--vermelho-esc);
+  }
+
+  .prod-funcao {
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-top: 0.25rem;
+  }
+
+  .prod-tipo p {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(36,26,20,0.65);
+    line-height: 1.38;
+  }
+
+  .prod-invest-val {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--vermelho-esc);
+    display: block;
+  }
+
+  .prod-invest-sub {
+    font-size: 0.62rem;
+    color: rgba(36,26,20,0.45);
+    font-weight: 700;
+    margin-top: 0.15rem;
+    line-height: 1.25;
+    display: block;
+  }
+
+  .prod-invest-def {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 0.96rem;
+    color: rgba(36,26,20,0.4);
+    display: block;
+  }
+
+  .prod-rodape-nota {
+    margin-top: 0.6rem;
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 0.82rem;
+    color: rgba(36,26,20,0.55);
+    max-width: 85%;
+    position: relative;
+    z-index: 3;
+  }
+
+  /* ═══════════════════════════════════════════
+     MOBILE (≤768px)
+  ═══════════════════════════════════════════ */
+  @media (max-width: 768px) {
+
+    .slide {
+      height: auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 6rem 6vw 5.5rem;
+      justify-content: flex-start;
+    }
+
+    /* Navegação lateral: tira do caminho do conteúdo e do rodapé */
+    #slide-nav { display: none; }
+
+    #slide-counter {
+      top: 0.9rem;
+      right: 1rem;
+      font-size: 0.7rem;
+    }
+
+    #nav-arrows {
+      bottom: 0.9rem;
+      right: 1rem;
+    }
+
+    #nav-arrows button { width: 28px; height: 28px; font-size: 0.78rem; }
+
+    /* Logo Trevo mini: sobe um pouco e encolhe para não brigar com o contador */
+    .marca-corner {
+      top: 1rem;
+      right: 6vw;
+      height: 20px;
+    }
+
+    /* Rodapé Simplizzia: empilha frase + logo, permite quebra de linha,
+       e sobe a posição para não ficar atrás das setas de navegação */
+    .simplizzia-rodape {
+      position: static;
+      margin-top: 2rem;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+      max-width: 100%;
+    }
+
+    .simplizzia-rodape p {
+      white-space: normal;
+      font-size: 0.66rem;
+      max-width: 70vw;
+    }
+
+    .simplizzia-rodape img { height: 22px; }
+
+    /* Capa e encerramento: conteúdo usa a largura toda em vez de 56%/60% */
+    .capa-content,
+    .enc-content {
+      max-width: 100%;
+    }
+
+    .enc-content {
+      text-align: left;
+      margin-left: 0;
+    }
+
+    .enc-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 38vh;
+      left: auto; top: auto; bottom: auto;
+      margin-bottom: 1.5rem;
+      border-radius: 4px 20px 4px 20px;
+      overflow: hidden;
+    }
+
+    .enc-img-fade { background: linear-gradient(0deg, var(--vermelho) 0%, rgba(216,0,0,0.4) 30%, rgba(216,0,0,0) 70%); }
+
+    /* Provocação (S2): texto empilhado sobre o mosaico, mosaico em tamanho real */
+    .provocacao-wrap { flex-direction: column; align-items: stretch; gap: 2rem; }
+
+    .provocacao-texto { flex: none; }
+
+    .mosaico-placeholder { flex: none; width: 100%; aspect-ratio: 1.15; }
+
+    .provocacao-title { max-width: 100%; }
+
+    /* Grids de cards: tudo empilha em 1 coluna */
+    .cards--2x2,
+    .cards--4col,
+    div[style*="grid-template-columns: repeat(2, 1fr)"] {
+      grid-template-columns: 1fr !important;
+      max-width: 100% !important;
+    }
+
+    /* Steps (processo 2 passos com seta): empilha verticalmente */
+    .steps {
+      flex-direction: column;
+      max-width: 100%;
+    }
+
+    .step-arrow { transform: rotate(90deg); padding: 0.3rem 0; }
+
+    /* Camadas (S6): já tem flex-wrap, só garante largura mínima menor */
+    .camada { min-width: 140px; }
+
+    /* Step-row (roadmap): permite quebra se o conteúdo for longo */
+    .step-row { flex-wrap: wrap; row-gap: 0.4rem; }
+
+    .step-date { margin-left: 57px; }
+
+    .divider { margin-left: 0; }
+
+    /* Layouts inline de 2 colunas largas (bullets + placeholder, texto + imagem,
+       cards lado a lado com gap grande): empilham em mobile */
+    div[style*="display: flex; gap: 4rem"],
+    div[style*="display: flex; gap: 1.5rem; width: 100%; flex: 1"] {
+      flex-direction: column !important;
+      gap: 1.6rem !important;
+    }
+
+    div[style*="display: flex; gap: 1rem; align-items: stretch"] {
+      flex-direction: column !important;
+    }
+
+    /* Filhos com max-width percentual restrito (bullets, título, ul) dentro
+       desses wraps: liberam para 100% quando empilhados */
+    ul.bullets[style*="max-width"],
+    h2.titulo-grande[style*="max-width"] {
+      max-width: 100% !important;
+    }
+
+    .fase-tabs { flex-direction: column; gap: 0.5rem; }
+    .fp-duas-colunas { flex-direction: column; gap: 1.4rem; }
+    .prod-card { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+    .prod-invest { text-align: left; }
+
+    /* Tipografia: reduz os mínimos do clamp para caber melhor */
+    .provocacao-title,
+    .titulo-grande { font-size: clamp(1.7rem, 8vw, 3rem) !important; }
+
+    .copykey { font-size: clamp(1.4rem, 6.5vw, 2.4rem) !important; }
+
+    .enc-quote { font-size: clamp(1.4rem, 6vw, 2.2rem) !important; }
+  }
+
+  /* ── Personas slide ── */
+  .personas-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.7rem;
+    width: 100%;
+    position: relative;
+    z-index: 3;
+  }
+
+  .persona-card {
+    background: var(--papel);
+    border-radius: 4px 16px 4px 16px;
+    padding: 0.9rem 1rem;
+    box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 8px 20px rgba(36,26,20,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    position: relative;
+  }
+
+  .persona-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .persona-badge {
+    width: 34px; height: 34px;
+    border-radius: 50% 50% 50% 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .persona-nome {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--tinta);
+    line-height: 1.1;
+  }
+
+  .persona-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: rgba(36,26,20,0.45);
+    line-height: 1.2;
+    margin-top: 0.1rem;
+  }
+
+  .persona-prioridade {
+    margin-left: auto;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.62rem;
+    flex-shrink: 0;
+  }
+
+  .persona-desc {
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: rgba(36,26,20,0.65);
+    line-height: 1.46;
+    flex: 1;
+  }
+
+  .persona-canal {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(36,26,20,0.4);
+    padding-top: 0.4rem;
+    border-top: 1px solid rgba(36,26,20,0.08);
+  }
+
+  .persona-canal-label {
+    color: rgba(36,26,20,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.6rem;
+    margin-right: 0.2rem;
+  }
+
+  .persona-nota {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(36,26,20,0.45);
+    margin-top: 0.5rem;
+    position: relative;
+    z-index: 3;
+  }
+
+
+  /* ── Diagnóstico — statements ── */
+  .diag-statements {
+    display: flex;
+    gap: 0.8rem;
+    width: 100%;
+    position: relative;
+    z-index: 3;
+  }
+
+  .diag-stmt {
+    flex: 1;
+    background: var(--papel);
+    border-radius: 4px 16px 4px 16px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 8px 20px rgba(36,26,20,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .diag-num {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--vermelho);
+    opacity: 0.7;
+  }
+
+  .diag-stmt p {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(36,26,20,0.65);
+    line-height: 1.48;
+  }
+
+  .diag-stmt strong {
+    color: var(--tinta);
+    font-weight: 800;
+  }
+
+
+  /* ── Sistema Visual — paleta + grid ── */
+  .sv-wrapper {
+    display: flex;
+    gap: 1.8rem;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    max-height: 420px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .sv-paleta {
+    flex: 1.1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .sv-grid-placeholder {
+    flex: 1.4;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .sv-secao-label {
+    font-family: var(--corpo);
+    font-weight: 800;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: rgba(36,26,20,0.4);
+  }
+
+  .sv-cores {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 0;
+    max-height: 380px;
+  }
+
+  .sv-swatch {
+    border-radius: 4px 14px 4px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.6rem 0.7rem;
+    gap: 0.1rem;
+    min-height: 0;
+  }
+
+  .sv-hex {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(0.72rem, 0.9vw, 0.9rem);
+    color: rgba(255,255,255,0.92);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .sv-nome {
+    font-family: var(--corpo);
+    font-weight: 700;
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+
+  /* ── KV phone carousel ── */
+  .kv-phones-wrap {
+    display: flex;
+    gap: 1.6rem;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+    z-index: 3;
+  }
+
+  .kv-phone-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transform: scale(0.88) translateY(8px);
+    opacity: 0.65;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+  }
+
+  .kv-phone-item.kv-center {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+
+  .kv-phone-frame {
+    width: 280px;
+    height: 350px;
+    border-radius: 20px;
+    border: 2.5px solid rgba(255,255,255,0.8);
+    background: #111;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .kv-notch {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 10px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 0 0 10px 10px;
+    z-index: 5;
+  }
+
+  .kv-screen {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .kv-home-bar {
+    position: absolute;
+    bottom: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 50px; height: 4px;
+    background: rgba(255,255,255,0.55);
+    border-radius: 4px;
+    z-index: 5;
+  }
+
+  .kv-phone-label {
+    font-family: var(--corpo);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    line-height: 1.3;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .kv-phone-label span {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    text-transform: none;
+    letter-spacing: 0;
+    display: block;
+    margin-top: 1px;
+  }
+
+  .kv-lbl-active {
+    color: rgba(255,255,255,0.9) !important;
+  }
+
+  .kv-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0.5rem;
+    position: relative;
+    z-index: 3;
+  }
+
+  .kv-nav {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .kv-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .kv-dot-on {
+    background: #fff;
+    transform: scale(1.3);
+  }
+
+  .kv-progress-bar {
+    width: 70px; height: 2px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-left: 6px;
+  }
+
+  .kv-progress-fill {
+    height: 100%;
+    background: rgba(255,255,255,0.65);
+    border-radius: 2px;
+    width: 0%;
+  }
+
+
+  /* ── Moodboard mosaic ── */
+  .mb-mosaic {
+    display: grid;
+    grid-template-columns: 1.9fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    max-height: 478px;
+    border-radius: 4px 16px 4px 16px;
+    overflow: hidden;
+  }
+
+  .mb-cell {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .mb-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .mb-r2c1 img { object-position: center 20%; }
+  .mb-r1c1 img { object-position: center 40%; }
+
+</style>
+</head>
+<body>
+
+<nav id="slide-nav"></nav>
+<div id="slide-counter">1 / 22</div>
+<div id="nav-arrows">
+  <button id="btn-prev" aria-label="Slide anterior">↑</button>
+  <button id="btn-next" aria-label="Próximo slide">↓</button>
+</div>
+<div id="notes-bar"></div>
+
+<div id="presentation">
+  <!-- ═══════════════════════════════════════════
+       SLIDE 1 — CAPA
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--vermelho" data-index="0"
+    data-notes="Deixar o visual falar. Dar um momento de silêncio enquanto o slide aparece antes de começar a falar. O tom de tudo que vem a seguir começa aqui. O nome da plataforma NÃO aparece ainda — a ideia precisa ser defendida antes de ser entregue.">
+    <div class="grain"></div>
+    <div class="mancha-clip"><div class="mancha" style="width:46vw;height:46vw;left:-18vw;bottom:-22vw;background:rgba(255,253,248,0.05);"></div></div>
+    <div class="capa-img-wrap">
+          <!-- [IMG_1Mumu, mascote da Trevo, em cima da geladeira na cozinha] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 1 — Mumu, mascote da Trevo, em cima da geladeira na cozinha]</span>
+          </div>
+      <div class="capa-img-fade"></div>
+    </div>
+    <div class="capa-content">
+          <!-- [LOGO_2] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-img" src="[MARCA_LOGO_BASE64]" style="margin-bottom: 3.2rem;" alt="Trevo">
+      <p class="eyebrow" style="position: relative;">Plataforma de marca e campanha mestre</p>
+      <h1 style="font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 4.2vw, 3.6rem); color: #fff; line-height: 1.05; position: relative; max-width: 90%;">2026 / 2027</h1>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 2 — ABERTURA PROVOCATIVA
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="1"
+    data-notes="Pausar após mostrar o slide. Deixar a afirmação respirar por alguns segundos. Então: 'E esse é exatamente o ponto de partida de tudo que vocês vão ver hoje.'">
+          <!-- [LOGO_3] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <div class="mancha-clip"><div class="mancha" style="width:30vw;height:30vw;right:-10vw;top:-12vw;background:rgba(216,0,0,0.05);"></div></div>
+    <svg class="onda-marca" style="color: var(--vermelho); right: 6vw; bottom: 6vh; opacity: 0.18;" width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 75C15 65 15 55 5 45C15 35 15 25 5 15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      <path d="M22 80C32 70 32 60 22 50C32 40 32 30 22 20" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      <path d="M39 85C49 75 49 65 39 55C49 45 49 35 39 25" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <div class="provocacao-wrap">
+      <div class="provocacao-texto">
+        <h1 class="provocacao-title">
+          Não existe<br>
+          <em>"a família<br>brasileira"</em>
+        </h1>
+        <p style="font-family: var(--serif); font-style: italic; font-weight: 500; font-size: clamp(1.5rem, 3.2vw, 2.5rem); color: var(--oliva); margin-top: 1.8rem;">
+          Existem famílias.
+        </p>
+      </div>
+      <div>
+        <div class="mosaico-placeholder">
+          <div class="mp-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-4.5-4.5a2 2 0 0 0-2.8 0L8 17"/></svg>
+            <span>Família<br>tradicional</span>
+          </div>
+          <div class="mp-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-4.5-4.5a2 2 0 0 0-2.8 0L8 17"/></svg>
+            <span>Mãe ou pai<br>solo</span>
+          </div>
+          <div class="mp-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-4.5-4.5a2 2 0 0 0-2.8 0L8 17"/></svg>
+            <span>Casal sem<br>filhos</span>
+          </div>
+          <div class="mp-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-4.5-4.5a2 2 0 0 0-2.8 0L8 17"/></svg>
+            <span>Família<br>multigeracional</span>
+          </div>
+          <div class="mp-item mp-wide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-4.5-4.5a2 2 0 0 0-2.8 0L8 17"/></svg>
+            <span>+ amigos, repúblicas, famílias reconstituídas...</span>
+          </div>
+        </div>
+        <p class="mosaico-legenda">[ mosaico de fotos reais — famílias Trevo ]</p>
+      </div>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_4] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_5] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 3 — A FAMÍLIA REAL
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="2"
+    data-notes="Em 2022, pela primeira vez na história, famílias com casal e filhos deixaram de ser maioria no Brasil. O que cresceu no lugar é exatamente isso — diversidade de arranjos, cada um com uma realidade diferente. A pergunta que fica é: a comunicação da Trevo reflete isso? Ainda não. E é aí que a proposta de hoje começa.">
+          <!-- [LOGO_6] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">O retrato real</p>
+    <h2 class="titulo-grande" style="font-size: clamp(2rem, 4vw, 3.4rem); margin-bottom: 2rem;">A família brasileira<br>tem muitas caras</h2>
+    <div class="cards cards--2x2" style="max-width: 84%;">
+      <div class="card">
+        <div class="card-title">Família multigeracional</div>
+        <div class="card-text">Vô, mãe, filha — tudo junto, cada um com seus rituais</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Família monoparental</div>
+        <div class="card-text">Mães solo já são <strong>30% do total</strong> — e crescendo <small style="color:#aaa;font-weight:700;">CNTE-CUT</small></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Casal sem filhos</div>
+        <div class="card-text">Quase dobrou — de <strong>13,8% para 26,9%</strong> entre 2000 e 2022 <small style="color:#aaa;font-weight:700;">IBGE</small></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Mãe/pai de pet</div>
+        <div class="card-text"><strong>2,3 pets</strong> por domicílio — presente em todas as faixas de renda</div>
+      </div>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_7] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_8] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 4 — PANORAMA DE CLASSE
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="3"
+    data-notes="Esses números mudam a régua de quem é o público real da Trevo. Não é nicho, é a maioria do país — e uma maioria que subiu de classe recentemente, então a relação dela com consumo ainda está se formando. Mais escolarizada do que o estereótipo de classe C/D costuma supor, e isso muda o tom que a publicidade pode usar. O fechamento é importante: não é sobre ser a opção mais barata, é sobre entregar valor percebido.">
+          <!-- [LOGO_9] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Panorama do público</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 1.8rem;">As classes C e D não são um nicho — são o Brasil</h2>
+
+    <div class="cards cards--2x2" style="max-width: 90%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem;">
+      <div class="meta-card">
+        <p class="meta-label">Classes C + D</p>
+        <p class="meta-num">76%</p>
+        <p class="meta-sub">da população brasileira — 60,9% na classe C, 15,05% na classe D <small style="color:#aaa; font-weight:700;">FGV Social, 2024</small></p>
+      </div>
+      <div class="meta-card">
+        <p class="meta-label">Classe C isolada</p>
+        <p class="meta-num">60,9%</p>
+        <p class="meta-sub">a maior fatia já registrada na série histórica da FGV, iniciada em 1976 <small style="color:#aaa; font-weight:700;">FGV Social</small></p>
+      </div>
+      <div class="meta-card">
+        <p class="meta-label">Mobilidade social</p>
+        <p class="meta-num">17,4 milhões</p>
+        <p class="meta-sub">de pessoas subiram de classe entre 2022 e 2024 — a maior mobilidade em décadas, mas ainda um equilíbrio frágil <small style="color:#aaa; font-weight:700;">FGV Social</small></p>
+      </div>
+      <div class="meta-card">
+        <p class="meta-label">Escolaridade média</p>
+        <p class="meta-num">10,2 anos</p>
+        <p class="meta-sub">de estudo — ensino médio incompleto na média. Mais instruídos do que a publicidade costuma supor. <small style="color:#aaa; font-weight:700;">IBGE/PNAD</small></p>
+      </div>
+    </div>
+
+    <p style="margin-top: 1.6rem; font-size: 0.92rem; color: rgba(36,26,20,0.6); font-weight: 700; max-width: 85%; line-height: 1.5;">Esse público não busca apenas o mais barato. Busca o que entrega mais — <strong style="color: var(--vermelho-esc);">71% prefere produtos mais saudáveis mesmo pagando mais caro por eles</strong>, e 8 em cada 10 brasileiros se esforçam para ter uma alimentação melhor. <small style="color:#aaa; font-weight:700;">Fiesp</small></p>
+
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_10] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_11] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+  <!-- ═══════════════════════════════════════════
+       SLIDE 5 — AS PERSONAS
+  ════════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="4"
+    data-notes="Quatro perfis reais — não abstrações de agência. Aline é a entrada principal: ela decide o carrinho, tem influência reversa sobre a mãe e potencial de conteúdo espontâneo. Rosana não é alcançada pela mídia: o caminho para ela passa pela Aline e pelo PDV. Bruna e Débora ampliam o território sem abandonar o core.">
+          <!-- [LOGO_12] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Quem a Trevo está falando</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.8rem, 3.5vw, 3rem); margin-bottom: 1.4rem;">As quatro personas da Trevo</h2>
+    <div class="personas-grid">
+
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-badge" style="background: var(--vermelho);">A</div>
+          <div>
+            <div class="persona-nome">Aline, 33</div>
+            <div class="persona-tag">A mãe que se vira sozinha</div>
+          </div>
+          <div class="persona-prioridade" style="background:var(--vermelho); color:#fff;">01</div>
+        </div>
+        <p class="persona-desc">Operadora de telemarketing, mãe solo de dois filhos em Contagem (MG). Renda de R$ 2.100/mês. Decide sozinha o que entra no carrinho — não pode arriscar produto que o filho vai recusar.</p>
+        <div class="persona-canal"><span class="persona-canal-label">Canal:</span> Instagram · WhatsApp</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-badge" style="background: var(--laranja);">R</div>
+          <div>
+            <div class="persona-nome">Rosana, 51</div>
+            <div class="persona-tag">A guardiã do sabor da família</div>
+          </div>
+          <div class="persona-prioridade" style="background:var(--laranja); color:#fff;">02</div>
+        </div>
+        <p class="persona-desc">Matriarca multigeracional. Renda de R$ 1.550/mês. Compra por tradição — se a família aprovou no almoço de domingo, o produto fica por anos. Não chega pela mídia: chega pela Aline e pelo PDV.</p>
+        <div class="persona-canal"><span class="persona-canal-label">Canal:</span> WhatsApp · Facebook</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-badge" style="background: var(--pink);">B</div>
+          <div>
+            <div class="persona-nome">Bruna, 29</div>
+            <div class="persona-tag">O casal que cozinha junto</div>
+          </div>
+          <div class="persona-prioridade" style="background:var(--pink); color:#fff;">03</div>
+        </div>
+        <p class="persona-desc">Vive com o companheiro, sem filhos. Renda familiar de R$ 5.900/mês. Exigente em percepção de qualidade — fideliza quando o produto entrega mais do que a embalagem modesta prometia.</p>
+        <div class="persona-canal"><span class="persona-canal-label">Canal:</span> Instagram · TikTok</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-badge" style="background: var(--azul);">D</div>
+          <div>
+            <div class="persona-nome">Débora, 26</div>
+            <div class="persona-tag">A família sou eu (e meus dois gatos)</div>
+          </div>
+          <div class="persona-prioridade" style="background:var(--azul); color:#fff;">04</div>
+        </div>
+        <p class="persona-desc">Mora sozinha com dois gatos e plantas. Renda de R$ 1.950/mês. Fideliza quando a marca a inclui no conceito de família. Alto potencial de gerar conteúdo espontâneo se se sentir vista.</p>
+        <div class="persona-canal"><span class="persona-canal-label">Canal:</span> TikTok · Instagram</div>
+      </div>
+
+    </div>
+    <p class="persona-nota">Prioridade de entrada: Aline → Rosana → Bruna → Débora · Rosana não é alcançada diretamente: o caminho passa pela Aline e pelo PDV.</p>
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_13] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_14] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 5 — MOMENTO CULTURAL
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="5"
+    data-notes="Isso não é modismo passageiro — é permissão cultural. O Brasil aprendeu a se orgulhar do próprio jeitinho sem precisar de tradução. Essa janela existe agora, e a Trevo tem tudo para ocupá-la de forma genuína. Não como oportunismo — como expressão natural de quem já é.">
+          <!-- [LOGO_15] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Janela de oportunidade</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); max-width: 58%; margin-bottom: 2rem;">O Brasil virou tendência global — de verdade</h2>
+    <div style="display: flex; gap: 4rem; align-items: flex-start; width: 100%;">
+      <ul class="bullets" style="flex: 1; max-width: 52%;">
+        <li>The Economist aponta o Brasil como motor cultural de 2026</li>
+        <li>Brazilcore: estética brasileira como linguagem desejada no mundo todo</li>
+        <li>A virada: deixamos de ser "inspiração exótica" para ser autoria</li>
+        <li>Para a Trevo: permissão cultural para celebrar o que já somos — sem desculpa</li>
+      </ul>
+      <div style="flex: 1; min-height: 220px; border-radius: 4px 16px 4px 16px; overflow: hidden; position: relative;">
+          <!-- [IMG_16Moodboard Brazilcore] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 16 — Moodboard Brazilcore]</span>
+          </div>
+      </div>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_17] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_18] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 6 — DIAGNÓSTICO
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="6"
+    data-notes="Antes de qualquer proposta, precisamos ser honestos sobre o diagnóstico. O problema mais crítico não é um post específico nem um canal — é a ausência de uma cola. Algo que dê sentido para qualquer coisa que a Trevo publique, de uma receita rápida a uma collab com influenciadora. É isso que a plataforma que vamos apresentar agora resolve.">
+          <!-- [LOGO_19] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">O diagnóstico</p>
+    <h2 class="titulo-grande" style="margin-bottom: 2rem;">
+      Conteúdo existe.<br>
+      <span style="color: var(--vermelho-esc);">Cola, não.</span>
+    </h2>
+    <ul class="bullets" style="margin-bottom: 1.4rem;">
+      <li>Conteúdos soltos — sem lógica que os conecte</li>
+      <li>Portfólio diverso sem narrativa que una os perfis</li>
+      <li>Reposicionamento que precisa elevar percepção sem soar distante</li>
+    </ul>
+    <div class="diag-statements">
+      <div class="diag-stmt">
+        <span class="diag-num">01</span>
+        <p>Conteúdos que <strong>não se reconhecem</strong> entre si — sem linha editorial comum</p>
+      </div>
+      <div class="diag-stmt">
+        <span class="diag-num">02</span>
+        <p>Portfólio rico, <strong>narrativa ausente</strong> — cada perfil fala por conta própria</p>
+      </div>
+      <div class="diag-stmt">
+        <span class="diag-num">03</span>
+        <p>Reposicionamento iniciado, mas sem <strong>cola que sustente</strong> a percepção de qualidade</p>
+      </div>
+    </div>
+        <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_20] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_21] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 7 — A PLATAFORMA
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--vermelho" data-index="7"
+    data-notes="Esse é o coração de tudo. 'Do Jeitinho da Sua Família' não é um slogan — é uma plataforma. E ela carrega três camadas ao mesmo tempo, o que é exatamente o que garante sua durabilidade. A primeira: inclusão sem exclusão. Não estamos falando de uma família ideal e estável. Estamos falando da família real — com criança que não come esse produto, com o vô que só toma o de sempre, com o dia corrido. A segunda é onde está a inteligência: 'jeitinho' não é diminuição — é posicionamento. Tem calor, tem improviso, tem amor no processo. É o oposto de 'do jeito certo', que soa elitista e distante. Essa distinção é o que permite o reposicionamento da marca sem afastar quem sempre confiou nela. A terceira: 'a sua família' é inesgotável como gatilho criativo. Café da manhã caótico, sobremesa de sábado, lancheira da escola — sempre tem uma nova situação para explorar. A plataforma nunca envelhece.">
+    <div class="grain"></div>
+          <!-- [LOGO_22] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="opacity: 0.95;" alt="Trevo">
+    <div class="mancha-clip"><div class="mancha" style="width:38vw;height:38vw;right:-14vw;bottom:-16vw;background:rgba(244,184,0,0.08);"></div></div>
+    <p class="eyebrow" style="position:relative;">Plataforma de marca</p>
+    <h2 class="titulo-grande" style="font-size: clamp(2.6rem, 6.2vw, 5rem); margin-bottom: 2.6rem; position:relative;">
+      Do Jeitinho<br>da Sua Família
+    </h2>
+    <div class="camadas" style="position:relative;">
+      <div class="camada" style="border-color: var(--amarelo);">
+        <p class="camada-label" style="color: var(--amarelo);">Inclusão sem exclusão</p>
+        <p class="camada-text">Não é a família ideal — é a <em>sua</em></p>
+      </div>
+      <div class="camada" style="border-color: var(--laranja);">
+        <p class="camada-label" style="color: var(--laranja);">Qualidade sem pedantismo</p>
+        <p class="camada-text">Jeitinho tem afeto e pragmatismo — não é "do jeito certo"</p>
+      </div>
+      <div class="camada" style="border-color: var(--pink);">
+        <p class="camada-label" style="color: var(--pink);">Território sustentável</p>
+        <p class="camada-text">Nunca envelhece — sempre há uma nova situação para explorar</p>
+      </div>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_23] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_24] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 8 — COPY-KEY
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="8"
+    data-notes="Essa copy-key faz um trabalho muito preciso. A primeira parte valida a diversidade — não existe uma família só, cada uma tem o seu jeito. A segunda parte posiciona o portfólio não como argumento de venda, mas como reconhecimento de realidade: a Trevo existe para todos esses jeitinhos. É simples, é verdadeiro e é difícil de esquecer.">
+          <!-- [LOGO_25] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <div class="mancha-clip"><div class="mancha" style="width:26vw;height:26vw;left:-8vw;bottom:-10vw;background:rgba(244,184,0,0.12);"></div></div>
+    <p class="eyebrow">Copy-key</p>
+    <blockquote class="copykey">
+      "Cada família tem o seu jeito.<br>
+      Trevo tem o sabor para todas elas."
+    </blockquote>
+    <p style="font-size: clamp(1rem, 1.6vw, 1.2rem); font-weight: 800; color: var(--vermelho);">
+      #DoJeitinhoDaSuaFamília
+    </p>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_26] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_27] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 9 — MOODBOARD
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="9" style="padding-top: 4vh; padding-bottom: 4vh;"
+    data-notes="Agora que vocês conhecem o conceito, deixem eu mostrar como isso se traduz visualmente. Não estamos entregando a identidade final aqui — estamos mostrando o mundo em que a Trevo vai viver. [Deixar as imagens falarem — não narrar cada uma, dar tempo para o público absorver o conjunto.]">
+          <!-- [LOGO_28] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Moodboard</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 1rem;">O universo visual que a Trevo vai habitar</h2>
+    <div class="mb-mosaic">
+        <div class="mb-cell mb-r1c1">
+          <!-- [IMG_29Arquitetura brasileira com muxarabi] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 29 — Arquitetura brasileira com muxarabi]</span>
+          </div>
+        </div>
+        <div class="mb-cell mb-r1c2">
+          <!-- [IMG_30Jardim com plantas brasileiras] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 30 — Jardim com plantas brasileiras]</span>
+          </div>
+        </div>
+        <div class="mb-cell mb-r1c3">
+          <!-- [IMG_31Quarto aconchegante] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 31 — Quarto aconchegante]</span>
+          </div>
+        </div>
+        <div class="mb-cell mb-r2c1">
+          <!-- [IMG_32Mesa de café da manhã brasileira] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 32 — Mesa de café da manhã brasileira]</span>
+          </div>
+        </div>
+        <div class="mb-cell mb-r2c2">
+          <!-- [IMG_33Cozinha brasileira real] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 33 — Cozinha brasileira real]</span>
+          </div>
+        </div>
+        <div class="mb-cell mb-r2c3">
+          <!-- [IMG_34Sala de estar brasileira] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 34 — Sala de estar brasileira]</span>
+          </div>
+        </div>
+      </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_35] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_36] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 10 — UNIVERSO VISUAL
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="10"
+    data-notes="O princípio guia é esse: o universo visual precisa fazer sentido em qualquer contexto onde a família Trevo realmente vive. Do post no Instagram à embalagem na geladeira. O que vocês estão vendo é uma janela — não a entrega completa.">
+          <!-- [LOGO_37] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Sistema visual</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 1.6rem;">Uma identidade que funciona<br>no feed e na geladeira</h2>
+    <div class="sv-wrapper">
+
+      <!-- Paleta oficial -->
+      <div class="sv-paleta">
+        <p class="sv-secao-label">Paleta oficial</p>
+        <div class="sv-cores">
+          <div class="sv-swatch" style="background:#E60031;">
+            <span class="sv-hex">#E60031</span>
+            <span class="sv-nome">Vermelho</span>
+          </div>
+          <div class="sv-swatch" style="background:#D4001D;">
+            <span class="sv-hex">#D4001D</span>
+            <span class="sv-nome">Verm. escuro</span>
+          </div>
+          <div class="sv-swatch" style="background:#F8B800;">
+            <span class="sv-hex" style="color:#5a3e00;">#F8B800</span>
+            <span class="sv-nome" style="color:rgba(0,0,0,0.5);">Amarelo</span>
+          </div>
+          <div class="sv-swatch" style="background:#FF6600;">
+            <span class="sv-hex">#FF6600</span>
+            <span class="sv-nome">Laranja</span>
+          </div>
+          <div class="sv-swatch" style="background:#FF4B8B;">
+            <span class="sv-hex">#FF4B8B</span>
+            <span class="sv-nome">Pink</span>
+          </div>
+          <div class="sv-swatch" style="background:#92D0FF;">
+            <span class="sv-hex" style="color:#1a3a5c;">#92D0FF</span>
+            <span class="sv-nome" style="color:rgba(0,0,0,0.45);">Azul</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid de aplicações (placeholder) -->
+      <div class="sv-grid-placeholder">
+        <p class="sv-secao-label">Grid de aplicações</p>
+        <div class="placeholder" style="flex:1; min-height: 0;">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><path d="M10.5 18.5h3"/></svg>
+          <span>Post estático · Carrossel<br>Stories · Embalagem</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_38] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_39] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 11 — CRITÉRIO CRIATIVO
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="11"
+    data-notes="A campanha mestre tem uma estrutura narrativa replicável — e é isso que garante que qualquer peça, em qualquer canal, pareça Trevo. Começa com uma situação que qualquer pessoa do público reconhece. Evolui com o jeitinho específico daquela família. E termina com o produto como solução natural — não com aquela virada forçada de 'e por falar nisso, apresento o produto'. A Trevo entra porque faz sentido estar ali. Isso funciona em vídeo curto, carrossel e stories sem perder o fio.">
+          <!-- [LOGO_40] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Critério criativo</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 0.6rem;">Cada peça nasce do mesmo lugar</h2>
+    <div class="steps">
+      <div class="step" style="background: var(--vermelho); color: #fff;">
+        <span class="step-num">①</span>
+        <span class="step-title">Situação</span>
+        <span class="step-desc">Familiar, reconhecível — o caos, o conflito de gostos, a correria</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step" style="background: var(--laranja); color: #fff;">
+        <span class="step-num">②</span>
+        <span class="step-title">O jeitinho</span>
+        <span class="step-desc">Daquela família específica para lidar com isso</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step" style="background: var(--amarelo); color: var(--tinta);">
+        <span class="step-num">③</span>
+        <span class="step-title">Trevo</span>
+        <span class="step-desc">Como parte natural da solução — não como interrupção</span>
+      </div>
+    </div>
+    <p style="margin-top: 2rem; font-size: 0.92rem; color: #888; font-weight: 700; font-style: italic;">
+      Funciona em vídeo curto, carrossel e stories sem perder o fio.
+    </p>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_41] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_42] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  
+  <!-- ═══════════════════════════════════════════
+       SLIDE 12 — KV PRINCIPAL · FAMÍLIA
+  ════════════════════════════════════════════ -->
+  <section class="slide slide--vermelho" data-index="12" style="padding: 0; position: relative; overflow: hidden;"
+    data-notes="Esse é o KV principal da campanha — a família multigeracional no café de domingo. A cena resume a plataforma: diversidade de arranjos, produto presente de forma natural, celebração do jeitinho de cada um.">
+          <!-- [IMG_43KV principal Trevo — família reunida] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 43 — KV principal Trevo — família reunida]</span>
+          </div>
+    <div style="position:absolute;inset:0;background:linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0) 100%);"></div>
+          <!-- [LOGO_44] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="z-index: 5;" alt="Trevo">
+
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_45] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_46] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 13 — KV · DESDOBRAMENTO FEED
+  ════════════════════════════════════════════ -->
+  <section class="slide slide--vermelho" data-index="13" style="padding-top: 4.5vh; padding-bottom: 3vh; justify-content: flex-start;"
+    data-notes="O mesmo conceito vive no feed. Cada post é uma família diferente — reconhecível para quem se vê ali. O carrossel ao vivo mostra como o KV se desdobra em Stories e posts para as personas prioritárias.">
+          <!-- [LOGO_47] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="z-index: 5;" alt="Trevo">
+    <p class="eyebrow" style="color:rgba(255,255,255,0.9); background:rgba(255,255,255,0.15); border-radius:20px; margin-bottom:0.6rem;">Do Jeitinho da Sua Família · Feed</p>
+    <h2 class="titulo-grande" style="color:#fff;font-size:clamp(1.4rem,2.5vw,2.2rem);margin-bottom:1.2rem;font-weight:700;">O conceito que vive<br>no feed delas</h2>
+
+    <div class="kv-phones-wrap">
+
+      <div class="kv-phone-item" id="kv-p0" onclick="kvGoTo(0)">
+        <div class="kv-phone-frame">
+          <div class="kv-notch"></div>
+          <div class="kv-screen" style="background:#1a0a08;">
+          <!-- [IMG_48Mãe e filho — Aline] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 48 — Mãe e filho — Aline]</span>
+          </div>
+          </div>
+          <div class="kv-home-bar"></div>
+        </div>
+        <p class="kv-phone-label" id="kv-lbl0">Mãe e filho<br><span>Persona Aline</span></p>
+      </div>
+
+      <div class="kv-phone-item kv-center" id="kv-p1" onclick="kvGoTo(1)">
+        <div class="kv-phone-frame">
+          <div class="kv-notch"></div>
+          <div class="kv-screen" style="background:#1a0f08;">
+          <!-- [IMG_49Mãe de pet — Débora] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 49 — Mãe de pet — Débora]</span>
+          </div>
+          </div>
+          <div class="kv-home-bar"></div>
+        </div>
+        <p class="kv-phone-label kv-lbl-active" id="kv-lbl1">Mãe de pet<br><span>Persona Débora</span></p>
+      </div>
+
+      <div class="kv-phone-item" id="kv-p2" onclick="kvGoTo(2)">
+        <div class="kv-phone-frame">
+          <div class="kv-notch"></div>
+          <div class="kv-screen" style="background:#180e04;">
+          <!-- [IMG_50Café sem pressa — Rosana] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 50 — Café sem pressa — Rosana]</span>
+          </div>
+          </div>
+          <div class="kv-home-bar"></div>
+        </div>
+        <p class="kv-phone-label" id="kv-lbl2">Café sem pressa<br><span>Persona Rosana</span></p>
+      </div>
+
+    </div>
+
+    <div class="kv-controls">
+      <button class="kv-nav" onclick="kvGoTo(kvCur-1)" aria-label="Anterior">&#8249;</button>
+      <button class="kv-dot kv-dot-on" id="kv-d0" onclick="kvGoTo(0)"></button>
+      <button class="kv-dot" id="kv-d1" onclick="kvGoTo(1)"></button>
+      <button class="kv-dot" id="kv-d2" onclick="kvGoTo(2)"></button>
+      <button class="kv-nav" onclick="kvGoTo(kvCur+1)" aria-label="Próximo">&#8250;</button>
+      <div class="kv-progress-bar"><div class="kv-progress-fill" id="kvProgFill"></div></div>
+    </div>
+
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_51] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_52] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+<!-- ═══════════════════════════════════════════
+       SLIDE 13 — ROADMAP DE EVOLUÇÃO DA CAMPANHA
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="14" style="padding-top: 4.5vh; padding-bottom: 4.5vh;"
+    data-notes="Esse é o mapa de evolução da campanha ao longo dos 12 meses. Não é um calendário rígido — é uma lógica de maturidade: primeiro construímos identidade, depois amplificamos com ativações, e por fim consolidamos com comunidade. Cada fase tem objetivo e tom de ativação próprios.">
+    <div class="grain"></div>
+    <div class="mancha-clip"><div class="mancha" style="width:26vw;height:26vw;right:-8vw;top:-10vw;background:rgba(216,0,0,0.05);"></div></div>
+          <!-- [LOGO_53] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+
+    <p class="eyebrow">Lógica de evolução da campanha</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.4vw, 3rem); margin-bottom: 0.3rem;">Construir, amplificar, consolidar</h2>
+    <p style="font-size: 0.92rem; color: rgba(36,26,20,0.55); font-weight: 700; margin-bottom: 1.5rem;">Horizonte de julho a junho — não é calendário rígido, é maturidade de comunicação</p>
+
+    <div class="fase-tabs">
+      <button class="fase-tab active" data-fase="1" onclick="trocarFase(1)">
+        <span class="ft-num">Fase 1</span>
+        <span class="ft-title">Construção de identidade</span>
+        <span class="ft-periodo">Julho – Setembro</span>
+      </button>
+      <button class="fase-tab" data-fase="2" onclick="trocarFase(2)">
+        <span class="ft-num">Fase 2</span>
+        <span class="ft-title">Amplificação com ativações</span>
+        <span class="ft-periodo">Outubro – Fevereiro</span>
+      </button>
+      <button class="fase-tab" data-fase="3" onclick="trocarFase(3)">
+        <span class="ft-num">Fase 3</span>
+        <span class="ft-title">Consolidação com comunidade</span>
+        <span class="ft-periodo">Março – Junho</span>
+      </button>
+    </div>
+
+    <div class="fase-painel active" id="painel-1" data-fase-color="1">
+      <p class="fp-objetivo">Apresentar a plataforma de campanha e criar associação entre Trevo, família, variedade, cuidado e cotidiano.</p>
+      <div class="fp-duas-colunas">
+        <div class="fp-col">
+          <p class="fp-block-title">Foco de conteúdo</p>
+          <ul class="fp-list">
+            <li>Apresentação do conceito "Do jeitinho da sua família"</li>
+            <li>Situações reais de consumo dentro de casa</li>
+            <li>Variedade do portfólio como resposta aos diferentes jeitos</li>
+            <li>Trevo Kids em entrada leve · Mumu em presença pontual</li>
+          </ul>
+        </div>
+        <div class="fp-col">
+          <p class="fp-block-title">Tipo de ativação</p>
+          <ul class="fp-list">
+            <li>Filme/peça manifesto · carrosséis conceituais</li>
+            <li>Reels com situações familiares simples</li>
+            <li>Influenciadores em formato piloto</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="fase-painel" id="painel-2" data-fase-color="2">
+      <p class="fp-objetivo">Ampliar alcance, frequência e relevância por meio de ativações de calendário, influenciadores, Mumu, receitas e Trevo Kids.</p>
+      <div class="fp-duas-colunas">
+        <div class="fp-col">
+          <p class="fp-block-title">Foco de conteúdo</p>
+          <ul class="fp-list">
+            <li>Datas de calendário reinterpretadas pelo conceito</li>
+            <li>Trevo Kids com mais protagonismo</li>
+            <li>Mumu em humor leve, trends e oportunidade</li>
+            <li>Conteúdos regionais em praças de maior força cultural</li>
+          </ul>
+        </div>
+        <div class="fp-col">
+          <p class="fp-block-title">Tipo de ativação</p>
+          <ul class="fp-list">
+            <li>Dia das Crianças, fim de ano, volta às aulas</li>
+            <li>Influenciadores com briefing integrado ao conceito</li>
+            <li>Primeiros estímulos de participação (enquetes, reposts)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="fase-painel" id="painel-3" data-fase-color="3">
+      <p class="fp-objetivo">Consolidar a campanha como plataforma de comunidade, estimulando UGC, participação, regionalidade e recorrência dos hubs mais fortes.</p>
+      <div class="fp-duas-colunas">
+        <div class="fp-col">
+          <p class="fp-block-title">Foco de conteúdo</p>
+          <ul class="fp-list">
+            <li>Histórias reais de consumidores · receitas da audiência</li>
+            <li>Mumu como condutora de conversas da marca</li>
+            <li>Conteúdos regionais — costumes, sotaques, hábitos locais</li>
+            <li>Criação de séries recorrentes</li>
+          </ul>
+        </div>
+        <div class="fp-col">
+          <p class="fp-block-title">Tipo de ativação</p>
+          <ul class="fp-list">
+            <li>Chamadas para consumidores mostrarem seus jeitos</li>
+            <li>Influenciadores locais em mercados prioritários</li>
+            <li>Consolidação dos melhores formatos em séries fixas</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_54] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_55] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 14 — O PAPEL DA MUMU
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="15" style="padding-top: 4.5vh; padding-bottom: 4.5vh;"
+    data-notes="A Mumu ganha uma função muito clara nesse sistema. Ela não é só personagem — ela é a prova de que a própria marca tem o seu jeitinho. O fato de ela já ter personalidade estabelecida é um ativo enorme: permite aparecer em trends sem parecer forçado. E, como vocês vão ver no próximo slide, ela também é a peça que resolve um desafio prático muito imediato.">
+          <!-- [LOGO_56] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">A mascote</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 0.7rem;">A Mumu tem o seu jeitinho —<br>e isso é estratégico</h2>
+    <div style="display: flex; gap: 3rem; align-items: flex-start; width: 100%;">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 0.9rem;">
+        <ul class="bullets">
+          <li>Ela é a família que representa a família</li>
+          <li>Voz ágil para trends e momentos de oportunidade</li>
+          <li>Contraponto bem-humorado à campanha planejada</li>
+          <li>A que abre a cortina para o que vem</li>
+        </ul>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.5rem; margin-top:0.3rem;">
+          <div onclick="mumuSwap('/mumu/mumu-geladeira.jpg')" style="cursor:pointer; border-radius:4px 12px 4px 12px; overflow:hidden; box-shadow:0 4px 10px rgba(36,26,20,0.1); opacity:0.8; transition:opacity 0.2s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.8">
+            <img src="/mumu/mumu-geladeira.jpg" alt="Mumu Geladeira" style="width:100%; height:8vh; max-height:72px; object-fit:cover; display:block;">
+          </div>
+          <div onclick="mumuSwap('/mumu/mumu-brasil.jpg')" style="cursor:pointer; border-radius:4px 12px 4px 12px; overflow:hidden; box-shadow:0 4px 10px rgba(36,26,20,0.1); opacity:0.8; transition:opacity 0.2s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.8">
+            <img src="/mumu/mumu-brasil.jpg" alt="Mumu Copa" style="width:100%; height:8vh; max-height:72px; object-fit:cover; display:block;">
+          </div>
+          <div onclick="mumuSwap('/mumu/mumu-pano.jpg')" style="cursor:pointer; border-radius:4px 12px 4px 12px; overflow:hidden; box-shadow:0 4px 10px rgba(36,26,20,0.1); opacity:0.8; transition:opacity 0.2s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.8">
+            <img src="/mumu/mumu-pano.jpg" alt="Mumu Pano" style="width:100%; height:8vh; max-height:72px; object-fit:cover; display:block;">
+          </div>
+          <div onclick="mumuSwap('/mumu/mumu-heroi.jpg')" style="cursor:pointer; border-radius:4px 12px 4px 12px; overflow:hidden; box-shadow:0 4px 10px rgba(36,26,20,0.1); opacity:0.8; transition:opacity 0.2s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.8">
+            <img src="/mumu/mumu-heroi.jpg" alt="Mumu Herói" style="width:100%; height:8vh; max-height:72px; object-fit:cover; display:block;">
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display:flex; flex-direction:column; gap:0.4rem; cursor:zoom-in;" onclick="mumuLightbox(document.getElementById('mumu-main').src)">
+        <div style="border-radius:4px 24px 4px 24px; overflow:hidden; box-shadow:0 14px 36px rgba(36,26,20,0.14);">
+          <img id="mumu-main" src="/mumu/mumu-geladeira.jpg" alt="Mumu" style="width:100%; height:46vh; max-height:400px; object-fit:cover; display:block; transition:opacity 0.3s;">
+        </div>
+        <p style="font-size:0.68rem; color:rgba(36,26,20,0.35); text-align:center; font-weight:600; letter-spacing:0.03em;">clique para ampliar</p>
+      </div>
+    </div>
+
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_57] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_58] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 15 — CONTEÚDO DE TRANSIÇÃO
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="16"
+    data-notes="Sabemos que há um prazo curto entre a aprovação de hoje e o início das postagens. Por isso temos uma proposta de transição: conteúdo que a Mumu conduz enquanto a campanha mestre é produzida. A ideia é abrir a cortina devagar — o público começa a sentir que algo diferente está chegando, sem saber ainda o quê. É a Mumu preparando o terreno.">
+          <!-- [LOGO_59] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Conteúdo-ponte</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 1.8rem;">Antes do lançamento,<br>a Mumu prepara o terreno</h2>
+    <div style="display: flex; gap: 4rem; align-items: center; width: 100%;">
+      <ul class="bullets" style="flex: 1;">
+        <li>Prazo curto entre aprovação e início das postagens</li>
+        <li>A Mumu conduz: cria antecipação sem entregar a campanha</li>
+        <li>Formato: conteúdo ágil, bem-humorado, no tom do que vem</li>
+      </ul>
+      <div class="placeholder" style="flex: 1; min-height: 220px;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><path d="M10.5 18.5h3"/></svg>
+        <span>Mockup de post de transição</span>
+      </div>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_60] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_61] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 16 — HUBS DE CONTEÚDO
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="17"
+    data-notes="Campanhas criam picos — hubs criam presença. São esses pilares que mantêm a Trevo no feed das famílias nos meses sem data comemorativa. Cada hub se conecta à plataforma e gera conteúdo recorrente — o que significa que a equipe não começa do zero toda semana.">
+          <!-- [LOGO_62] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Conteúdo always-on</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 1.8rem;">O conteúdo que existe entre os picos</h2>
+    <div class="cards cards--4col" style="max-width: 96%;">
+      <div class="card">
+        <div class="card-title">Receitas do jeitinho</div>
+        <div class="card-text">Uso de produto adaptado a cada perfil familiar</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bagunça bonita</div>
+        <div class="card-text">Cotidiano real, humor, situações reconhecíveis</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Trevo Kids</div>
+        <div class="card-text">A linhagem infantil em território próprio</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Mumu em ação</div>
+        <div class="card-text">Espaço de agilidade e trends</div>
+      </div>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_63] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_64] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 17 — PERFORMANCE E ALCANCE
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="18"
+    data-notes="R$5 mil mensais divididos entre Meta e Google, sem conversão direta de vendas — então o mix muda de cara conforme a campanha amadurece. Na fase 1 é awareness pura pra validar criativo. Na fase 2 entra busca sazonal nos picos de calendário. Na fase 3 o foco vira reter quem já engajou. Influenciadores seguem a mesma lógica: piloto primeiro, escala depois, recorrência só pra quem provou tração.">
+          <!-- [LOGO_65] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Tráfego pago · Jan–Mai 2026</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.4rem, 2.6vw, 2.2rem); margin-bottom: 0.9rem;">Base sólida. O que prejudicou: verba instável.</h2>
+
+    <div style="display: flex; gap: 1rem; width: 100%; margin-bottom: 1.2rem;">
+      <div style="flex:1; background:var(--papel); border-radius:4px 16px 4px 16px; padding:0.8rem 1rem; box-shadow:0 8px 20px rgba(36,26,20,0.07); border-top:4px solid var(--vermelho); text-align:center;">
+        <p style="font-family:var(--display); font-size:1.65rem; font-weight:800; color:var(--vermelho);">22,7M</p>
+        <p style="font-size:0.7rem; font-weight:700; color:rgba(36,26,20,0.6); margin-top:0.1rem;">impressões · Jan–Mai 2026</p>
+      </div>
+      <div style="flex:1; background:var(--papel); border-radius:4px 16px 4px 16px; padding:0.8rem 1rem; box-shadow:0 8px 20px rgba(36,26,20,0.07); border-top:4px solid var(--laranja); text-align:center;">
+        <p style="font-family:var(--display); font-size:1.65rem; font-weight:800; color:var(--laranja);">R$1,07</p>
+        <p style="font-size:0.7rem; font-weight:700; color:rgba(36,26,20,0.6); margin-top:0.1rem;">CPM · 3× abaixo do benchmark</p>
+      </div>
+      <div style="flex:1; background:var(--papel); border-radius:4px 16px 4px 16px; padding:0.8rem 1rem; box-shadow:0 8px 20px rgba(36,26,20,0.07); border-top:4px solid var(--amarelo); text-align:center;">
+        <p style="font-family:var(--display); font-size:1.65rem; font-weight:800; color:var(--oliva);">R$0,03</p>
+        <p style="font-size:0.7rem; font-weight:700; color:rgba(36,26,20,0.6); margin-top:0.1rem;">CPV · público assistia o vídeo inteiro</p>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.8rem; width:100%; margin-bottom:1.2rem;">
+      <div>
+        <p style="font-family:var(--display); font-weight:700; color:var(--oliva); font-size:0.83rem; margin-bottom:0.65rem; border-bottom:3px solid var(--amarelo); padding-bottom:0.4rem; display:inline-block;">✓ Mantemos</p>
+        <ul class="bullets" style="font-size:0.8rem;">
+          <li>Dark posts de alcance (CPM ≤ R$1,25)</li>
+          <li>Vídeo ThruPlay — CPV R$0,03–0,07, altíssima retenção</li>
+          <li>Campanha dedicada de crescimento de seguidores</li>
+          <li>Google como vídeo/Discovery — não como busca genérica</li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-family:var(--display); font-weight:700; color:var(--vermelho-esc); font-size:0.83rem; margin-bottom:0.65rem; border-bottom:3px solid var(--vermelho); padding-bottom:0.4rem; display:inline-block;">→ Mudamos</p>
+        <ul class="bullets" style="font-size:0.8rem;">
+          <li>Pausa busca genérica Google — 5 meses, zero resultado</li>
+          <li>Só busca por marca ("trevo lácteos") — posição #1 em 85%</li>
+          <li>Criativos renovados com mais frequência (em maio CPM subiu 153% por saturação)</li>
+          <li>Verba estável por 30 dias — pausas reiniciam o algoritmo do zero</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="width:100%; overflow:hidden; border-radius:4px 14px 4px 14px; border:1.5px solid var(--creme-escuro);">
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; background:var(--oliva); color:var(--creme); font-family:var(--display); font-size:0.7rem; font-weight:700; padding:0.45rem 1rem;">
+        <span>Frente · R$5.000/mês</span><span style="text-align:center;">Plataforma</span><span style="text-align:right;">Verba</span>
+      </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; padding:0.4rem 1rem; background:var(--papel); font-size:0.76rem; border-bottom:1px solid var(--creme-escuro);">
+        <span style="font-weight:700;">Alcance / Awareness</span><span style="text-align:center; color:rgba(36,26,20,0.5);">Meta</span><span style="text-align:right; font-weight:700; color:var(--vermelho-esc);">R$1.200</span>
+      </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; padding:0.4rem 1rem; background:var(--creme); font-size:0.76rem; border-bottom:1px solid var(--creme-escuro);">
+        <span style="font-weight:700;">Vídeo / Retenção</span><span style="text-align:center; color:rgba(36,26,20,0.5);">Meta + Google</span><span style="text-align:right; font-weight:700; color:var(--vermelho-esc);">R$1.700</span>
+      </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; padding:0.4rem 1rem; background:var(--papel); font-size:0.76rem; border-bottom:1px solid var(--creme-escuro);">
+        <span style="font-weight:700;">Seguidores</span><span style="text-align:center; color:rgba(36,26,20,0.5);">Meta</span><span style="text-align:right; font-weight:700; color:var(--vermelho-esc);">R$1.000</span>
+      </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; padding:0.4rem 1rem; background:var(--creme); font-size:0.76rem; border-bottom:1px solid var(--creme-escuro);">
+        <span style="font-weight:700;">Engajamento</span><span style="text-align:center; color:rgba(36,26,20,0.5);">Meta</span><span style="text-align:right; font-weight:700; color:var(--vermelho-esc);">R$600</span>
+      </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; padding:0.4rem 1rem; background:var(--papel); font-size:0.76rem; border-bottom:1px solid var(--creme-escuro);">
+        <span style="font-weight:700;">Busca por marca</span><span style="text-align:center; color:rgba(36,26,20,0.5);">Google</span><span style="text-align:right; font-weight:700; color:var(--vermelho-esc);">R$500</span>
+      </div>
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr; padding:0.4rem 1rem; background:var(--oliva); color:var(--creme); font-family:var(--display); font-size:0.76rem; font-weight:700;">
+        <span>Total</span><span></span><span style="text-align:right;">R$5.000</span>
+      </div>
+    </div>
+
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_66] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_67] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 18 — PRODUÇÃO DE CONTEÚDO
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="19" style="padding-top: 4.5vh; padding-bottom: 4.5vh;"
+    data-notes="O fornecedor grande (Tio Brother) fica reservado para onde o investimento se paga — vídeos-chave de campanha. O volume diário das redes, que é onde perdíamos rapidez, passa a ser coberto por fontes mais ágeis: o parceiro Simplizzia para conteúdo dinâmico, IA generativa para preenchimento visual sob demanda, e a Mumu para reagir à cultura em tempo real. Os valores de Parceiro Simplizzia e da IA ainda estão em aberto — não estamos escondendo isso.">
+          <!-- [LOGO_68] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Produção de conteúdo</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.7rem, 3.2vw, 2.7rem); margin-bottom: 0.3rem;">Qualidade onde importa, agilidade onde a rede pede</h2>
+    <p style="font-size: 0.88rem; color: rgba(36,26,20,0.55); font-weight: 700; margin-bottom: 1rem;">Modelo híbrido de produção — distribuição por fonte, função e investimento</p>
+
+    <div class="prod-lista">
+
+      <div class="prod-card">
+        <div class="prod-badge badge-tiobrother">Vídeo<br>chave</div>
+        <div class="prod-info">
+          <p class="prod-fonte-tag">Fornecedor grande</p>
+          <p class="prod-fonte-nome">Tio Brother</p>
+          <p class="prod-funcao">Hero content, alta produção</p>
+        </div>
+        <div class="prod-tipo">
+          <p>Filme manifesto · vídeos de momentos-âncora (lançamento, Dia das Crianças, Natal, fechamento de ciclo)</p>
+        </div>
+        <div class="prod-invest">
+          <span class="prod-invest-val">R$ 1.500/mês</span>
+          <span class="prod-invest-sub">contrato atual: R$3.000 / 4 vídeos, dividido com outra marca</span>
+        </div>
+      </div>
+
+      <div class="prod-card">
+        <div class="prod-badge badge-parceiro">Ágil<br>UGC</div>
+        <div class="prod-info">
+          <p class="prod-fonte-tag">Fornecedor ágil</p>
+          <p class="prod-fonte-nome">Parceiro Simplizzia</p>
+          <p class="prod-funcao">Conteúdo dinâmico e contínuo</p>
+        </div>
+        <div class="prod-tipo">
+          <p>Fotos + vídeos curtos de produto, estilo UGC, rotina e calendário</p>
+        </div>
+        <div class="prod-invest">
+          <span class="prod-invest-def">A definir</span>
+        </div>
+      </div>
+
+      <div class="prod-card">
+        <div class="prod-badge badge-ia">IA<br>Gen.</div>
+        <div class="prod-info">
+          <p class="prod-fonte-tag">IA generativa</p>
+          <p class="prod-fonte-nome">Simplizzia</p>
+          <p class="prod-funcao">Preenchimento visual sob demanda</p>
+        </div>
+        <div class="prod-tipo">
+          <p>Key visuals, variações de paleta/composição, apoio ao hub de receitas</p>
+        </div>
+        <div class="prod-invest">
+          <span class="prod-invest-def">A definir</span>
+          <span class="prod-invest-sub">gera custo adicional — a quantificar</span>
+        </div>
+      </div>
+
+      <div class="prod-card">
+        <div class="prod-badge badge-mumu">Trend<br>Voz</div>
+        <div class="prod-info">
+          <p class="prod-fonte-tag">Interno</p>
+          <p class="prod-fonte-nome">Mumu</p>
+          <p class="prod-funcao">Trends e voz ágil da marca</p>
+        </div>
+        <div class="prod-tipo">
+          <p>Vídeos curtos/memes, baixa produção, alta frequência reativa</p>
+        </div>
+        <div class="prod-invest">
+          <span class="prod-invest-def">Interno</span>
+          <span class="prod-invest-sub">sem custo de fornecedor externo</span>
+        </div>
+      </div>
+
+    </div>
+
+    <p style="margin-top: 1rem; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 0.85rem; color: rgba(36,26,20,0.55); max-width: 85%;">O fornecedor grande fica reservado para onde o investimento se paga; o volume diário das redes é coberto por fontes mais ágeis e baratas.</p>
+
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_69] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_70] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 19 — SEO / AIO
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="20"
+    data-notes="GEO (Generative Engine Optimization) já é tratada como disciplina própria em 2026. O Google AI Overviews só cita quem já ranqueia bem organicamente — SEO tradicional é pré-requisito, não é substituído. Um estudo recente mostrou que só 9,3% das marcas analisadas foram mencionadas por IAs — é espaço onde a maioria ainda está ausente. E não é espaço vazio: a Chamyto já ocupa esse território de conteúdo de lancheira, o que valida a tese mas também mostra urgência.">
+          <!-- [LOGO_71] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Busca e descoberta</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.7rem, 3.2vw, 2.7rem); margin-bottom: 0.3rem;">Aparecer quando a família está buscando resposta</h2>
+    <p style="font-size: 0.88rem; color: rgba(36,26,20,0.55); font-weight: 700; margin-bottom: 1.4rem;">SEO continua sendo a base — GEO (presença em respostas de IA) se constrói em cima dele, não no lugar dele</p>
+
+    <div style="display: flex; gap: 0.9rem; width: 100%; max-width: 96%; margin-bottom: 1.3rem;">
+      <div style="flex: 1; background: var(--papel); border-radius: 4px 18px 4px 18px; padding: 1.1rem 1.2rem; box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 10px 22px rgba(36,26,20,0.05); position: relative;">
+        <span style="position: absolute; top: -10px; left: 1.1rem; background: var(--vermelho); color: #fff; font-family: var(--display); font-weight: 700; font-size: 0.72rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">1</span>
+        <p style="font-family: var(--display); font-weight: 700; font-size: 0.86rem; color: var(--vermelho-esc); margin-top: 0.4rem;">Hub respondível</p>
+        <p style="font-size: 0.74rem; color: rgba(36,26,20,0.6); margin-top: 0.4rem; line-height: 1.4; font-weight: 600;">Receitas em formato pergunta-e-resposta direta — o que SEO clássico e IA generativa preferem extrair</p>
+      </div>
+      <div style="flex: 1; background: var(--papel); border-radius: 4px 18px 4px 18px; padding: 1.1rem 1.2rem; box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 10px 22px rgba(36,26,20,0.05); position: relative;">
+        <span style="position: absolute; top: -10px; left: 1.1rem; background: var(--laranja); color: #fff; font-family: var(--display); font-weight: 700; font-size: 0.72rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">2</span>
+        <p style="font-family: var(--display); font-weight: 700; font-size: 0.86rem; color: var(--laranja); margin-top: 0.4rem;">Dados estruturados</p>
+        <p style="font-size: 0.74rem; color: rgba(36,26,20,0.6); margin-top: 0.4rem; line-height: 1.4; font-weight: 600;">Schema markup de Receita e FAQ assim que o hub existir</p>
+      </div>
+      <div style="flex: 1; background: var(--papel); border-radius: 4px 18px 4px 18px; padding: 1.1rem 1.2rem; box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 10px 22px rgba(36,26,20,0.05); position: relative;">
+        <span style="position: absolute; top: -10px; left: 1.1rem; background: var(--pink); color: #fff; font-family: var(--display); font-weight: 700; font-size: 0.72rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">3</span>
+        <p style="font-family: var(--display); font-weight: 700; font-size: 0.86rem; color: var(--pink); margin-top: 0.4rem;">Teste manual quinzenal</p>
+        <p style="font-size: 0.74rem; color: rgba(36,26,20,0.6); margin-top: 0.4rem; line-height: 1.4; font-weight: 600;">Perguntar no ChatGPT/Gemini/Perplexity se a Trevo aparece — vira o KPI deste front</p>
+      </div>
+      <div style="flex: 1; background: var(--papel); border-radius: 4px 18px 4px 18px; padding: 1.1rem 1.2rem; box-shadow: 0 2px 0 rgba(36,26,20,0.05), 0 10px 22px rgba(36,26,20,0.05); position: relative;">
+        <span style="position: absolute; top: -10px; left: 1.1rem; background: #5A9BC2; color: #fff; font-family: var(--display); font-weight: 700; font-size: 0.72rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">4</span>
+        <p style="font-family: var(--display); font-weight: 700; font-size: 0.86rem; color: #5A9BC2; margin-top: 0.4rem;">Autoridade em fontes terceiras</p>
+        <p style="font-size: 0.74rem; color: rgba(36,26,20,0.6); margin-top: 0.4rem; line-height: 1.4; font-weight: 600;">Parcerias editoriais com portais de nutrição — IAs confiam em quem é mais referenciado</p>
+      </div>
+    </div>
+
+    <div style="background: rgba(216,0,0,0.04); border-left: 4px solid var(--vermelho); border-radius: 0 12px 12px 0; padding: 0.9rem 1.2rem; max-width: 90%;">
+      <p style="font-size: 0.82rem; color: var(--tinta); font-weight: 700; line-height: 1.5;">Só 9,3% das marcas aparecem em respostas de IA hoje — é espaço onde a maioria está ausente. Mas não é espaço vazio: a categoria de iogurte já tem concorrente ocupando conteúdo de lancheira escolar. Quem começar antes, educa a busca primeiro.</p>
+    </div>
+
+    <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_72] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_73] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 20 — METAS
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme2" data-index="21"
+    data-notes="Esses são valores de referência de mercado — não estamos inventando metas no escuro, mas também reconhecemos que precisamos do baseline real da Trevo para travar os números definitivos. O importante agora é alinhar os indicadores certos e a direção. Os valores exatos ficam para a próxima conversa, depois da aprovação.">
+          <!-- [LOGO_74] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">Metas de referência</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 1.8rem;">As metas — e a honestidade<br>sobre o que são</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; width: 100%; max-width: 84%; margin-bottom: 1.3rem;">
+      <div class="meta-card">
+        <p class="meta-label">Reconhecimento da plataforma</p>
+        <p class="meta-num" style="color: var(--vermelho-esc);">+15–20%</p>
+        <p class="meta-sub">em 12 meses · brand lift</p>
+      </div>
+      <div class="meta-card">
+        <p class="meta-label">Engajamento em redes sociais</p>
+        <p class="meta-num" style="color: var(--laranja);">+25–30%</p>
+        <p class="meta-sub">vs. ano anterior</p>
+      </div>
+      <div class="meta-card">
+        <p class="meta-label">"Trevo entende minha família"</p>
+        <p class="meta-num" style="color: var(--pink); font-size: 1.4rem;">Baseline a definir</p>
+        <p class="meta-sub">pesquisa de percepção de marca</p>
+      </div>
+      <div class="meta-card">
+        <p class="meta-label">Trevo Kids — recall espontâneo</p>
+        <p class="meta-num" style="color: #5A9BC2; font-size: 1.4rem;">Sub-território a medir</p>
+        <p class="meta-sub">estabelecer baseline no lançamento</p>
+      </div>
+    </div>
+    <p style="font-size: 0.78rem; color: #999; font-style: italic; max-width: 84%; font-weight: 600;">
+      * Valores de referência de mercado sugeridos para discussão — a serem validados com baseline real da Trevo.
+    </p>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_75] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_76] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 21 — PRÓXIMOS PASSOS
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--creme" data-index="22"
+    data-notes="Esses são os próximos passos — com espaço para as datas que vamos alinhar juntos agora. O que queremos deixar claro é que a aprovação de hoje desbloqueia um plano que já está estruturado. Não começamos do zero amanhã — precisamos de um 'sim' para colocar isso em movimento.">
+          <!-- [LOGO_77] Substituir pelo logo da nova marca em base64 -->
+          <img class="marca-corner" src="[MARCA_LOGO_BASE64]" style="" alt="Trevo">
+    <p class="eyebrow">O que vem agora</p>
+    <h2 class="titulo-grande" style="font-size: clamp(1.9rem, 3.6vw, 3.1rem); margin-bottom: 1.8rem;">O que acontece depois do sim</h2>
+    <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 80%;">
+      <div class="step-row">
+        <span class="step-badge" style="background: var(--vermelho);">01</span>
+        <div class="step-info">
+          <p>Validação</p>
+          <p>Aprovação da plataforma e campanha mestre</p>
+        </div>
+        <span class="step-date">[data]</span>
+      </div>
+      <div class="divider"></div>
+      <div class="step-row">
+        <span class="step-badge" style="background: var(--laranja);">02</span>
+        <div class="step-info">
+          <p>Produção</p>
+          <p>KV e peças-base, universo visual aplicado</p>
+        </div>
+        <span class="step-date">[data]</span>
+      </div>
+      <div class="divider"></div>
+      <div class="step-row">
+        <span class="step-badge" style="background: var(--pink);">03</span>
+        <div class="step-info">
+          <p>Criadores</p>
+          <p>Mapeamento e fechamento de parcerias</p>
+        </div>
+        <span class="step-date">[data]</span>
+      </div>
+      <div class="divider"></div>
+      <div class="step-row">
+        <span class="step-badge" style="background: var(--amarelo); color: var(--tinta);">04</span>
+        <div class="step-info">
+          <p>Go-live</p>
+          <p>Lançamento da campanha mestre</p>
+        </div>
+        <span class="step-date">[data]</span>
+      </div>
+      <div class="divider"></div>
+      <div class="step-row">
+        <span class="step-badge" style="background: #5A9BC2;">05</span>
+        <div class="step-info">
+          <p>Primeiro desdobramento sazonal</p>
+          <p>Ativação do primeiro momento do calendário</p>
+        </div>
+        <span class="step-date">[data]</span>
+      </div>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_78] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_79] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 22 — ENCERRAMENTO
+  ═══════════════════════════════════════════ -->
+  <section class="slide slide--vermelho" data-index="23"
+    data-notes="É isso. Deixamos essa frase aqui porque ela é o que importa lembrar depois que a apresentação acabar. Não a plataforma, não o framework, não os hubs — essa frase. Se ela ficar, a estratégia ficou. [Pausa. Deixar o slide respirar.] Ficamos à disposição para perguntas.">
+    <div class="grain"></div>
+    <div class="enc-img-wrap">
+          <!-- [IMG_80Mãe e filho na cozinha com produtos Trevo] Inserir imagem como base64 ou URL -->
+          <div class="placeholder" style="display:flex;align-items:center;justify-content:center;min-height:180px;background:rgba(0,0,0,0.07);border-radius:8px;">
+            <span style="font-size:0.8rem;color:#888;font-weight:600;">[IMAGEM 80 — Mãe e filho na cozinha com produtos Trevo]</span>
+          </div>
+      <div class="enc-img-fade"></div>
+    </div>
+          <!-- [LOGO_81] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-img" src="[MARCA_LOGO_BASE64]" style="position: absolute; top: 2.8rem; left: 8vw; z-index: 2; opacity: 0.95;" alt="Trevo">
+    <div class="enc-content">
+      <blockquote class="enc-quote">
+        "Cada família tem o seu jeito.<br>
+        Trevo tem o sabor para todas elas."
+      </blockquote>
+      <p style="font-size: clamp(0.95rem, 1.6vw, 1.15rem); font-weight: 800; color: rgba(251,243,231,0.5);">
+        #DoJeitinhoDaSuaFamília
+      </p>
+    </div>
+      <div class="simplizzia-rodape">
+      <p>Cada família tem o seu jeito. Cada estratégia também é do jeitinho da Simplizzia.</p>
+          <!-- [LOGO_82] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-escura" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+          <!-- [LOGO_83] Substituir pelo logo da nova marca em base64 -->
+          <img class="logo-clara" src="[MARCA_LOGO_BASE64]" style="" alt="Simplizzia">
+    </div>
+  </section>
+
+</div><!-- #presentation -->
+
+<script>
+  const presentation = document.getElementById('presentation');
+  const counter      = document.getElementById('slide-counter');
+  const navContainer = document.getElementById('slide-nav');
+  const notesBar      = document.getElementById('notes-bar');
+  let slides, total, current = 0;
+
+  function trocarFase(n) {
+    document.querySelectorAll('.fase-tab').forEach(t => t.classList.toggle('active', t.dataset.fase == n));
+    document.querySelectorAll('.fase-painel').forEach(p => p.classList.toggle('active', p.id === 'painel-' + n));
+  }
+
+  function init() {
+    slides = document.querySelectorAll('.slide');
+    total  = slides.length;
+
+    const showNotes = new URLSearchParams(window.location.search).get('notas') === 'true';
+    if (showNotes) notesBar.style.display = 'block';
+
+    navContainer.innerHTML = '';
+    slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.dataset.target = i;
+      dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+      dot.addEventListener('click', () => goToSlide(i));
+      navContainer.appendChild(dot);
+    });
+
+    function goToSlide(index) {
+      if (index < 0 || index >= total) return;
+      slides[index].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function isDarkSlide(el) {
+      return el.classList.contains('slide--vermelho') || el.classList.contains('slide--oliva');
+    }
+
+    function updateUI(index) {
+      current = index;
+      counter.textContent = (index + 1) + ' / ' + total;
+      const dark = isDarkSlide(slides[index]);
+      counter.style.color = dark ? 'rgba(255,253,248,0.4)' : 'rgba(36,26,20,0.35)';
+
+      document.querySelectorAll('.dot').forEach((d, i) => {
+        d.classList.toggle('active', i === index);
+        d.classList.toggle('on-dark', dark);
+      });
+
+      document.querySelectorAll('#nav-arrows button').forEach(b => {
+        b.style.background = dark ? 'rgba(255,253,248,0.15)' : 'rgba(36,26,20,0.07)';
+        b.style.color      = dark ? '#fff' : '#555';
+      });
+
+      if (showNotes) notesBar.textContent = slides[index].dataset.notes || '';
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) updateUI(parseInt(entry.target.dataset.index));
+      });
+    }, { root: presentation, threshold: 0.6 });
+
+    slides.forEach(s => observer.observe(s));
+
+    document.getElementById('btn-prev').addEventListener('click', () => goToSlide(current - 1));
+    document.getElementById('btn-next').addEventListener('click', () => goToSlide(current + 1));
+
+    document.addEventListener('keydown', e => {
+      if (['ArrowDown', 'PageDown', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault();
+        goToSlide(current + 1);
+      }
+      if (['ArrowUp', 'PageUp', 'ArrowLeft'].includes(e.key)) {
+        e.preventDefault();
+        goToSlide(current - 1);
+      }
+    });
+
+    updateUI(0);
+  }
+
+  window.addEventListener('DOMContentLoaded', init);
+
+
+  /* KV phone carousel */
+  let kvCur = 1;
+  const kvTotal = 3;
+  let kvProg = 0, kvTimer, kvProgTimer;
+  const KV_INTERVAL = 4500;
+
+  function kvGoTo(n) {
+    kvCur = ((n % kvTotal) + kvTotal) % kvTotal;
+    kvUpdate();
+    kvResetAuto();
+  }
+
+  function kvUpdate() {
+    for (let i = 0; i < kvTotal; i++) {
+      const pw = document.getElementById('kv-p' + i);
+      const lbl = document.getElementById('kv-lbl' + i);
+      const dot = document.getElementById('kv-d' + i);
+      if (!pw) return;
+      const on = i === kvCur;
+      pw.className = 'kv-phone-item' + (on ? ' kv-center' : '');
+      lbl.className = 'kv-phone-label' + (on ? ' kv-lbl-active' : '');
+      dot.className = 'kv-dot' + (on ? ' kv-dot-on' : '');
+    }
+    kvProg = 0;
+    const fill = document.getElementById('kvProgFill');
+    if (fill) fill.style.width = '0%';
+  }
+
+  function kvResetAuto() {
+    clearInterval(kvTimer); clearInterval(kvProgTimer);
+    kvProg = 0;
+    const fill = document.getElementById('kvProgFill');
+    if (fill) fill.style.width = '0%';
+    kvStartAuto();
+  }
+
+  function kvStartAuto() {
+    kvTimer = setInterval(() => kvGoTo(kvCur + 1), KV_INTERVAL);
+    kvProgTimer = setInterval(() => {
+      kvProg = Math.min(kvProg + (100 / (KV_INTERVAL / 80)), 100);
+      const fill = document.getElementById('kvProgFill');
+      if (fill) fill.style.width = kvProg + '%';
+    }, 80);
+  }
+
+  kvStartAuto();
+
+
+  // ── Mumu Gallery ──
+  function mumuSwap(newSrc) {
+    var main = document.getElementById('mumu-main');
+    if (main) main.src = newSrc;
+  }
+  function mumuLightbox(src) {
+    var lb = document.getElementById('mumu-lb');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'mumu-lb';
+      lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(15,8,5,0.93);display:flex;align-items:center;justify-content:center;cursor:zoom-out;opacity:0;transition:opacity 0.25s;';
+      lb.onclick = function() { lb.style.opacity='0'; setTimeout(function(){lb.style.display='none';},250); };
+      var img = document.createElement('img');
+      img.id = 'mumu-lb-img';
+      img.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:6px 24px 6px 24px;box-shadow:0 30px 80px rgba(0,0,0,0.6);';
+      lb.appendChild(img);
+      document.body.appendChild(lb);
+    }
+    document.getElementById('mumu-lb-img').src = src;
+    lb.style.display = 'flex';
+    requestAnimationFrame(function(){ lb.style.opacity='1'; });
+  }
+</script>
+</body>
+</html>
