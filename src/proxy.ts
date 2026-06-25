@@ -42,8 +42,13 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // Apresentações HTML estáticas são públicas — sem auth
+  if (pathname.endsWith('.html')) {
+    return supabaseResponse
+  }
+
   // Rotas públicas que não precisam de autenticação
-  const publicRoutes = ['/login', '/auth/callback', '/avaliacoes', '/onboarding', '/esqueci-senha', '/redefinir-senha', '/api/onboarding/']
+  const publicRoutes = ['/login', '/auth/callback', '/avaliacoes', '/apresentacoes', '/onboarding', '/esqueci-senha', '/redefinir-senha', '/api/onboarding/']
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   // Usuário não autenticado tentando acessar rota protegida
@@ -73,6 +78,6 @@ export const config = {
      * - favicon.ico
      * - arquivos com extensão (js, css, png, etc.)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|html)$).*)',
   ],
 }
