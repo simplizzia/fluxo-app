@@ -1,4 +1,15 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)\\.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, noimageindex"
+        }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/lembrete-aguardando",
