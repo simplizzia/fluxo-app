@@ -1514,13 +1514,21 @@
         </p>
       </div>
       <div style="flex: 1 1 44%; min-width: 0;">
-        <div style="display:grid; grid-template-columns: 1.3fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 5px; width:100%; height: min(310px, 44vh); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(36,26,20,0.12);">
-          <img src="/mumu/slide2-05.jpg" style="grid-column:1; grid-row:1/4; width:100%;height:100%;object-fit:cover;" alt="">
-          <img src="/mumu/slide2-04.jpeg" style="grid-column:2/4; grid-row:1; width:100%;height:100%;object-fit:cover;" alt="">
-          <img src="/mumu/slide2-02.jpg" style="grid-column:2; grid-row:2; width:100%;height:100%;object-fit:cover;" alt="">
-          <img src="/mumu/slide2-03.jpg" style="grid-column:3; grid-row:2; width:100%;height:100%;object-fit:cover;" alt="">
-          <img src="/mumu/slide2-01.jpeg" style="grid-column:2; grid-row:3; width:100%;height:100%;object-fit:cover;" alt="">
-          <img src="/mumu/slide2-06.jpg" style="grid-column:3; grid-row:3; width:100%;height:100%;object-fit:cover;" alt="">
+        <div id="s2-gallery" style="position:relative; width:100%; height: min(310px, 44vh); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(36,26,20,0.14);">
+          <img src="/mumu/slide2-05.jpg" class="s2-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:1;transition:opacity 0.7s ease;" alt="">
+          <img src="/mumu/slide2-01.jpeg" class="s2-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.7s ease;" alt="">
+          <img src="/mumu/slide2-04.jpeg" class="s2-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.7s ease;" alt="">
+          <img src="/mumu/slide2-02.jpg" class="s2-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.7s ease;" alt="">
+          <img src="/mumu/slide2-06.jpg" class="s2-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.7s ease;" alt="">
+          <img src="/mumu/slide2-03.jpg" class="s2-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.7s ease;" alt="">
+          <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;">
+            <span class="s2-dot" style="width:14px;height:5px;border-radius:3px;background:rgba(255,255,255,0.95);display:inline-block;transition:all 0.35s;"></span>
+            <span class="s2-dot" style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.45);display:inline-block;transition:all 0.35s;"></span>
+            <span class="s2-dot" style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.45);display:inline-block;transition:all 0.35s;"></span>
+            <span class="s2-dot" style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.45);display:inline-block;transition:all 0.35s;"></span>
+            <span class="s2-dot" style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.45);display:inline-block;transition:all 0.35s;"></span>
+            <span class="s2-dot" style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.45);display:inline-block;transition:all 0.35s;"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -2747,6 +2755,21 @@
     var img = document.getElementById('mumu-lb-img');
     if (img) img.src = mumuImages[mumuLbIdx];
   }
+
+  // -- Slide 2 gallery --
+  (function() {
+    var imgs = document.querySelectorAll(".s2-img");
+    var dots = document.querySelectorAll(".s2-dot");
+    var cur = 0;
+    function go(n) {
+      imgs[cur].style.opacity = "0";
+      dots[cur].style.width = "5px"; dots[cur].style.borderRadius = "50%"; dots[cur].style.background = "rgba(255,255,255,0.45)";
+      cur = (n + imgs.length) % imgs.length;
+      imgs[cur].style.opacity = "1";
+      dots[cur].style.width = "14px"; dots[cur].style.borderRadius = "3px"; dots[cur].style.background = "rgba(255,255,255,0.95)";
+    }
+    setInterval(function() { go(cur + 1); }, 2800);
+  })();
 </script>
 </body>
 </html>
