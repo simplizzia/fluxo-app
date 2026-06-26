@@ -818,16 +818,35 @@ html, body { height: 100%; overflow: hidden; background: #0a0f1e; }
 #simplizzia-credit.on-dark .sc-phrase { color: rgba(255,255,255,.4); opacity: 1; }
 #simplizzia-credit img { height: 20px; width: auto; }
 
-/* Hide per-slide Simplizzia logos — replaced by global fixed element */
-.slide-footer .simplizzia-logo { display: none; }
+/* Hide per-slide footer — replaced by global fixed elements */
+.slide-footer { display: none; }
+
+/* ─── Slide counter (global fixed) ─── */
+#slide-counter {
+  position: fixed;
+  top: 4.2rem;
+  right: 3.5rem;
+  z-index: 50;
+  pointer-events: none;
+  font-family: var(--corpo);
+  font-size: .68rem;
+  letter-spacing: .06em;
+  color: var(--muted);
+  opacity: .6;
+}
+#slide-counter.on-dark {
+  color: rgba(255,255,255,.4);
+  opacity: 1;
+}
+@media (max-width: 860px) { #slide-counter { display: none; } }
 
 /* ─── Cover mosaic ─── */
 .cover-mosaic {
   position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 48%;
+  right: 0; top: 10%; bottom: 10%;
+  width: 38%;
 }
-.cover-mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 6px 0 0 6px; }
 
 /* ─── Contracapa image ─── */
 .contracapa-img {
@@ -951,9 +970,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     data-notes="Deixar o visual falar. Pausa antes de começar. O tom de proximidade que a gente quer resgatar começa aqui — com essa frase que é de todo mundo, não da diretoria.">
     <div style="max-width:50%;position:relative;z-index:1">
       <div class="eyebrow">Estratégia de Comunicação Interna, Endomarketing e Cultura Organizacional</div>
-      <h1 class="slide-title t-xl">SOMOS TREVO</h1>
-      <p class="lead">Aqui, ninguém faz o iogurte chegar à mesa sozinho.</p>
-      <p class="body">Lácticos Trevo · Reaproximação, pertencimento e orgulho do produto</p>
+      <h1 class="slide-title t-xl" style="margin-bottom:.5rem">TREVO LÁCTEOS | EHRMANN</h1>
+      <p style="font-family:var(--corpo);font-size:1.25rem;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.06em">2026 / 2027</p>
     </div>
     <div class="cover-mosaic">
       <img src="clientes/trevo/assets/equipe-trevo-07.png" alt="">
@@ -1131,25 +1149,24 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
 
   <!-- 09 — Geladeira da Mumu -->
   <section class="slide slide--branco" data-index="8"
-    data-notes="Simples até parecer óbvio — e é exatamente por isso que funciona. Não pede nada da pessoa além de abrir a geladeira. A Mumu entra no cotidiano sem pedir permissão.">
+    data-notes="A votação dá voz ao colaborador sem pedir exposição. O produto escolhido gera expectativa — quem votou quer ver o resultado. A Mumu entra no cotidiano como mediadora, não como porta-voz da empresa.">
     <div class="eyebrow">Ação Low Budget #1</div>
-    <h2 class="slide-title t-md">1 · Geladeira da Mumu</h2>
+    <h2 class="slide-title t-md">1 · Ajude a Mumu a Escolher</h2>
     <div class="action-layout">
       <div>
-        <div class="img-ph" style="width:64px;height:64px;margin-bottom:.875rem;border-radius:50%">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          <span>Mumu</span>
-        </div>
-        <p class="action-tagline">Produto da semana liberado para degustação — com a Mumu como anfitriã</p>
-        <p class="action-desc">Uma vez por semana, um produto específico ganha destaque na geladeira do refeitório. A Mumu "escolhe" o produto e estampa um cartãozinho simples: "Essa semana, a Mumu escolheu o iogurte tal pra você provar." Resolve uma queixa real — produtos pouco conhecidos pelo próprio time — e cria um hábito leve e recorrente, sem pedir nada da pessoa além de experimentar.</p>
+        <p class="action-tagline">Voto mensal por QR Code, WhatsApp ou enquete nos canais internos</p>
+        <p class="action-desc">Todo mês, a equipe de Marketing seleciona quatro produtos previamente definidos, e os colaboradores votam no favorito. O produto vencedor fica disponível para degustação no refeitório durante a semana seguinte, acompanhado de um cartão simples:</p>
+        <div style="margin-top:.75rem;padding:.75rem 1rem;background:rgba(0,178,94,.06);border-left:3px solid var(--verde);border-radius:6px;font-family:var(--corpo);font-size:.875rem;line-height:1.6;color:var(--tinta);font-style:italic">"Vocês escolheram! Neste mês, a Geladeira da Mumu traz o produto mais votado pelos colaboradores."</div>
       </div>
       <div>
         <div class="why-label">Por que funciona</div>
         <ul class="bullets bullets-check">
-          <li>Custo baixíssimo: só reposição de produto e um cartão impresso</li>
-          <li>Frequência semanal cria expectativa e hábito</li>
-          <li>Zero exposição pessoal — ninguém precisa performar nada</li>
-          <li>Já é o primeiro uso real da Mumu no dia a dia da fábrica</li>
+          <li>Dá voz ao colaborador sem aumentar a complexidade da ação</li>
+          <li>Cria expectativa e hábito de participação</li>
+          <li>Incentiva o acesso aos canais internos</li>
+          <li>Aumenta o conhecimento sobre o portfólio</li>
+          <li>Gera pertencimento — a escolha parte das pessoas</li>
+          <li>Custo extremamente baixo: usa produtos já fabricados</li>
         </ul>
       </div>
     </div>
@@ -1166,12 +1183,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     <h2 class="slide-title t-md">2 · Café Especial — Sugestão Fechada</h2>
     <div class="action-layout">
       <div>
-        <div class="img-ph" style="width:64px;height:64px;margin-bottom:.875rem;border-radius:50%">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          <span>Mumu</span>
-        </div>
         <p class="action-tagline">Voto simples, sem exposição: a pessoa marca, não precisa escrever</p>
-        <p class="action-desc">Divulga-se um café especial do mês e, em vez de pedir sugestão aberta, apresentam-se 3 a 4 opções de sabor dentro das possibilidades operacionais. Um quadro físico simples no refeitório recebe os votos por adesivo ou furo — sem precisar escrever nome ou opinião por extenso. O resultado da votação fica visível e vira conversa natural entre os times.</p>
+        <p class="action-desc">Todo mês divulga-se um café especial. Em vez de sugestão aberta, apresentam-se 2 opções de sabor dentro das possibilidades operacionais. A votação é feita via formulário simples no Google — sem precisar escrever nome ou opinião. O resultado da votação fica visível e vira conversa natural dentro da fábrica.</p>
       </div>
       <div>
         <div class="why-label">Por que funciona</div>
@@ -1179,7 +1192,6 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
           <li>Opção fechada reduz a barreira de participar</li>
           <li>Voto visual e rápido — qualquer um participa em segundos</li>
           <li>Quadro físico funciona mesmo para quem não usa e-mail</li>
-          <li>Primeiro uso do "Mural que Anda" como canal de escuta</li>
         </ul>
       </div>
     </div>
@@ -1261,19 +1273,36 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 14 — Degustação às Cegas -->
+  <!-- 14 — Acerte o Produto Trevo -->
   <section class="slide slide--branco" data-index="13"
-    data-notes="A sequência importa: a degustação às cegas vem primeiro, porque não pede nada da pessoa — só que ela prove e reaja. O 'Acerte o Sabor' vem depois, quando o ambiente já tem confiança. A reação genuína de quem descobre que escolheu o próprio produto é o conteúdo mais poderoso que a Trevo pode ter.">
+    data-notes="A sequência importa: a degustação vem primeiro, porque não pede nada da pessoa — só que ela prove e reaja. A reação genuína de quem descobre que escolheu o próprio produto é o conteúdo mais poderoso que a Trevo pode ter.">
     <div class="eyebrow">Sabor de Orgulho — Ação 1</div>
-    <h2 class="slide-title t-md">Degustação às Cegas &amp; "Acerte o Sabor"</h2>
-    <div class="two-col">
+    <h2 class="slide-title t-md">Acerte o Produto Trevo</h2>
+    <div class="action-layout">
       <div>
-        <p class="action-tagline">Degustação às Cegas · imediato</p>
-        <p class="action-desc">Sessões mensais e rápidas (15 min, na própria fábrica ou pátio) onde colaboradores — incluindo terceirizados — degustam o próprio produto às cegas, comparado a concorrentes. Depois, revela-se: "Você escolheu o produto que SUA linha fabricou." A reação genuína de orgulho vale mais que qualquer discurso institucional. Documentação simples: vídeos curtos no próprio celular, sem produção.</p>
+        <p class="action-tagline">Caixa com cinco produtos sem identificação — o colaborador prova e tenta acertar</p>
+        <p class="action-desc">Produtos de linhas diferentes da Trevo são servidos sem rótulo. O participante responde: É iogurte ou sobremesa? Qual o sabor? Qual a linha? Versão tradicional, zero lactose ou proteica? Quem acertar todas as respostas ganha um brinde — kit de produtos, bolsa térmica ou squeeze institucional.</p>
+        <div style="margin-top:1rem;padding:.75rem 1rem;background:rgba(0,178,94,.06);border-left:3px solid var(--verde);border-radius:6px">
+          <p style="font-size:.68rem;font-family:var(--corpo);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--verde-esc);margin-bottom:.3rem">Valor para P&amp;D</p>
+          <p class="action-desc" style="color:var(--tinta)">Produtos facilmente reconhecidos têm identidade sensorial forte. Os mais confundidos apontam oportunidades de desenvolvimento. Colaboradores tornam-se um grupo de teste natural para validações preliminares.</p>
+        </div>
       </div>
       <div>
-        <p class="action-tagline">"Acerte o Sabor" · futuro, com premiação</p>
-        <p class="action-desc">Evolução natural da degustação: a pessoa tenta identificar ingredientes, sabor ou variação específica. Pensado para rodar mensalmente, como etapa futura, depois que a Geladeira da Mumu e o Café já tiverem esquentado o ambiente. Premiação simbólica: kit de produtos, bolsa térmica ou destaque no Mural. Selo "Somos Trevo" valida o resultado.</p>
+        <div class="why-label">Objetivos da ação</div>
+        <ul class="bullets bullets-check">
+          <li>Aproximar o colaborador do portfólio completo da empresa</li>
+          <li>Gerar orgulho pelos produtos fabricados internamente</li>
+          <li>Criar experiência leve e interativa de engajamento</li>
+          <li>Transformar colaboradores em embaixadores mais preparados</li>
+        </ul>
+        <div style="margin-top:1.25rem">
+          <div class="why-label">Indicadores</div>
+          <ul class="bullets" style="gap:.4rem">
+            <li>Taxa de acerto por produto</li>
+            <li>Produtos mais reconhecidos e mais confundidos</li>
+            <li>Evolução do reconhecimento ao longo do tempo</li>
+          </ul>
+        </div>
       </div>
     </div>
     <div class="slide-footer">
@@ -1337,9 +1366,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
         <div class="crono-title">Esquentar o ambiente</div>
         <ul class="crono-items">
           <li>Reativar selo Somos Trevo + lançar Mumu</li>
-          <li>Geladeira da Mumu (semanal)</li>
+          <li>Geladeira da Mumu</li>
           <li>Café Especial — Sugestão Fechada</li>
-          <li>Implantar o Mural físico</li>
         </ul>
       </div>
       <div class="crono-col">
@@ -1347,8 +1375,7 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
         <div class="crono-title">Criar movimento</div>
         <ul class="crono-items">
           <li>Caça ao Tesouro #1</li>
-          <li>Degustação às Cegas #1</li>
-          <li>Mural passa a circular entre setores</li>
+          <li>Acerte o Produto Trevo #1</li>
           <li>1ª homenagem piloto (com a pessoa)</li>
         </ul>
       </div>
@@ -1359,7 +1386,6 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
           <li>Caça ao Tesouro #2</li>
           <li>Homenagens (Dia dos Pais ou data do período)</li>
           <li>Jornada do Produto: "Essa Embalagem Tem Nome"</li>
-          <li>1ª leitura de métricas e ajustes</li>
         </ul>
       </div>
     </div>
@@ -1369,41 +1395,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 17 — Métricas -->
-  <section class="slide slide--cinza" data-index="16"
-    data-notes="Nada aqui exige software novo ou consultoria de RH. O termômetro é o próprio mural. O pulse é um cartão impresso. E o NPS é uma única pergunta. Barato, rápido e comparável trimestre a trimestre.">
-    <div class="eyebrow">Como medir o sucesso</div>
-    <h2 class="slide-title t-md">Métricas simples, rápidas e baratas</h2>
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-title">Termômetro do Mural</div>
-        <div class="metric-body">Volume e tom das perguntas/respostas mês a mês — silêncio indica clima ruim, engajamento indica melhora.</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-title">Pulse de 1 pergunta</div>
-        <div class="metric-body">Cartão com carinha ao final de cada ação — sem plataforma cara, sem pesquisa de 20 perguntas.</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-title">Adesão espontânea</div>
-        <div class="metric-body">Quantos terceirizados participam por vontade própria vs. por escala — esse número conta a história do pertencimento.</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-title">NPS interno trimestral</div>
-        <div class="metric-body">"De 0 a 10, o quanto você recomendaria trabalhar na Trevo?" — pergunta única, fácil de comparar e levar à diretoria.</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-title">Turnover e absenteísmo</div>
-        <div class="metric-body">Métricas que a diretoria já acompanha — comunicação bem feita historicamente reduz esses números.</div>
-      </div>
-    </div>
-    <div class="slide-footer">
-      <div class="simplizzia-logo"><img src="/logo-simplizzia.png" alt="Simplizzia"></div>
-      <span class="slide-page">17 / 33</span>
-    </div>
-  </section>
-
-  <!-- 18 — Encerramento Bloco A -->
-  <section class="slide slide--azul" data-index="17"
+  <!-- 17 — Encerramento Bloco A -->
+  <section class="slide slide--azul" data-index="16"
     data-notes="Pausa após o título. Esse é o fechamento do bloco — e precisa respirar. O que fica é a pergunta implícita: vale a pena continuar pagando o custo do silêncio?">
     <div class="eyebrow">O argumento para a diretoria</div>
     <h2 class="slide-title t-lg">Não pedimos orçamento.<br>Pedimos coragem.</h2>
@@ -1419,8 +1412,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
   <!-- DIVISOR                                          -->
   <!-- ══════════════════════════════════════════════════ -->
 
-  <!-- 19 — Divisor LinkedIn -->
-  <section class="slide slide--azul" data-index="18"
+  <!-- 18 — Divisor LinkedIn -->
+  <section class="slide slide--azul" data-index="17"
     data-notes="Pausa natural aqui. A segunda parte começa com uma pergunta implícita: se a gente resolve o interno, como isso se conecta com o que mostramos para fora? O LinkedIn é a resposta.">
     <div class="divisor-line"></div>
     <div class="eyebrow">Parte 2 de 2 · LinkedIn como canal de marca empregadora</div>
@@ -1442,8 +1435,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
   <!-- BLOCO B — LINKEDIN                               -->
   <!-- ══════════════════════════════════════════════════ -->
 
-  <!-- 20 — Por que a rota anterior não funcionou -->
-  <section class="slide slide--branco" data-index="19"
+  <!-- 19 — Por que a rota anterior não funcionou -->
+  <section class="slide slide--branco" data-index="18"
     data-notes="Sem julgamento — a diretriz anterior tinha uma lógica. Mas o LinkedIn tem uma lógica própria que não cede para vendas diretas. O diagnóstico é simples: estávamos usando o canal certo para o objetivo errado.">
     <div class="eyebrow">Diagnóstico</div>
     <h2 class="slide-title t-lg">Por que a rota anterior não funcionou</h2>
@@ -1471,8 +1464,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 21 — Nova Direção Estratégica -->
-  <section class="slide slide--cinza" data-index="20"
+  <!-- 20 — Nova Direção Estratégica -->
+  <section class="slide slide--cinza" data-index="19"
     data-notes="As três frentes têm pesos diferentes — isso é intencional e honesto. Atração de talentos é o problema mais urgente; reputação e retenção são consequências naturais de fazer o primeiro bem feito.">
     <div class="eyebrow">Nova direção estratégica</div>
     <h2 class="slide-title t-md">Marca empregadora como objetivo central, em três frentes</h2>
@@ -1500,8 +1493,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 22 — Ficha técnica → história das pessoas -->
-  <section class="slide slide--branco" data-index="21"
+  <!-- 21 — Ficha técnica → história das pessoas -->
+  <section class="slide slide--branco" data-index="20"
     data-notes="Essa é a mudança mais concreta de comportamento editorial. E é também a mais difícil de manter — porque o instinto corporativo é falar sobre o produto, não sobre quem faz o produto.">
     <div class="eyebrow">Inovação no conteúdo</div>
     <h2 class="slide-title t-md">De ficha técnica para história das pessoas por trás do produto</h2>
@@ -1529,8 +1522,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 23 — Dados 2026 -->
-  <section class="slide slide--branco" data-index="22"
+  <!-- 22 — Dados 2026 -->
+  <section class="slide slide--branco" data-index="21"
     data-notes="O 8x de engajamento é especialmente importante: significa que uma voz humana vale oito vezes mais que a página oficial da empresa. Isso muda o investimento de tempo e energia.">
     <div class="eyebrow">O que os dados de 2026 confirmam</div>
     <h2 class="slide-title t-lg">Tendências de mercado validam a direção proposta</h2>
@@ -1555,11 +1548,11 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 24 — Benchmark Transição -->
-  <section class="slide slide--azul" data-index="23"
+  <!-- 23 — Benchmark Transição -->
+  <section class="slide slide--azul" data-index="22"
     data-notes="Antes de apresentar a proposta de execução, vamos mostrar que o setor já está se movendo. Não é aposta sem precedente — é uma prática que três players relevantes já validaram.">
     <div class="eyebrow">Benchmark de mercado</div>
-    <h2 class="slide-title t-lg">Como players do setor lático<br>já trabalham marca empregadora<br>no LinkedIn</h2>
+    <h2 class="slide-title t-lg">Como players do setor lácteo<br>já trabalham marca empregadora<br>no LinkedIn</h2>
     <div class="pilares" style="margin-top:1rem">
       <div class="pilar" style="padding:1.5rem;justify-content:center">
         <div class="pilar-title" style="font-size:1.4rem;margin:0;text-align:center">Lactalis</div>
@@ -1577,8 +1570,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 25 — Lactalis -->
-  <section class="slide slide--branco" data-index="24"
+  <!-- 24 — Lactalis -->
+  <section class="slide slide--branco" data-index="23"
     data-notes="A Lactalis é o maior player global do setor — e ainda assim usa vozes humanas individuais. Se o maior faz assim, é porque funciona.">
     <div class="eyebrow">Benchmark · 1 de 3</div>
     <h2 class="slide-title t-lg">Lactalis — escala + voz humana</h2>
@@ -1599,8 +1592,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 26 — Laticínios Porto Alegre -->
-  <section class="slide slide--branco" data-index="25"
+  <!-- 25 — Laticínios Porto Alegre -->
+  <section class="slide slide--branco" data-index="24"
     data-notes="Esse exemplo importa porque mostra que 'conteúdo técnico' e 'conteúdo humano' não são opostos. A especialista de sustentabilidade falando sobre o próprio trabalho é as duas coisas ao mesmo tempo.">
     <div class="eyebrow">Benchmark · 2 de 3</div>
     <h2 class="slide-title t-lg">Laticínios Porto Alegre — cultura + conteúdo técnico</h2>
@@ -1621,8 +1614,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 27 — Verde Campo -->
-  <section class="slide slide--branco" data-index="26"
+  <!-- 26 — Verde Campo -->
+  <section class="slide slide--branco" data-index="25"
     data-notes="Verde Campo é o mais próximo do que estamos propondo para a Trevo — e já funciona. Isso transforma a conversa de 'será que funciona?' para 'quando a gente começa?'.">
     <div class="eyebrow">Benchmark · 3 de 3</div>
     <h2 class="slide-title t-lg">Verde Campo — referência direta de execução</h2>
@@ -1643,8 +1636,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 28 — Síntese benchmark -->
-  <section class="slide slide--cinza" data-index="27"
+  <!-- 27 — Síntese benchmark -->
+  <section class="slide slide--cinza" data-index="26"
     data-notes="Esses três aprendizados fecham o ciclo de diagnóstico e benchmark — e abrem caminho direto para o plano de execução.">
     <div class="eyebrow">Síntese do benchmark</div>
     <h2 class="slide-title t-md">Três aprendizados do setor para a nossa estratégia</h2>
@@ -1668,8 +1661,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 29 — Fases de Execução -->
-  <section class="slide slide--branco" data-index="28"
+  <!-- 28 — Fases de Execução -->
+  <section class="slide slide--branco" data-index="27"
     data-notes="O nome da fase 1 não é coincidência — é fundação mesmo. Sem mapear as vozes certas no início, o employee advocacy não decola. A sequência não é negociável.">
     <div class="eyebrow">Fases de execução</div>
     <h2 class="slide-title t-md">Testar e ajustar antes de escalar</h2>
@@ -1707,8 +1700,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 30 — Calendário Editorial -->
-  <section class="slide slide--cinza" data-index="29"
+  <!-- 29 — Calendário Editorial -->
+  <section class="slide slide--cinza" data-index="28"
     data-notes="O volume de posts da página é consistente ao longo do semestre. O que cresce é a camada de advocacy: começa com mapeamento, vira treinamento, depois publicação, depois autonomia.">
     <div class="eyebrow">Calendário editorial</div>
     <h2 class="slide-title t-md">Visão mensal Jul–Dez 2026</h2>
@@ -1774,7 +1767,7 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
   </section>
 
   <!-- 31 — KPIs -->
-  <section class="slide slide--branco" data-index="30"
+  <section class="slide slide--branco" data-index="29"
     data-notes="Cada frente tem seus próprios indicadores — porque cada frente tem um objetivo diferente. O que une todos é a comparação mês a mês nos relatórios.">
     <div class="eyebrow">Indicadores de sucesso</div>
     <h2 class="slide-title t-md">Indicadores por frente estratégica</h2>
@@ -1821,8 +1814,8 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     </div>
   </section>
 
-  <!-- 32 — Ponto de Atenção -->
-  <section class="slide slide--branco" data-index="31"
+  <!-- 31 — Ponto de Atenção -->
+  <section class="slide slide--branco" data-index="30"
     data-notes="Preferimos nomear as limitações antes de ser perguntados sobre elas. A ferramenta nativa de Jobs não está no plano agora — mas pode entrar numa fase futura. Transparência aqui é ativo, não fraqueza.">
     <div class="eyebrow">Ponto de atenção</div>
     <h2 class="slide-title t-md">Um ponto de atenção — e uma sugestão para o futuro</h2>
@@ -1841,7 +1834,7 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
   </section>
 
   <!-- 33 — Próximos Passos -->
-  <section class="slide slide--azul" data-index="32"
+  <section class="slide slide--azul" data-index="31"
     data-notes="Fechamento limpo — três próximos passos concretos e um agradecimento. Não há promessa de milagre: há um plano com início claro, fases definidas e métricas acompanháveis. A aprovação de hoje desbloqueia isso. Ficamos à disposição para perguntas.">
     <div style="max-width:48%;position:relative;z-index:1">
       <div class="eyebrow">Próximos passos</div>
@@ -1858,6 +1851,9 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
   </section>
 
 </div><!-- /#presentation -->
+
+<!-- ─── Slide counter ─── -->
+<div id="slide-counter"></div>
 
 <!-- ─── Brand marks ─── -->
 <div id="trevo-logo">
@@ -1886,13 +1882,14 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
 
 <script>
 (function () {
-  var TOTAL = 33;
+  var TOTAL = 32;
   var pres = document.getElementById('presentation');
   var slides = Array.from(document.querySelectorAll('.slide'));
   var dotsWrap = document.getElementById('nav-dots');
   var arrowUp = document.getElementById('arrow-up');
   var arrowDn = document.getElementById('arrow-down');
   var notesEl = document.getElementById('notes-text');
+  var counterEl = document.getElementById('slide-counter');
   var current = 0;
 
   // Build dots
@@ -1917,10 +1914,12 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
       notesEl.textContent = slides[idx] ? (slides[idx].dataset.notes || '') : '';
     }
     var isDark = slides[idx] && slides[idx].classList.contains('slide--azul');
-    var hideCredit = (idx === 0 || idx === 32);
+    var hideCredit = (idx === 31);
     creditEl.style.display = hideCredit ? 'none' : 'flex';
     creditEl.classList.toggle('on-dark', !hideCredit && isDark);
     trevoLogoEl.classList.toggle('on-dark', isDark);
+    counterEl.textContent = (idx + 1) + ' / ' + TOTAL;
+    counterEl.classList.toggle('on-dark', isDark);
   }
 
   function goTo(idx) {
