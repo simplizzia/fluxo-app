@@ -816,7 +816,7 @@ html, body { height: 100%; overflow: hidden; background: #0a0f1e; }
   white-space: nowrap;
 }
 #simplizzia-credit.on-dark .sc-phrase { color: rgba(255,255,255,.4); opacity: 1; }
-#simplizzia-credit img { height: 20px; width: auto; }
+#simplizzia-credit img { height: 24px; width: auto; }
 
 /* Hide per-slide footer — replaced by global fixed elements */
 .slide-footer { display: none; }
@@ -840,13 +840,28 @@ html, body { height: 100%; overflow: hidden; background: #0a0f1e; }
 }
 @media (max-width: 860px) { #slide-counter { display: none; } }
 
+/* ─── Cover badge (eyebrow pill) ─── */
+.cover-badge {
+  display: inline-block;
+  background: var(--verde);
+  color: #fff;
+  font-family: var(--corpo);
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .38rem .95rem;
+  border-radius: 100px;
+  margin-bottom: 1.5rem;
+}
+
 /* ─── Cover mosaic ─── */
 .cover-mosaic {
   position: absolute;
-  right: 0; top: 10%; bottom: 10%;
+  right: 2rem; top: 10%; bottom: 10%;
   width: 38%;
 }
-.cover-mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 6px 0 0 6px; }
+.cover-mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 6px; }
 
 /* ─── Contracapa image ─── */
 .contracapa-img {
@@ -969,7 +984,7 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
   <section class="slide slide--azul" data-index="0"
     data-notes="Deixar o visual falar. Pausa antes de começar. O tom de proximidade que a gente quer resgatar começa aqui — com essa frase que é de todo mundo, não da diretoria.">
     <div style="max-width:50%;position:relative;z-index:1">
-      <div class="eyebrow">Estratégia de Comunicação Interna, Endomarketing e Cultura Organizacional</div>
+      <div class="cover-badge">Comunicação Interna · Endomarketing · Cultura</div>
       <h1 class="slide-title t-xl" style="margin-bottom:.5rem">TREVO LÁCTEOS | EHRMANN</h1>
       <p style="font-family:var(--corpo);font-size:1.25rem;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.06em">2026 / 2027</p>
     </div>
@@ -1860,7 +1875,6 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
   <img src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo | Ehrmann">
 </div>
 <div id="simplizzia-credit">
-  <span class="sc-phrase">Estratégia com o selo <strong>"Somos Simplizzia"</strong></span>
   <img src="clientes/trevo/assets/logo-simplizzia-colorida.png" alt="Simplizzia" class="sc-logo-color">
   <img src="clientes/trevo/assets/logo-simplizzia-branca.png" alt="Simplizzia" class="sc-logo-white">
 </div>
@@ -1920,6 +1934,7 @@ body.notas-on .slide { padding-bottom: calc(32vh + 4rem); }
     trevoLogoEl.classList.toggle('on-dark', isDark);
     counterEl.textContent = (idx + 1) + ' / ' + TOTAL;
     counterEl.classList.toggle('on-dark', isDark);
+    counterEl.style.visibility = (idx === 0) ? 'hidden' : 'visible';
   }
 
   function goTo(idx) {
