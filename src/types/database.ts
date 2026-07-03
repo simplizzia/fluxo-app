@@ -2055,6 +2055,566 @@ export type Database = {
           },
         ]
       }
+      imagens_acesso: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          profile_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          profile_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_acesso_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_acesso_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_acesso_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_bloco_mestre: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          estilo_geral: string | null
+          estilo_luz: string | null
+          formato_padrao: string
+          id: string
+          negativos_padrao: string[]
+          organization_id: string
+          paleta_hex: string[]
+          regra_paleta: string | null
+          sentimento_marca: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          estilo_geral?: string | null
+          estilo_luz?: string | null
+          formato_padrao?: string
+          id?: string
+          negativos_padrao?: string[]
+          organization_id: string
+          paleta_hex?: string[]
+          regra_paleta?: string | null
+          sentimento_marca?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          estilo_geral?: string | null
+          estilo_luz?: string | null
+          formato_padrao?: string
+          id?: string
+          negativos_padrao?: string[]
+          organization_id?: string
+          paleta_hex?: string[]
+          regra_paleta?: string | null
+          sentimento_marca?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_bloco_mestre_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_bloco_mestre_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_casos_calibracao: {
+        Row: {
+          cena_id: string | null
+          cliente_id: string
+          correcao_aplicada: string | null
+          created_at: string
+          descricao_erro: string
+          dimensao_regua: string | null
+          escopo_do_erro: string
+          id: string
+          organization_id: string
+          promovido_em: string | null
+          promovido_para: string | null
+          promovido_por: string | null
+          status: string
+          updated_at: string
+          vezes_visto: number
+        }
+        Insert: {
+          cena_id?: string | null
+          cliente_id: string
+          correcao_aplicada?: string | null
+          created_at?: string
+          descricao_erro: string
+          dimensao_regua?: string | null
+          escopo_do_erro: string
+          id?: string
+          organization_id: string
+          promovido_em?: string | null
+          promovido_para?: string | null
+          promovido_por?: string | null
+          status?: string
+          updated_at?: string
+          vezes_visto?: number
+        }
+        Update: {
+          cena_id?: string | null
+          cliente_id?: string
+          correcao_aplicada?: string | null
+          created_at?: string
+          descricao_erro?: string
+          dimensao_regua?: string | null
+          escopo_do_erro?: string
+          id?: string
+          organization_id?: string
+          promovido_em?: string | null
+          promovido_para?: string | null
+          promovido_por?: string | null
+          status?: string
+          updated_at?: string
+          vezes_visto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_casos_calibracao_cena_id_fkey"
+            columns: ["cena_id"]
+            isOneToOne: false
+            referencedRelation: "imagens_cenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_casos_calibracao_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_casos_calibracao_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_casos_calibracao_promovido_por_fkey"
+            columns: ["promovido_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_categorias_variacao: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          tipo: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          tipo: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_categorias_variacao_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_categorias_variacao_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_cenas: {
+        Row: {
+          acao_pose: string
+          cliente_id: string
+          created_at: string
+          criado_por: string | null
+          ferramenta_recomendada: string | null
+          formato: string | null
+          id: string
+          imagem_resultado_path: string | null
+          negativos_final: string | null
+          nota_especial: string | null
+          nota_regua: string | null
+          organization_id: string
+          personagem_id: string | null
+          personagem_texto: string | null
+          produto_id: string | null
+          prompt_final: string
+          status: string
+          updated_at: string
+          variacao_atributo_id: string | null
+        }
+        Insert: {
+          acao_pose: string
+          cliente_id: string
+          created_at?: string
+          criado_por?: string | null
+          ferramenta_recomendada?: string | null
+          formato?: string | null
+          id?: string
+          imagem_resultado_path?: string | null
+          negativos_final?: string | null
+          nota_especial?: string | null
+          nota_regua?: string | null
+          organization_id: string
+          personagem_id?: string | null
+          personagem_texto?: string | null
+          produto_id?: string | null
+          prompt_final: string
+          status?: string
+          updated_at?: string
+          variacao_atributo_id?: string | null
+        }
+        Update: {
+          acao_pose?: string
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string | null
+          ferramenta_recomendada?: string | null
+          formato?: string | null
+          id?: string
+          imagem_resultado_path?: string | null
+          negativos_final?: string | null
+          nota_especial?: string | null
+          nota_regua?: string | null
+          organization_id?: string
+          personagem_id?: string | null
+          personagem_texto?: string | null
+          produto_id?: string | null
+          prompt_final?: string
+          status?: string
+          updated_at?: string
+          variacao_atributo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_cenas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_cenas_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_cenas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_cenas_personagem_id_fkey"
+            columns: ["personagem_id"]
+            isOneToOne: false
+            referencedRelation: "imagens_personagens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_cenas_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "imagens_produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_cenas_variacao_atributo_id_fkey"
+            columns: ["variacao_atributo_id"]
+            isOneToOne: false
+            referencedRelation: "imagens_variacao_atributos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_patches_tecnicos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          organization_id: string
+          origem_caso_id: string | null
+          palavras_chave: string[]
+          quando_usar: string | null
+          snippet_texto: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          organization_id: string
+          origem_caso_id?: string | null
+          palavras_chave?: string[]
+          quando_usar?: string | null
+          snippet_texto: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          organization_id?: string
+          origem_caso_id?: string | null
+          palavras_chave?: string[]
+          quando_usar?: string | null
+          snippet_texto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_patches_tecnicos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_patches_tecnicos_origem_caso_id_fkey"
+            columns: ["origem_caso_id"]
+            isOneToOne: false
+            referencedRelation: "imagens_casos_calibracao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_personagens: {
+        Row: {
+          alerta_contaminacao: string | null
+          cliente_id: string
+          created_at: string
+          descricao_fixa: string | null
+          id: string
+          imagem_referencia_path: string | null
+          nome: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          alerta_contaminacao?: string | null
+          cliente_id: string
+          created_at?: string
+          descricao_fixa?: string | null
+          id?: string
+          imagem_referencia_path?: string | null
+          nome: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          alerta_contaminacao?: string | null
+          cliente_id?: string
+          created_at?: string
+          descricao_fixa?: string | null
+          id?: string
+          imagem_referencia_path?: string | null
+          nome?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_personagens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_personagens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_produtos: {
+        Row: {
+          alerta_contraste: string | null
+          angulos_disponiveis: string[]
+          cliente_id: string
+          created_at: string
+          escala_relativa: string | null
+          formato: string | null
+          id: string
+          imagem_referencia_path: string | null
+          nome: string
+          organization_id: string
+          regra_geracao: string | null
+          restricao_conteudo: string | null
+          tampa: string | null
+          updated_at: string
+        }
+        Insert: {
+          alerta_contraste?: string | null
+          angulos_disponiveis?: string[]
+          cliente_id: string
+          created_at?: string
+          escala_relativa?: string | null
+          formato?: string | null
+          id?: string
+          imagem_referencia_path?: string | null
+          nome: string
+          organization_id: string
+          regra_geracao?: string | null
+          restricao_conteudo?: string | null
+          tampa?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alerta_contraste?: string | null
+          angulos_disponiveis?: string[]
+          cliente_id?: string
+          created_at?: string
+          escala_relativa?: string | null
+          formato?: string | null
+          id?: string
+          imagem_referencia_path?: string | null
+          nome?: string
+          organization_id?: string
+          regra_geracao?: string | null
+          restricao_conteudo?: string | null
+          tampa?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_produtos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_produtos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imagens_variacao_atributos: {
+        Row: {
+          categoria_id: string
+          cliente_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          status: string
+          valor: string
+          vezes_usado: number
+        }
+        Insert: {
+          categoria_id: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          status?: string
+          valor: string
+          vezes_usado?: number
+        }
+        Update: {
+          categoria_id?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          valor?: string
+          vezes_usado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_variacao_atributos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "imagens_categorias_variacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_variacao_atributos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imagens_variacao_atributos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       in_app_notificacoes: {
         Row: {
           created_at: string
