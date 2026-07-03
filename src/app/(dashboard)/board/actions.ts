@@ -167,7 +167,6 @@ export async function actionCriarCard(
       confidencial,
       status: 'aguardando_info',
       campos_publicos: camposPublicos,
-      campos_internos: camposInternos,
     })
     .select('id')
     .single()
@@ -175,6 +174,18 @@ export async function actionCriarCard(
   if (insertError || !newRow) {
     console.error('[actionCriarCard] insert:', insertError?.message)
     return { error: 'Erro ao criar demanda. Tente novamente.' }
+  }
+
+  // Campos internos vivem em tabela isolada (RLS nega acesso direto via API).
+  // Escrita server-side via service role.
+  if (camposInternos && Object.keys(camposInternos).length > 0) {
+    const svc = createServiceClient()
+    await (svc.from('cards_internos' as never) as unknown as { insert: (v: unknown) => Promise<unknown> })
+      .insert({
+        card_id: newRow.id,
+        organization_id: profile.organization_id,
+        dados: camposInternos,
+      })
   }
 
   // Calcula créditos consumidos (best-effort — não bloqueia se migração pendente)
@@ -276,7 +287,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   const { data: card, error } = await supabase
     .from('cards')
     .select(
-      'campos_publicos, campos_internos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(campos_formulario, agente_slug, tem_publicacao)',
+      'campos_publicos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(campos_formulario, agente_slug, tem_publicacao)',
     )
     .eq('id', cardId)
     .single()
@@ -286,11 +297,20 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   const ehEquipe = profile.papel !== 'cliente'
   const tipo = card.tipo as unknown as { campos_formulario: CampoFormulario[]; agente_slug: string | null; tem_publicacao: boolean | null } | null
 
+  // campos_internos vive em tabela isolada; só a equipe lê, via service role.
+  // A RLS de `cards` acima já garantiu que este usuário pode ver este card.
+  let camposInternos: Record<string, unknown> | null = null
+  if (ehEquipe) {
+    const svc = createServiceClient()
+    const { data: internos } = await (svc.from('cards_internos' as never) as unknown as {
+      select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { dados: unknown } | null }> } }
+    }).select('dados').eq('card_id', cardId).maybeSingle()
+    camposInternos = (internos?.dados as Record<string, unknown>) ?? {}
+  }
+
   return {
     campos_publicos: (card.campos_publicos as Record<string, unknown>) ?? {},
-    campos_internos: ehEquipe
-      ? ((card.campos_internos as Record<string, unknown>) ?? {})
-      : null,
+    campos_internos: camposInternos,
     campos_formulario: tipo?.campos_formulario ?? [],
     rodadas_revisao: card.rodadas_revisao ?? 0,
     motivo_cancelamento: card.motivo_cancelamento ?? null,

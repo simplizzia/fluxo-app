@@ -269,26 +269,36 @@ export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult
       })
       .eq('id', runId)
 
-    // 7. If Pattern A (card-triggered), save output to card's campos_internos
+    // 7. If Pattern A (card-triggered), save output to card's internal fields
+    //    (tabela isolada cards_internos — escrita server-side via service role)
     if (cardId) {
-      const { data: card } = await service
-        .from('cards')
-        .select('campos_internos')
-        .eq('id', cardId)
-        .single()
+      const internos = service.from('cards_internos' as never) as unknown as {
+        select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { dados: unknown; organization_id: string } | null }> } }
+        upsert: (v: unknown, o: unknown) => Promise<unknown>
+      }
+      const { data: atual } = await internos.select('dados, organization_id').eq('card_id', cardId).maybeSingle()
 
-      const camposAtuais = (card?.campos_internos as Record<string, unknown>) ?? {}
-      await service
-        .from('cards')
-        .update({
-          campos_internos: {
+      let orgId = atual?.organization_id
+      if (!orgId) {
+        const { data: c } = await service.from('cards').select('organization_id').eq('id', cardId).single()
+        orgId = (c as { organization_id: string } | null)?.organization_id
+      }
+
+      const camposAtuais = (atual?.dados as Record<string, unknown>) ?? {}
+      await internos.upsert(
+        {
+          card_id: cardId,
+          organization_id: orgId,
+          dados: {
             ...camposAtuais,
             ia_output: outputText,
             ia_agente: agenteChave,
             ia_gerado_em: new Date().toISOString(),
           },
-        })
-        .eq('id', cardId)
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'card_id' },
+      )
     }
 
     return { runId, output: outputText, tokensInput, tokensOutput, duracaoMs }

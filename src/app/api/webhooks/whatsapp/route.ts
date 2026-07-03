@@ -347,13 +347,6 @@ Se a mensagem não for um pedido de serviço (ex.: agradecimento, pergunta gené
       prioridade:      'normal',
       responsavel_id:  (atendimento as { id: string } | null)?.id ?? null,
       campos_publicos: {} as import('@/types/database').Json,
-      campos_internos: {
-        origem:    'whatsapp',
-        numero:    numero,
-        remetente: nomeRemetente,
-        mensagem_original: texto,
-        observacoes_izzi: parsed.observacoes,
-      } as unknown as import('@/types/database').Json,
     })
     .select('id')
     .single()
@@ -361,6 +354,20 @@ Se a mensagem não for um pedido de serviço (ex.: agradecimento, pergunta gené
   if (cardErr || !card) {
     throw new Error(`Erro ao criar card: ${cardErr?.message}`)
   }
+
+  // Campos internos vivem em tabela isolada (RLS nega acesso direto via API)
+  await (service.from('cards_internos' as never) as unknown as { insert: (v: unknown) => Promise<unknown> })
+    .insert({
+      card_id: card.id,
+      organization_id: orgId,
+      dados: {
+        origem:    'whatsapp',
+        numero:    numero,
+        remetente: nomeRemetente,
+        mensagem_original: texto,
+        observacoes_izzi: parsed.observacoes,
+      },
+    })
 
   return {
     cardCriado: true,
