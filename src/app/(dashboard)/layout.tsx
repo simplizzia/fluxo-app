@@ -27,6 +27,8 @@ const NAV_GROUPS: NavGroupDef[] = [
       { href: '/board',      label: 'Board',      iconKey: 'Kanban'          },
       { href: '/calendario', label: 'Calendário', iconKey: 'Calendar',
         roles: ['socia', 'gestao', 'atendimento', 'executor'] },
+      { href: '/imagens',    label: 'Imagens IA', iconKey: 'Image',
+        roles: ['socia', 'gestao', 'atendimento', 'executor'] },
     ],
   },
 

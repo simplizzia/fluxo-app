@@ -5,7 +5,7 @@ import {
   ChevronRight,
   LayoutDashboard, Kanban, Calendar, Users, GitBranch,
   Settings, BarChart2, Heart, Star, FileText, Palette, Zap, Bot, Shield,
-  DollarSign, Share2, Trophy,
+  DollarSign, Share2, Trophy, Image,
 } from 'lucide-react'
 import SidebarLinkClient from './SidebarLinkClient'
 
@@ -13,7 +13,7 @@ import SidebarLinkClient from './SidebarLinkClient'
 const ICON_MAP = {
   LayoutDashboard, Kanban, Calendar, Users, GitBranch,
   Settings, BarChart2, Heart, Star, FileText, Palette, Zap, Bot, Shield,
-  DollarSign, Share2, Trophy,
+  DollarSign, Share2, Trophy, Image,
 } as const
 
 export type IconKey = keyof typeof ICON_MAP
