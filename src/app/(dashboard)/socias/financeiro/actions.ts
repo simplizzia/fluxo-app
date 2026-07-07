@@ -562,6 +562,8 @@ const DespesaSchema = z.object({
   recorrente: z.boolean().default(false),
   ciclo: z.enum(['mensal', 'trimestral', 'semestral', 'anual', 'projeto'] as const).optional().nullable(),
   observacoes: z.string().optional(),
+  status: z.enum(['pendente', 'paga', 'vencida'] as const).optional(),
+  pago_em: z.string().optional().nullable(),
 })
 
 export async function actionCriarDespesa(
@@ -582,6 +584,8 @@ export async function actionCriarDespesa(
       competencia: validated.data.competencia || null,
       ciclo: validated.data.ciclo ?? null,
       observacoes: validated.data.observacoes || null,
+      status: validated.data.status ?? 'pendente',
+      pago_em: validated.data.pago_em || null,
     })
     .select('id')
     .single()

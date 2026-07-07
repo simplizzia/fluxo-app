@@ -843,6 +843,8 @@ function ModalNovaDespesa({
     recorrente: despesa?.recorrente ?? false,
     ciclo: (despesa?.ciclo ?? 'mensal') as CicloCobranca,
     observacoes: despesa?.observacoes ?? '',
+    jaPaga: false,
+    pagoEm: '',
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -851,6 +853,7 @@ function ModalNovaDespesa({
     const valor = parseFloat(form.valor.replace(',', '.'))
     if (isNaN(valor) || valor <= 0) { setErro('Informe um valor válido.'); return }
     if (!form.vencimento) { setErro('Informe a data de vencimento.'); return }
+    if (!editando && form.jaPaga && !form.pagoEm) { setErro('Informe a data de pagamento.'); return }
 
     const payload = {
       descricao: form.descricao.trim(),
@@ -862,6 +865,9 @@ function ModalNovaDespesa({
       recorrente: form.recorrente,
       ciclo: form.recorrente ? form.ciclo : null,
       observacoes: form.observacoes.trim() || undefined,
+      ...(!editando && form.jaPaga
+        ? { status: 'paga' as const, pago_em: new Date(form.pagoEm + 'T12:00:00').toISOString() }
+        : {}),
     }
 
     startTransition(async () => {
@@ -959,6 +965,38 @@ function ModalNovaDespesa({
                 </select>
               )}
             </div>
+            {!editando && (
+              <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 space-y-2">
+                <div className="flex items-center gap-3">
+                  <button type="button"
+                    onClick={() => setForm({
+                      ...form,
+                      jaPaga: !form.jaPaga,
+                      pagoEm: !form.jaPaga && !form.pagoEm ? form.vencimento : form.pagoEm,
+                    })}
+                    className={`relative h-5 w-9 flex-none rounded-full transition-colors ${form.jaPaga ? 'bg-emerald-500' : 'bg-zinc-200'}`}>
+                    <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${form.jaPaga ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                  </button>
+                  <span className="text-xs text-zinc-700">Já foi paga</span>
+                </div>
+                {form.jaPaga && (
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <label className="mb-1 block text-[11px] font-medium text-zinc-600">Data do pagamento</label>
+                      <input type="date" value={form.pagoEm}
+                        onChange={(e) => setForm({ ...form, pagoEm: e.target.value })}
+                        className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+                    </div>
+                    <button type="button"
+                      onClick={() => setForm({ ...form, pagoEm: form.vencimento })}
+                      disabled={!form.vencimento}
+                      className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 transition whitespace-nowrap">
+                      Pago no vencimento
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-700">Observações</label>
               <textarea rows={2} value={form.observacoes}
@@ -996,8 +1034,11 @@ function ModalPagarDespesa({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const jaPaga = despesa.status === 'paga'
   const [isPending, startTransition] = useTransition()
-  const [pagoEm, setPagoEm] = useState(new Date().toISOString().slice(0, 10))
+  const [pagoEm, setPagoEm] = useState(
+    despesa.pago_em ? despesa.pago_em.slice(0, 10) : new Date().toISOString().slice(0, 10),
+  )
 
   function handleConfirmar(e: React.FormEvent) {
     e.preventDefault()
@@ -1018,7 +1059,9 @@ function ModalPagarDespesa({
         <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
             <div>
-              <h2 className="font-display text-base font-semibold text-zinc-900">Confirmar Pagamento</h2>
+              <h2 className="font-display text-base font-semibold text-zinc-900">
+                {jaPaga ? 'Alterar Data de Pagamento' : 'Confirmar Pagamento'}
+              </h2>
               <p className="mt-0.5 text-xs text-zinc-500 truncate max-w-[240px]">{despesa.descricao}</p>
             </div>
             <button onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100">
@@ -1030,10 +1073,16 @@ function ModalPagarDespesa({
               <span className="text-xs text-zinc-500">Valor</span>
               <span className="text-sm font-semibold text-zinc-800">{formatBRL(Number(despesa.valor))}</span>
             </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-700">Data do pagamento</label>
-              <input type="date" required value={pagoEm} onChange={(e) => setPagoEm(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-700">Data do pagamento</label>
+                <input type="date" required value={pagoEm} onChange={(e) => setPagoEm(e.target.value)}
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-brand focus:outline-none" />
+              </div>
+              <button type="button" onClick={() => setPagoEm(despesa.vencimento)}
+                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition whitespace-nowrap">
+                Pago no vencimento
+              </button>
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={onClose}
@@ -1043,7 +1092,7 @@ function ModalPagarDespesa({
               <button type="submit" disabled={isPending}
                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60 transition">
                 {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                Confirmar
+                {jaPaga ? 'Salvar' : 'Confirmar'}
               </button>
             </div>
           </form>
@@ -1281,12 +1330,11 @@ function AbaDespesas({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        {d.status !== 'paga' && (
-                          <button onClick={() => setPagando(d)} title="Marcar como paga"
-                            className="rounded-lg p-1.5 text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 transition">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
+                        <button onClick={() => setPagando(d)}
+                          title={d.status === 'paga' ? 'Alterar data de pagamento' : 'Marcar como paga'}
+                          className={`rounded-lg p-1.5 transition hover:bg-emerald-50 hover:text-emerald-600 ${d.status === 'paga' ? 'text-emerald-500' : 'text-zinc-400'}`}>
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </button>
                         <button onClick={() => setEditando(d)} title="Editar despesa"
                           className="rounded-lg p-1.5 text-zinc-400 hover:bg-blue-50 hover:text-blue-600 transition">
                           <Pencil className="h-3.5 w-3.5" />
