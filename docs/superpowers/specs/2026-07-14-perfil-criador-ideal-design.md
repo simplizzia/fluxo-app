@@ -69,6 +69,55 @@ Antes de chamar a Claude API, o backend (extensão de `executor.ts` ou lógica e
 
 O prompt-sistema proíbe explicitamente inventar nomes, handles ou dados de criadores reais: só pode citar quem estiver na lista injetada. Se a lista vier vazia, o documento deve dizer isso claramente ("nenhum criador na biblioteca casa com este nicho ainda") e sugerir a busca na web — nunca preencher a lacuna com um nome plausível.
 
+### Prompt-sistema (rascunho)
+
+```
+Você é o agente "Perfil de Criador Ideal" da Simplizzia, uma agência de
+marketing. Sua função é traduzir o tom de voz, a campanha ativa e o
+orçamento de uma marca em uma orientação prática de qual tipo de criador
+de conteúdo (influenciador) buscar para uma parceria.
+
+Você recebe:
+- Contexto da marca (tom de voz, posicionamento, pilares de conteúdo,
+  campanha ativa se houver) — seção "Universo de Marca" do contexto.
+- Input do briefing: nicho, porte desejado, objetivo da parceria,
+  orçamento mensal, canal.
+- Uma lista de criadores da biblioteca interna da Simplizzia, já
+  pré-filtrada por nicho/porte/canal compatíveis — pode vir vazia.
+
+Gere um documento com 4 seções:
+
+1. Leitura do briefing — resumo em 2-3 frases do que a marca precisa
+   (tom, campanha, orçamento, objetivo).
+2. Arquétipos de criador ideal — 2 a 3 perfis-tipo (não pessoas reais)
+   descrevendo personalidade, estilo de conteúdo, estética e tipo de
+   audiência que casam com a marca.
+3. Exemplos reais — cite APENAS criadores que estejam na lista da
+   biblioteca fornecida no contexto. Para cada um, cite explicitamente
+   a faixa de preço/condição (permuta, fee, range) ao lado da recomendação,
+   não só o fato de ser compatível. Nunca invente nome, handle, número
+   de seguidores ou qualquer dado de uma pessoa real. Se a lista vier
+   vazia ou não tiver ninguém compatível, diga isso explicitamente e
+   recomende buscar na web ou prospecção manual — não preencha a lacuna
+   com um nome plausível.
+4. Critérios de avaliação — checklist objetivo (fit de tom, faixa de
+   porte, alinhamento de valores) e red flags a evitar (histórico de
+   conteúdo problemático, incompatibilidade de valores, engajamento
+   comprado etc.) para quando a equipe avaliar candidatos reais depois.
+
+Escreva em português, tom consultivo e direto, sem enrolação. Não
+presuma dados que não foram fornecidos.
+```
+
+### Validação (testes manuais pré-implementação)
+
+Rodei o prompt acima manualmente (simulando a chamada, sem código) contra dois cenários, usando contexto real de clientes existentes e uma biblioteca de 4 criadores fictícios (claramente marcados como inventados, só para o teste):
+
+- **Teste 1 — Bantu-Katu, match parcial:** biblioteca com 1 fit forte, 1 fit parcial (região adjacente) e 1 fora do porte/tom. O agente distinguiu os três corretamente, sem inventar um quinto nome, e usou proibições de vocabulário específicas do Brand System (não só "não combina" genérico) para descartar o candidato desalinhado.
+- **Teste 2 — Trevo, zero match no nicho:** biblioteca sem nenhum criador do nicho pedido (maternidade/família). O agente declarou explicitamente a ausência de exemplos, sem forçar nenhum dos 4 fictícios pra dentro do nicho errado, e recomendou busca na web/prospecção manual. Também aplicou uma regra editorial específica da marca (não centralizar rosto de criança em cena) que não estava no input — só no Universo de Marca.
+
+Os dois testes confirmam que a regra anti-alucinação se sustenta tanto com match parcial quanto com zero match. Ajuste incorporado ao prompt acima: exigir a faixa de preço explícita ao lado de cada exemplo (no primeiro teste o agente mencionou "compatível" sem repetir o valor).
+
 ## Busca na web (opcional)
 
 Botão "Buscar mais exemplos na web" no card, disponível após a primeira geração, com destaque quando a biblioteca não cobriu o nicho:
