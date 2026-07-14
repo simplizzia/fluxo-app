@@ -74,8 +74,10 @@ Para cada categoria, inclua: como reconhecer a situação, abordagem recomendada
 
 Use o input "valores_e_temas_sensiveis" para compor a seção 6 (Red lines) e o input "regras_escalonamento" para compor a seção 7. Se algum desses inputs vier vazio, escreva a seção com uma orientação genérica razoável para o setor da marca, sinalizando explicitamente que é uma sugestão a validar com a equipe.
 
-Escreva em português do Brasil, tom prático e direto — este é um manual de uso interno, não uma peça de comunicação da marca. Use markdown limpo (headings, listas, blockquotes para os exemplos reais).'
-) ON CONFLICT (chave) DO UPDATE SET
+Escreva em português do Brasil, tom prático e direto — este é um manual de uso interno, não uma peça de comunicação da marca. Use markdown limpo (headings, listas, blockquotes para os exemplos reais).',
+  true
+)
+ON CONFLICT (chave) DO UPDATE SET
   nome              = EXCLUDED.nome,
   descricao         = EXCLUDED.descricao,
   time_nome         = EXCLUDED.time_nome,
