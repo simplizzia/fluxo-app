@@ -160,6 +160,24 @@ export const AGENTES: AgenteDef[] = [
     papeisPermitidos: ['socia', 'gestao', 'atendimento'],
     inputsSchema: [{ chave: 'texto', label: 'Texto a validar', tipo: 'textarea', obrigatorio: true }],
   },
+  {
+    chave: 'inteligencia.guia-interacao-social',
+    nome: 'Guia de Interação em Redes Sociais',
+    descricao: 'Gera um guia de referência para responder comentários e DMs recebidos pela marca, alinhado ao tom de voz e à campanha ativa, com exemplos reais fornecidos pela equipe.',
+    time: 'Inteligência',
+    timeNumero: 3,
+    padrao: 'C',
+    tipoDemandaSlug: 'guia-interacao-social',
+    papeisPermitidos: ['socia', 'gestao', 'atendimento'],
+    inputsSchema: [
+      { chave: 'marca', label: 'Marca', tipo: 'text', obrigatorio: true },
+      { chave: 'canais_ativos', label: 'Canais ativos', tipo: 'textarea', obrigatorio: true },
+      { chave: 'valores_e_temas_sensiveis', label: 'Valores e temas sensíveis', tipo: 'textarea', obrigatorio: false },
+      { chave: 'categorias_adicionais', label: 'Categorias adicionais de situação', tipo: 'textarea', obrigatorio: false },
+      { chave: 'exemplos_reais', label: 'Exemplos reais de comentários/DMs', tipo: 'textarea', obrigatorio: true },
+      { chave: 'regras_escalonamento', label: 'Regras de escalonamento', tipo: 'textarea', obrigatorio: false },
+    ],
+  },
 
   // ── Time 4: Planejamento ──────────────────────────────────────────────────
   {
