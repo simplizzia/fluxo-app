@@ -208,6 +208,76 @@ export const AGENTES: AgenteDef[] = [
     ],
   },
 
+  // ── Time 4b: Cronograma ───────────────────────────────────────────────────
+  // Etapas da cadeia de cronograma. Acionadas pelo fluxo de cronograma (não por
+  // card nem pelo portal), cada uma recebe o contexto da marca + produtos ativos
+  // e a saída da etapa anterior. Ver spec 2026-07-24-fluxo-cronograma-design.
+  {
+    chave: 'cronograma.briefing',
+    nome: 'Cronograma · Briefing',
+    descricao: 'Reúne marca, produtos ativos, restrições e a lógica de sequenciamento do mês anterior para abrir o cronograma.',
+    time: 'Cronograma',
+    timeNumero: 4,
+    padrao: 'C',
+    papeisPermitidos: ['socia', 'gestao', 'atendimento'],
+    inputsSchema: [
+      { chave: 'mes_referencia', label: 'Mês de referência', tipo: 'text', obrigatorio: true },
+      { chave: 'restricoes', label: 'Restrições do mês (produtos fora, datas a evitar)', tipo: 'textarea', obrigatorio: false },
+    ],
+  },
+  {
+    chave: 'cronograma.temas-pilares',
+    nome: 'Cronograma · Temas e Pilares',
+    descricao: 'Define os pilares editoriais do mês e quais produtos são elegíveis, a partir do briefing.',
+    time: 'Cronograma',
+    timeNumero: 4,
+    padrao: 'C',
+    papeisPermitidos: ['socia', 'gestao', 'atendimento'],
+    inputsSchema: [],
+  },
+  {
+    chave: 'cronograma.calendario',
+    nome: 'Cronograma · Calendário',
+    descricao: 'Distribui os posts do mês em formato estruturado, aplicando sequenciamento por arco (ordem, não conteúdo) e SKU sem repetição.',
+    time: 'Cronograma',
+    timeNumero: 4,
+    padrao: 'C',
+    papeisPermitidos: ['socia', 'gestao', 'atendimento'],
+    inputsSchema: [
+      { chave: 'qtd_posts', label: 'Quantidade de posts no mês', tipo: 'number', obrigatorio: false },
+    ],
+  },
+  {
+    chave: 'cronograma.coerencia',
+    nome: 'Cronograma · Análise de Coerência',
+    descricao: 'Audita o calendário: SKU repetido, intercalação de marca, pendências de viabilidade e tom das legendas.',
+    time: 'Cronograma',
+    timeNumero: 4,
+    padrao: 'C',
+    papeisPermitidos: ['socia', 'gestao', 'atendimento'],
+    inputsSchema: [],
+  },
+  {
+    chave: 'cronograma.angulos-alternativos',
+    nome: 'Cronograma · Ângulos Alternativos',
+    descricao: 'Para posts frágeis ou dependentes de pendência, propõe alternativas viáveis.',
+    time: 'Cronograma',
+    timeNumero: 4,
+    padrao: 'C',
+    papeisPermitidos: ['socia', 'gestao', 'atendimento'],
+    inputsSchema: [],
+  },
+  {
+    chave: 'cronograma.aprendizados',
+    nome: 'Cronograma · Aprendizados',
+    descricao: 'No fechamento, compara o gerado com o aprovado e propõe aprendizados para os próximos meses.',
+    time: 'Cronograma',
+    timeNumero: 4,
+    padrao: 'C',
+    papeisPermitidos: ['socia', 'gestao', 'atendimento'],
+    inputsSchema: [],
+  },
+
   // ── Time 5: Criativo ──────────────────────────────────────────────────────
   {
     chave: 'criativo.carrossel',
