@@ -1,5 +1,27 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isFeatureEnabled, type FeatureKey } from '@/lib/features'
+
+// Prefixo de rota → feature. Módulos desligados nesta fase de uso (ver
+// src/lib/features.ts) redirecionam para /dashboard, mesmo por URL direta.
+// Ordem importa: prefixos mais específicos antes dos mais gerais.
+const ROTAS_POR_FEATURE: [string, FeatureKey][] = [
+  ['/socias/financeiro', 'financeiro'],
+  ['/socias/social', 'social'],
+  ['/socias/gamificacao', 'gamificacao'],
+  ['/socias', 'socias'],
+  ['/calendario', 'calendario'],
+  ['/imagens', 'imagens'],
+  ['/reunioes', 'reunioes'],
+  ['/cs', 'cs'],
+  ['/nps', 'nps'],
+  ['/relatorios', 'relatorios'],
+  ['/plano', 'plano'],
+  ['/automacoes', 'automacoes'],
+  ['/pipeline', 'pipeline'],
+  ['/lgpd', 'lgpd'],
+  ['/marca', 'marca_cliente'],
+]
 
 /**
  * Proxy de autenticação e renovação de sessão.
@@ -63,6 +85,17 @@ export async function proxy(request: NextRequest) {
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  // Módulo desligado nesta fase de uso — some do menu e também não abre por URL.
+  const featureRota = ROTAS_POR_FEATURE.find(([prefixo]) =>
+    pathname === prefixo || pathname.startsWith(`${prefixo}/`),
+  )
+  if (featureRota && !isFeatureEnabled(featureRota[1])) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    url.searchParams.set('erro', 'modulo_indisponivel')
     return NextResponse.redirect(url)
   }
 

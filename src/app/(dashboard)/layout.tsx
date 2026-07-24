@@ -4,6 +4,7 @@ import { getCurrentProfile } from '@/lib/dal'
 import { createClient } from '@/lib/supabase/server'
 import { actionLogout } from '@/app/(auth)/login/actions'
 import type { PapelUsuario } from '@/types/database'
+import { isFeatureEnabled, type FeatureKey } from '@/lib/features'
 import { IzziChatWidget } from '@/components/izzi/IzziChatWidget'
 import { IzziEquipeTrigger } from '@/components/izzi/IzziEquipeTrigger'
 import { IzziOnboarding } from '@/components/izzi/IzziOnboarding'
@@ -14,8 +15,8 @@ import { SidebarNav } from './SidebarNav'
 import { DashboardShell } from './DashboardShell'
 import type { NavItem, NavGroup, IconKey } from './SidebarNav'
 
-// Definição interna com roles (filtradas no Server Component antes de passar ao Client)
-interface NavItemDef { href: string; label: string; iconKey: IconKey; roles?: PapelUsuario[] }
+// Definição interna com roles + feature flag (filtradas no Server Component)
+interface NavItemDef { href: string; label: string; iconKey: IconKey; roles?: PapelUsuario[]; feature?: FeatureKey }
 interface NavGroupDef { label?: string; roles?: PapelUsuario[]; items: NavItemDef[] }
 
 const NAV_GROUPS: NavGroupDef[] = [
@@ -26,9 +27,9 @@ const NAV_GROUPS: NavGroupDef[] = [
       { href: '/dashboard',  label: 'Dashboard',  iconKey: 'LayoutDashboard' },
       { href: '/board',      label: 'Board',      iconKey: 'Kanban'          },
       { href: '/calendario', label: 'Calendário', iconKey: 'Calendar',
-        roles: ['socia', 'gestao', 'atendimento', 'executor'] },
+        roles: ['socia', 'gestao', 'atendimento', 'executor'], feature: 'calendario' },
       { href: '/imagens',    label: 'Imagens IA', iconKey: 'Image',
-        roles: ['socia', 'gestao', 'atendimento', 'executor'] },
+        roles: ['socia', 'gestao', 'atendimento', 'executor'], feature: 'imagens' },
     ],
   },
 
@@ -38,11 +39,11 @@ const NAV_GROUPS: NavGroupDef[] = [
     roles: ['socia', 'gestao', 'atendimento'],
     items: [
       { href: '/clientes', label: 'Clientes',        iconKey: 'Users'    },
-      { href: '/reunioes', label: 'Reuniões',         iconKey: 'Calendar' },
+      { href: '/reunioes', label: 'Reuniões',         iconKey: 'Calendar', feature: 'reunioes' },
       { href: '/cs',       label: 'Customer Success', iconKey: 'Heart',
-        roles: ['socia', 'atendimento'] },
+        roles: ['socia', 'atendimento'], feature: 'cs' },
       { href: '/nps',      label: 'NPS & Avaliações', iconKey: 'Star',
-        roles: ['socia', 'atendimento'] },
+        roles: ['socia', 'atendimento'], feature: 'nps' },
     ],
   },
 
@@ -51,9 +52,9 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: 'Minha conta',
     roles: ['cliente'],
     items: [
-      { href: '/plano',     label: 'Uso do Plano', iconKey: 'BarChart2' },
-      { href: '/relatorios',label: 'Relatórios',   iconKey: 'FileText'  },
-      { href: '/marca',     label: 'Minha Marca',  iconKey: 'Palette'   },
+      { href: '/plano',     label: 'Uso do Plano', iconKey: 'BarChart2', feature: 'plano' },
+      { href: '/relatorios',label: 'Relatórios',   iconKey: 'FileText', feature: 'relatorios' },
+      { href: '/marca',     label: 'Minha Marca',  iconKey: 'Palette', feature: 'marca_cliente' },
     ],
   },
 
@@ -62,8 +63,8 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: 'Dados',
     roles: ['socia', 'atendimento'],
     items: [
-      { href: '/relatorios', label: 'Relatórios',   iconKey: 'FileText'  },
-      { href: '/plano',      label: 'Uso do Plano', iconKey: 'BarChart2' },
+      { href: '/relatorios', label: 'Relatórios',   iconKey: 'FileText', feature: 'relatorios' },
+      { href: '/plano',      label: 'Uso do Plano', iconKey: 'BarChart2', feature: 'plano' },
     ],
   },
 
@@ -74,7 +75,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     items: [
       { href: '/agentes',    label: 'Agentes de IA', iconKey: 'Bot' },
       { href: '/automacoes', label: 'Automações',    iconKey: 'Zap',
-        roles: ['socia'] },
+        roles: ['socia'], feature: 'automacoes' },
     ],
   },
 
@@ -83,7 +84,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: 'Comercial',
     roles: ['socia'],
     items: [
-      { href: '/pipeline', label: 'Pipeline CRM', iconKey: 'GitBranch' },
+      { href: '/pipeline', label: 'Pipeline CRM', iconKey: 'GitBranch', feature: 'pipeline' },
     ],
   },
 
@@ -92,12 +93,12 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: 'Gestão',
     roles: ['socia'],
     items: [
-      { href: '/socias',              label: 'Área das Sócias',   iconKey: 'Star'       },
-      { href: '/socias/pessoas',      label: 'Pessoas & Cultura', iconKey: 'Users'      },
-      { href: '/socias/financeiro',   label: 'Financeiro',        iconKey: 'DollarSign' },
-      { href: '/socias/social',       label: 'Redes Sociais',     iconKey: 'Share2'     },
-      { href: '/socias/gamificacao',  label: 'Gamificação',       iconKey: 'Trophy'     },
-      { href: '/lgpd',                label: 'LGPD & Segurança', iconKey: 'Shield'     },
+      { href: '/socias',              label: 'Área das Sócias',   iconKey: 'Star',       feature: 'socias'      },
+      { href: '/socias/pessoas',      label: 'Pessoas & Cultura', iconKey: 'Users',      feature: 'socias'      },
+      { href: '/socias/financeiro',   label: 'Financeiro',        iconKey: 'DollarSign', feature: 'financeiro'  },
+      { href: '/socias/social',       label: 'Redes Sociais',     iconKey: 'Share2',     feature: 'social'      },
+      { href: '/socias/gamificacao',  label: 'Gamificação',       iconKey: 'Trophy',     feature: 'gamificacao' },
+      { href: '/lgpd',                label: 'LGPD & Segurança', iconKey: 'Shield',      feature: 'lgpd'        },
       { href: '/admin/tipos-demanda', label: 'SLA por Demanda', iconKey: 'Zap'     },
       { href: '/admin/usuarios',      label: 'Usuários',         iconKey: 'Settings' },
     ],
@@ -135,13 +136,16 @@ export default async function DashboardLayout({
     clientesParaIzzi = (data ?? []) as { id: string; nome: string }[]
   }
 
-  // Filtra grupos e itens pelo papel — só dados serializáveis chegam ao Client Component
+  // Filtra grupos e itens por papel E por feature flag — só dados serializáveis
+  // chegam ao Client Component. Um item de módulo desligado (FEATURES) não
+  // aparece; a rota dele também redireciona, via requireFeature no page.tsx.
   const gruposVisiveis: NavGroup[] = NAV_GROUPS
     .filter((g) => !g.roles || g.roles.includes(profile.papel))
     .map((g) => ({
       label: g.label,
       items: g.items
         .filter((item) => !item.roles || item.roles.includes(profile.papel))
+        .filter((item) => !item.feature || isFeatureEnabled(item.feature))
         .map(({ href, label, iconKey }) => ({ href, label, iconKey }) satisfies NavItem),
     }))
     .filter((g) => g.items.length > 0)

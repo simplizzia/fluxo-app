@@ -16,6 +16,7 @@ import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { PapelUsuario } from '@/types/database'
+import { isFeatureEnabled, type FeatureKey } from '@/lib/features'
 
 // Re-exporta para manter compatibilidade com imports que vinham de dal.ts
 export type { PapelUsuario }
@@ -118,6 +119,16 @@ export async function requirePapel(
 
 export async function requireSocia(): Promise<UserProfile> {
   return requirePapel('socia')
+}
+
+/**
+ * Bloqueia a rota de um módulo desligado nesta fase de uso. Some do menu via
+ * FEATURES em layout.tsx; esta guarda impede o acesso por URL direta.
+ */
+export async function requireFeature(key: FeatureKey): Promise<void> {
+  if (!isFeatureEnabled(key)) {
+    redirect('/dashboard?erro=modulo_indisponivel')
+  }
 }
 
 export async function requireEquipe(): Promise<UserProfile> {
