@@ -57,13 +57,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "action_items_reuniao_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "action_items_reuniao_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -338,13 +331,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "agent_runs_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "agent_runs_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
@@ -522,13 +508,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "aprovacoes_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "aprovacoes_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -583,13 +562,6 @@ export type Database = {
             columns: ["card_id"]
             isOneToOne: false
             referencedRelation: "cards"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arquivos_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1072,13 +1044,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "badges_conquistados_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "badges_conquistados_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -1185,13 +1150,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "card_status_history_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "card_status_history_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -1202,7 +1160,6 @@ export type Database = {
       }
       cards: {
         Row: {
-          campos_internos: Json
           campos_publicos: Json
           cliente_id: string | null
           concluido_em: string | null
@@ -1232,7 +1189,6 @@ export type Database = {
           versao_entrega_atual: number | null
         }
         Insert: {
-          campos_internos?: Json
           campos_publicos?: Json
           cliente_id?: string | null
           concluido_em?: string | null
@@ -1262,7 +1218,6 @@ export type Database = {
           versao_entrega_atual?: number | null
         }
         Update: {
-          campos_internos?: Json
           campos_publicos?: Json
           cliente_id?: string | null
           concluido_em?: string | null
@@ -1332,6 +1287,45 @@ export type Database = {
             columns: ["tipo_id"]
             isOneToOne: false
             referencedRelation: "tipos_demanda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cards_internos: {
+        Row: {
+          card_id: string
+          created_at: string
+          dados: Json
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          dados?: Json
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          dados?: Json
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_internos_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: true
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cards_internos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
             referencedColumns: ["id"]
           },
         ]
@@ -1475,13 +1469,6 @@ export type Database = {
             columns: ["card_id"]
             isOneToOne: false
             referencedRelation: "cards"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comentarios_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
             referencedColumns: ["id"]
           },
           {
@@ -4262,13 +4249,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "publicacoes_agendadas_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "publicacoes_agendadas_criado_por_fkey"
             columns: ["criado_por"]
             isOneToOne: false
@@ -4723,13 +4703,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "whatsapp_mensagens_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "whatsapp_mensagens_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -4740,111 +4713,7 @@ export type Database = {
       }
     }
     Views: {
-      cards_safe: {
-        Row: {
-          campos_internos: Json | null
-          campos_publicos: Json | null
-          cliente_id: string | null
-          confidencial: boolean | null
-          created_at: string | null
-          criado_por: string | null
-          data_publicacao: string | null
-          id: string | null
-          motivo_cancelamento: string | null
-          organization_id: string | null
-          prazo_cliente: string | null
-          prazo_interno: string | null
-          prioridade: Database["public"]["Enums"]["prioridade_card"] | null
-          responsavel_id: string | null
-          rodadas_revisao: number | null
-          status: Database["public"]["Enums"]["status_card"] | null
-          tipo_id: string | null
-          titulo: string | null
-          updated_at: string | null
-          versao_entrega_atual: number | null
-        }
-        Insert: {
-          campos_internos?: never
-          campos_publicos?: Json | null
-          cliente_id?: string | null
-          confidencial?: boolean | null
-          created_at?: string | null
-          criado_por?: string | null
-          data_publicacao?: string | null
-          id?: string | null
-          motivo_cancelamento?: string | null
-          organization_id?: string | null
-          prazo_cliente?: string | null
-          prazo_interno?: string | null
-          prioridade?: Database["public"]["Enums"]["prioridade_card"] | null
-          responsavel_id?: string | null
-          rodadas_revisao?: number | null
-          status?: Database["public"]["Enums"]["status_card"] | null
-          tipo_id?: string | null
-          titulo?: string | null
-          updated_at?: string | null
-          versao_entrega_atual?: number | null
-        }
-        Update: {
-          campos_internos?: never
-          campos_publicos?: Json | null
-          cliente_id?: string | null
-          confidencial?: boolean | null
-          created_at?: string | null
-          criado_por?: string | null
-          data_publicacao?: string | null
-          id?: string | null
-          motivo_cancelamento?: string | null
-          organization_id?: string | null
-          prazo_cliente?: string | null
-          prazo_interno?: string | null
-          prioridade?: Database["public"]["Enums"]["prioridade_card"] | null
-          responsavel_id?: string | null
-          rodadas_revisao?: number | null
-          status?: Database["public"]["Enums"]["status_card"] | null
-          tipo_id?: string | null
-          titulo?: string | null
-          updated_at?: string | null
-          versao_entrega_atual?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cards_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cards_criado_por_fkey"
-            columns: ["criado_por"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cards_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cards_responsavel_id_fkey"
-            columns: ["responsavel_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cards_tipo_id_fkey"
-            columns: ["tipo_id"]
-            isOneToOne: false
-            referencedRelation: "tipos_demanda"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       auth_cliente_ids: { Args: never; Returns: string[] }
