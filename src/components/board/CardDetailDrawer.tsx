@@ -15,6 +15,7 @@ import {
   actionBuscarArquivos,
   actionUploadArquivo,
   actionEnviarParaAprovacao,
+  actionAprovarInternamente,
   actionAprovarCard,
   actionReprovarCard,
   actionCancelarCard,
@@ -103,6 +104,11 @@ export function CardDetailDrawer({
   const [rodadasRevisao, setRodadasRevisao] = useState(0)
   const [motivoCancelamento, setMotivoCancelamento] = useState<string | null>(null)
   const [marca, setMarca] = useState<{ id: string; nome: string } | null>(null)
+  // Conferência técnica interna (tipos com fluxo_aprovacao_duplo, ex. Embalagens)
+  const [fluxoDuplo, setFluxoDuplo] = useState(false)
+  const [aprovadoInternamente, setAprovadoInternamente] = useState(false)
+  const [pendingAprovacaoInterna, setPendingAprovacaoInterna] = useState(false)
+  const [erroAprovacaoInterna, setErroAprovacaoInterna] = useState<string | null>(null)
 
   // IA — Pattern A
   const [agenteChave, setAgenteChave] = useState<string | null>(null)
@@ -188,6 +194,8 @@ export function CardDetailDrawer({
         setAgenteChave(result.agente_chave ?? null)
         setTemPublicacao(result.tem_publicacao ?? false)
         setMarca(result.marca ?? null)
+        setFluxoDuplo(result.fluxo_aprovacao_duplo ?? false)
+        setAprovadoInternamente(result.aprovado_internamente ?? false)
         // Se já tem output IA salvo em campos_internos, exibe
         const ia = (result.campos_internos as Record<string, unknown> | null)?.ia_output
         if (ia && typeof ia === 'string') setIaOutput(ia)
@@ -289,6 +297,15 @@ export function CardDetailDrawer({
     }
   }
 
+  async function handleAprovarInternamente() {
+    setErroAprovacaoInterna(null)
+    setPendingAprovacaoInterna(true)
+    const result = await actionAprovarInternamente(card.id)
+    setPendingAprovacaoInterna(false)
+    if (result.error) setErroAprovacaoInterna(result.error)
+    else setAprovadoInternamente(true)
+  }
+
   async function handleEnviarParaAprovacao() {
     setErroEnviarAprovacao(null)
     setPendingEnviarAprovacao(true)
@@ -338,6 +355,9 @@ export function CardDetailDrawer({
       setCard(cardAtualizado)
       onCardUpdated(cardAtualizado)
       setRodadasRevisao((prev) => prev + 1)
+      // A conferência técnica vale por rodada: com a peça voltando para ajuste,
+      // a próxima versão precisa ser conferida de novo antes de ir ao cliente.
+      setAprovadoInternamente(false)
       setMostrandoReprova(false)
       setMotivoReprova('')
       // Recarrega comentários para exibir o feedback automático criado pelo servidor
@@ -736,6 +756,47 @@ export function CardDetailDrawer({
               </div>
             )}
 
+            {/* Conferência técnica interna — tipos com fluxo_aprovacao_duplo.
+                A peça passa pela equipe antes de chegar ao cliente; se o
+                cliente pedir ajustes, a rodada seguinte confere de novo. */}
+            {(card.status === 'em_andamento' || card.status === 'necessita_ajustes') &&
+              fluxoDuplo && ehEquipe && (
+              <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                <p className="text-xs font-medium text-zinc-700">
+                  Aprovação técnica interna
+                </p>
+                {aprovadoInternamente ? (
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-green-700">
+                    <CheckCircle2 className="h-3.5 w-3.5 flex-none" aria-hidden="true" />
+                    Conferida nesta rodada — pode seguir para o cliente.
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Este tipo de demanda precisa de conferência da equipe antes de ir ao
+                      cliente.
+                    </p>
+                    {(papelAtual === 'socia' || papelAtual === 'gestao') ? (
+                      <button
+                        onClick={handleAprovarInternamente}
+                        disabled={pendingAprovacaoInterna}
+                        className="mt-2 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50"
+                      >
+                        {pendingAprovacaoInterna ? 'Registrando…' : 'Aprovar tecnicamente'}
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-xs text-zinc-400">
+                        Peça a revisão de uma sócia ou da gestão.
+                      </p>
+                    )}
+                    {erroAprovacaoInterna && (
+                      <InlineError className="mt-1.5">{erroAprovacaoInterna}</InlineError>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Botão "Enviar para aprovação" — equipe (não executor) com entrega anexada */}
             {(card.status === 'em_andamento' || card.status === 'necessita_ajustes') &&
               ehEquipe && papelAtual !== 'executor' &&
@@ -743,7 +804,12 @@ export function CardDetailDrawer({
               <div className="mt-3">
                 <button
                   onClick={handleEnviarParaAprovacao}
-                  disabled={pendingEnviarAprovacao}
+                  disabled={pendingEnviarAprovacao || (fluxoDuplo && !aprovadoInternamente)}
+                  title={
+                    fluxoDuplo && !aprovadoInternamente
+                      ? 'Falta a aprovação técnica interna desta rodada.'
+                      : undefined
+                  }
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
                 >
                   <CheckCircle2 className="h-4 w-4" />

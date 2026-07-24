@@ -364,6 +364,10 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   agente_chave?: string | null
   tem_publicacao?: boolean
   marca?: { id: string; nome: string } | null
+  /** Tipo exige conferência técnica interna antes de ir ao cliente. */
+  fluxo_aprovacao_duplo?: boolean
+  /** A conferência técnica desta rodada já foi registrada. */
+  aprovado_internamente?: boolean
   error?: string
 }> {
   const profile = await getCurrentProfile()
@@ -372,7 +376,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   const { data: card, error } = await supabase
     .from('cards')
     .select(
-      'campos_publicos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(campos_formulario, agente_slug, tem_publicacao), marca:onboarding_marcas!marca_id(id, nome)',
+      'campos_publicos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(campos_formulario, agente_slug, tem_publicacao, fluxo_aprovacao_duplo), marca:onboarding_marcas!marca_id(id, nome)',
     )
     .eq('id', cardId)
     .single()
@@ -380,7 +384,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   if (error || !card) return { error: 'Card não encontrado.' }
 
   const ehEquipe = profile.papel !== 'cliente'
-  const tipo = card.tipo as unknown as { campos_formulario: CampoFormulario[]; agente_slug: string | null; tem_publicacao: boolean | null } | null
+  const tipo = card.tipo as unknown as { campos_formulario: CampoFormulario[]; agente_slug: string | null; tem_publicacao: boolean | null; fluxo_aprovacao_duplo: boolean | null } | null
   const marca = card.marca as unknown as { id: string; nome: string } | null
 
   // campos_internos vive em tabela isolada; só a equipe lê, via service role.
@@ -396,6 +400,23 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
     camposInternos = (internos?.dados as Record<string, unknown>) ?? {}
   }
 
+  // Estado da conferência técnica da rodada corrente (só interessa à equipe).
+  const fluxoDuplo = ehEquipe && (tipo?.fluxo_aprovacao_duplo ?? false)
+  let aprovadoInternamente = false
+  if (fluxoDuplo) {
+    const rodadaAtual = (card.rodadas_revisao ?? 0) + 1
+    const { data: interna } = await supabase
+      .from('aprovacoes')
+      .select('id')
+      .eq('card_id', cardId)
+      .eq('interna', true)
+      .eq('decisao', 'aprovado')
+      .eq('rodada', rodadaAtual)
+      .limit(1)
+      .maybeSingle()
+    aprovadoInternamente = Boolean(interna)
+  }
+
   return {
     campos_publicos: (card.campos_publicos as Record<string, unknown>) ?? {},
     campos_internos: camposInternos,
@@ -405,6 +426,8 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
     agente_chave: ehEquipe ? (tipo?.agente_slug ?? null) : null,
     tem_publicacao: ehEquipe ? (tipo?.tem_publicacao ?? false) : false,
     marca,
+    fluxo_aprovacao_duplo: fluxoDuplo,
+    aprovado_internamente: aprovadoInternamente,
   }
 }
 
@@ -715,6 +738,62 @@ export async function actionUploadArquivo(
 // actionEnviarParaAprovacao — socia/gestao/atendimento envia card ao cliente
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// actionAprovarInternamente — aprovação técnica interna (fluxo_aprovacao_duplo)
+//
+// Tipos de demanda marcados com fluxo_aprovacao_duplo (hoje, Embalagens) passam
+// por conferência técnica da equipe antes de chegar ao cliente. A coluna e o
+// campo `aprovacoes.interna` existem desde a primeira migration; até aqui nada
+// no código os lia, e o fluxo duplo simplesmente não acontecia.
+// ---------------------------------------------------------------------------
+
+export async function actionAprovarInternamente(
+  cardId: string,
+): Promise<{ error?: string; rodada?: number }> {
+  const profile = await requirePapel('socia', 'gestao')
+  const supabase = await createClient()
+  const service = createServiceClient()
+
+  const { data: card, error: fetchError } = await supabase
+    .from('cards')
+    .select('status, organization_id, rodadas_revisao')
+    .eq('id', cardId)
+    .single()
+
+  if (fetchError || !card) return { error: 'Card não encontrado.' }
+
+  if (card.status !== 'em_andamento' && card.status !== 'necessita_ajustes') {
+    return { error: 'A aprovação técnica acontece enquanto a demanda está em produção.' }
+  }
+
+  const rodada = (card.rodadas_revisao ?? 0) + 1
+
+  const { error } = await service.from('aprovacoes').insert({
+    organization_id: card.organization_id,
+    card_id: cardId,
+    aprovado_por: profile.id,
+    decisao: 'aprovado',
+    interna: true,
+    rodada,
+  })
+
+  if (error) {
+    console.error('[actionAprovarInternamente]', error.message)
+    return { error: 'Erro ao registrar a aprovação técnica.' }
+  }
+
+  await service.from('audit_log').insert({
+    organization_id: card.organization_id,
+    usuario_id: profile.id,
+    acao: 'card.aprovado_internamente',
+    entidade: 'card',
+    entidade_id: cardId,
+    metadata: { rodada },
+  })
+
+  return { rodada }
+}
+
 export async function actionEnviarParaAprovacao(
   cardId: string,
 ): Promise<{ error?: string }> {
@@ -724,7 +803,7 @@ export async function actionEnviarParaAprovacao(
 
   const { data: card, error: fetchError } = await supabase
     .from('cards')
-    .select('status, organization_id, titulo, cliente_id, tipo_id, cliente:clientes!cliente_id(nome, contato), tipo:tipos_demanda!tipo_id(nome)')
+    .select('status, organization_id, titulo, cliente_id, tipo_id, rodadas_revisao, cliente:clientes!cliente_id(nome, contato), tipo:tipos_demanda!tipo_id(nome, fluxo_aprovacao_duplo)')
     .eq('id', cardId)
     .single()
 
@@ -734,8 +813,9 @@ export async function actionEnviarParaAprovacao(
     titulo: string
     cliente_id: string
     tipo_id: string | null
+    rodadas_revisao: number | null
     cliente: { nome: string; contato: Record<string, string> | null }
-    tipo: { nome: string } | null
+    tipo: { nome: string; fluxo_aprovacao_duplo: boolean | null } | null
   }
   const cardT = card as unknown as CardEnvio
 
@@ -754,6 +834,28 @@ export async function actionEnviarParaAprovacao(
 
   if (!arquivoEntrega) {
     return { error: 'Adicione um arquivo de entrega antes de enviar para aprovação.' }
+  }
+
+  // Fluxo duplo: exige a aprovação técnica desta rodada. A checagem é por
+  // rodada porque, se o cliente pedir ajustes, a peça refeita precisa passar
+  // pela conferência de novo — não vale a aprovação da rodada anterior.
+  if (cardT.tipo?.fluxo_aprovacao_duplo) {
+    const rodadaAtual = (cardT.rodadas_revisao ?? 0) + 1
+    const { data: aprovacaoInterna } = await supabase
+      .from('aprovacoes')
+      .select('id')
+      .eq('card_id', cardId)
+      .eq('interna', true)
+      .eq('decisao', 'aprovado')
+      .eq('rodada', rodadaAtual)
+      .limit(1)
+      .maybeSingle()
+
+    if (!aprovacaoInterna) {
+      return {
+        error: `${cardT.tipo.nome} exige aprovação técnica interna antes de ir ao cliente. Peça a revisão de uma sócia ou da gestão.`,
+      }
+    }
   }
 
   const statusAnterior = card.status
