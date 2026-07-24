@@ -24,8 +24,10 @@ const NAV_GROUPS: NavGroupDef[] = [
   {
     label: 'Operação',
     items: [
-      { href: '/dashboard',  label: 'Dashboard',  iconKey: 'LayoutDashboard' },
-      { href: '/board',      label: 'Board',      iconKey: 'Kanban'          },
+      { href: '/dashboard',   label: 'Dashboard',   iconKey: 'LayoutDashboard' },
+      { href: '/board',       label: 'Board',       iconKey: 'Kanban'          },
+      { href: '/cronogramas', label: 'Cronogramas', iconKey: 'Calendar',
+        roles: ['socia', 'gestao', 'atendimento', 'executor'] },
       { href: '/calendario', label: 'Calendário', iconKey: 'Calendar',
         roles: ['socia', 'gestao', 'atendimento', 'executor'], feature: 'calendario' },
       { href: '/imagens',    label: 'Imagens IA', iconKey: 'Image',

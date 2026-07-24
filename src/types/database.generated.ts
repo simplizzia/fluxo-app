@@ -1535,6 +1535,244 @@ export type Database = {
           },
         ]
       }
+      cronograma_itens: {
+        Row: {
+          card_id: string | null
+          created_at: string
+          cronograma_id: string
+          data_publicacao: string | null
+          detalhamento: Json
+          formato: string | null
+          horario: string | null
+          id: string
+          legenda: string | null
+          marca_id: string | null
+          ordem: number
+          organization_id: string
+          pendencia: string | null
+          pilar: string | null
+          produto_id: string | null
+          tema: string | null
+          updated_at: string
+          viabilidade: Database["public"]["Enums"]["viabilidade_item"]
+        }
+        Insert: {
+          card_id?: string | null
+          created_at?: string
+          cronograma_id: string
+          data_publicacao?: string | null
+          detalhamento?: Json
+          formato?: string | null
+          horario?: string | null
+          id?: string
+          legenda?: string | null
+          marca_id?: string | null
+          ordem?: number
+          organization_id: string
+          pendencia?: string | null
+          pilar?: string | null
+          produto_id?: string | null
+          tema?: string | null
+          updated_at?: string
+          viabilidade?: Database["public"]["Enums"]["viabilidade_item"]
+        }
+        Update: {
+          card_id?: string | null
+          created_at?: string
+          cronograma_id?: string
+          data_publicacao?: string | null
+          detalhamento?: Json
+          formato?: string | null
+          horario?: string | null
+          id?: string
+          legenda?: string | null
+          marca_id?: string | null
+          ordem?: number
+          organization_id?: string
+          pendencia?: string | null
+          pilar?: string | null
+          produto_id?: string | null
+          tema?: string | null
+          updated_at?: string
+          viabilidade?: Database["public"]["Enums"]["viabilidade_item"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_itens_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_itens_cronograma_id_fkey"
+            columns: ["cronograma_id"]
+            isOneToOne: false
+            referencedRelation: "cronogramas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_itens_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_itens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cronograma_mensagens: {
+        Row: {
+          autor_id: string | null
+          conteudo: string
+          created_at: string
+          cronograma_id: string
+          id: string
+          itens_afetados: Json
+          organization_id: string
+          papel: string
+        }
+        Insert: {
+          autor_id?: string | null
+          conteudo: string
+          created_at?: string
+          cronograma_id: string
+          id?: string
+          itens_afetados?: Json
+          organization_id: string
+          papel: string
+        }
+        Update: {
+          autor_id?: string | null
+          conteudo?: string
+          created_at?: string
+          cronograma_id?: string
+          id?: string
+          itens_afetados?: Json
+          organization_id?: string
+          papel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_mensagens_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_mensagens_cronograma_id_fkey"
+            columns: ["cronograma_id"]
+            isOneToOne: false
+            referencedRelation: "cronogramas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_mensagens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cronogramas: {
+        Row: {
+          analise_coerencia: Json
+          briefing: Json
+          card_origem_id: string | null
+          cliente_id: string
+          created_at: string
+          criado_por: string | null
+          id: string
+          marca_id: string
+          mes_referencia: string
+          organization_id: string
+          status: Database["public"]["Enums"]["status_cronograma"]
+          temas_pilares: Json
+          updated_at: string
+        }
+        Insert: {
+          analise_coerencia?: Json
+          briefing?: Json
+          card_origem_id?: string | null
+          cliente_id: string
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          marca_id: string
+          mes_referencia: string
+          organization_id: string
+          status?: Database["public"]["Enums"]["status_cronograma"]
+          temas_pilares?: Json
+          updated_at?: string
+        }
+        Update: {
+          analise_coerencia?: Json
+          briefing?: Json
+          card_origem_id?: string | null
+          cliente_id?: string
+          created_at?: string
+          criado_por?: string | null
+          id?: string
+          marca_id?: string
+          mes_referencia?: string
+          organization_id?: string
+          status?: Database["public"]["Enums"]["status_cronograma"]
+          temas_pilares?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronogramas_card_origem_id_fkey"
+            columns: ["card_origem_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronogramas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronogramas_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronogramas_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronogramas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_share_access_log: {
         Row: {
           acessado_em: string
@@ -4902,6 +5140,7 @@ export type Database = {
         | "cancelado"
       status_cliente: "ativo" | "inativo" | "prospecto"
       status_colaborador: "ativo" | "inativo" | "em_avaliacao"
+      status_cronograma: "rascunho" | "em_revisao" | "aprovado" | "desmembrado"
       status_pagamento: "pago" | "pendente" | "em_atraso"
       status_produto:
         | "ativo"
@@ -4965,6 +5204,11 @@ export type Database = {
         | "texto_imagem"
         | "metricas"
         | "citacao"
+      viabilidade_item:
+        | "proposta"
+        | "roteiro_a_fechar"
+        | "so_ia"
+        | "depende_registro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5176,6 +5420,7 @@ export const Constants = {
       ],
       status_cliente: ["ativo", "inativo", "prospecto"],
       status_colaborador: ["ativo", "inativo", "em_avaliacao"],
+      status_cronograma: ["rascunho", "em_revisao", "aprovado", "desmembrado"],
       status_pagamento: ["pago", "pendente", "em_atraso"],
       status_produto: [
         "ativo",
@@ -5245,6 +5490,12 @@ export const Constants = {
         "texto_imagem",
         "metricas",
         "citacao",
+      ],
+      viabilidade_item: [
+        "proposta",
+        "roteiro_a_fechar",
+        "so_ia",
+        "depende_registro",
       ],
     },
   },
