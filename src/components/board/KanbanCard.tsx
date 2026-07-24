@@ -111,9 +111,18 @@ export function KanbanCard({ card, isOverlay = false, onDetalhes, isSelected = f
 
       {/* Cliente em pill de marca + Tipo */}
       <div className="mb-3 space-y-1">
-        <span className="inline-block rounded-full bg-brand-light px-2 py-0.5 text-[11px] font-medium text-brand">
-          {card.cliente.nome}
-        </span>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="inline-block rounded-full bg-brand-light px-2 py-0.5 text-[11px] font-medium text-brand">
+            {card.cliente.nome}
+          </span>
+          {/* Num cliente multimarca (Trevo tem Trevo e Ehrmann), saber de qual
+              marca é o card é o que evita misturar as duas no trabalho. */}
+          {card.marca && (
+            <span className="inline-block rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+              {card.marca.nome}
+            </span>
+          )}
+        </div>
         <p className="text-[11px] text-zinc-400">{card.tipo.nome}</p>
       </div>
 

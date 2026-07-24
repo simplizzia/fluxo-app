@@ -14,6 +14,7 @@ import {
   emailCardReprovado,
   emailCardCancelado,
 } from '@/lib/email'
+import { motivoBloqueio } from '@/lib/cards/status'
 import { avaliarBadges } from '@/lib/gamificacao'
 import { calcCreditosCard } from '@/lib/uso'
 import { notificarClienteParaAprovacao } from '@/lib/whatsapp'
@@ -67,6 +68,15 @@ export async function actionMoverCard(
   }
 
   if (card.status === novoStatus) return {}
+
+  // Regra crítica do CLAUDE.md, aplicada no servidor.
+  //
+  // para_aprovacao, concluido e cancelado carregam efeitos que um movimento
+  // simples pularia: exigência de arquivo de entrega, registro em `aprovacoes`,
+  // notificação ao cliente e motivo de cancelamento. Antes desta checagem
+  // bastava arrastar o card para a coluna para burlar tudo isso.
+  const bloqueio = motivoBloqueio(card.status, novoStatus)
+  if (bloqueio) return { error: bloqueio }
 
   const { error } = await supabase
     .from('cards')
@@ -213,6 +223,15 @@ export async function actionCriarCard(
         return { errors: { marca_id: ['Selecione a marca para esta demanda.'] } }
       }
     }
+  } else {
+    // A marca vem do formulário e por isso não é confiável. Um marca_id de
+    // outro cliente passaria direto e faria o agente montar o contexto com a
+    // marca errada — precisamente o vazamento entre marcas que o escopo por
+    // marca existe para impedir.
+    const { marcas } = await actionBuscarMarcasCliente(cliente_id)
+    if (!marcas.some((m) => m.id === marca_id)) {
+      return { errors: { marca_id: ['Esta marca não pertence ao cliente selecionado.'] } }
+    }
   }
 
   // Passo 1: inserir e pegar apenas o ID
@@ -245,12 +264,11 @@ export async function actionCriarCard(
   // Escrita server-side via service role.
   if (camposInternos && Object.keys(camposInternos).length > 0) {
     const svc = createServiceClient()
-    await (svc.from('cards_internos' as never) as unknown as { insert: (v: unknown) => Promise<unknown> })
-      .insert({
-        card_id: newRow.id,
-        organization_id: profile.organization_id,
-        dados: camposInternos,
-      })
+    await svc.from('cards_internos').insert({
+      card_id: newRow.id,
+      organization_id: profile.organization_id,
+      dados: camposInternos,
+    })
   }
 
   // Calcula créditos consumidos (best-effort — não bloqueia se migração pendente)
@@ -370,9 +388,11 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   let camposInternos: Record<string, unknown> | null = null
   if (ehEquipe) {
     const svc = createServiceClient()
-    const { data: internos } = await (svc.from('cards_internos' as never) as unknown as {
-      select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { dados: unknown } | null }> } }
-    }).select('dados').eq('card_id', cardId).maybeSingle()
+    const { data: internos } = await svc
+      .from('cards_internos')
+      .select('dados')
+      .eq('card_id', cardId)
+      .maybeSingle()
     camposInternos = (internos?.dados as Record<string, unknown>) ?? {}
   }
 
@@ -1122,7 +1142,7 @@ export async function actionDuplicarCard(cardId: string): Promise<{
   const { data: original, error: fetchError } = await supabase
     .from('cards')
     .select(`
-      organization_id, cliente_id, tipo_id, prioridade,
+      organization_id, cliente_id, tipo_id, marca_id, prioridade,
       prazo_cliente, campos_publicos, confidencial,
       titulo,
       tipo:tipos_demanda!tipo_id(id, nome, categoria, sla_ativo, sla_prazo_inicio_horas, sla_prazo_resposta_horas),
@@ -1139,6 +1159,7 @@ export async function actionDuplicarCard(cardId: string): Promise<{
       organization_id: original.organization_id,
       cliente_id:      original.cliente_id,
       tipo_id:         original.tipo_id,
+      marca_id:        original.marca_id,
       titulo:          `${original.titulo} (cópia)`,
       status:          'a_fazer',
       prioridade:      original.prioridade,
@@ -1152,6 +1173,7 @@ export async function actionDuplicarCard(cardId: string): Promise<{
       id, titulo, status, prioridade, prazo_cliente, data_entrega_programada,
       confidencial, created_at, sla_iniciado_em,
       cliente:clientes!cliente_id(id, nome),
+      marca:onboarding_marcas!marca_id(id, nome),
       tipo:tipos_demanda!tipo_id(id, nome, categoria, sla_ativo, sla_prazo_inicio_horas, sla_prazo_resposta_horas),
       responsavel:profiles!responsavel_id(id, nome)
     `)

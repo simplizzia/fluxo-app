@@ -3,9 +3,16 @@ import { getCurrentProfile } from '@/lib/dal'
 import { createClient } from '@/lib/supabase/server'
 import { KanbanBoard } from '@/components/board/KanbanBoard'
 import type { BoardCard } from './actions'
+import type { PrioridadeCard } from '@/types/database'
 
 export const metadata: Metadata = {
   title: 'Board — Simplizzia',
+}
+
+const PRIORIDADES: readonly PrioridadeCard[] = ['urgente', 'alta', 'normal', 'baixa']
+
+function ehPrioridade(v: string): v is PrioridadeCard {
+  return (PRIORIDADES as readonly string[]).includes(v)
 }
 
 // Next.js 16: searchParams é uma Promise
@@ -28,46 +35,39 @@ export default async function BoardPage({
   // Cards (RLS garante filtragem por papel automaticamente)
   // ---------------------------------------------------------------------------
 
-  const { data: rawCards } = await supabase
+  // Uma consulta só. Antes eram duas: a principal e outra apenas para
+  // data_entrega_programada e sla_iniciado_em, "para evitar erro caso o schema
+  // ainda não tenha sido atualizado". Com os tipos regenerados a defesa perdeu
+  // a razão de ser — e ela custava uma ida extra ao banco a cada render.
+  let query = supabase
     .from('cards')
     .select(`
       id, titulo, status, prioridade, prazo_cliente, confidencial, created_at,
+      data_entrega_programada, sla_iniciado_em,
       cliente:clientes!cliente_id(id, nome),
       tipo:tipos_demanda!tipo_id(
         id, nome, categoria,
         sla_ativo, sla_prazo_inicio_horas, sla_prazo_resposta_horas
       ),
-      responsavel:profiles!responsavel_id(id, nome)
+      responsavel:profiles!responsavel_id(id, nome),
+      marca:onboarding_marcas!marca_id(id, nome)
     `)
-    .order('created_at', { ascending: false })
 
-  // Busca campos adicionados em migrações posteriores separadamente para
-  // evitar erro caso o schema ainda não tenha sido atualizado no ambiente.
-  const cardIds = (rawCards ?? []).map((c) => c.id)
-  const { data: extraData } = cardIds.length > 0
-    ? await supabase
-        .from('cards')
-        .select('id, data_entrega_programada, sla_iniciado_em')
-        .in('id', cardIds)
-    : { data: [] as { id: string; data_entrega_programada?: string | null; sla_iniciado_em?: string | null }[] }
+  // Filtros no banco, não no navegador. Antes a query trazia todos os cards
+  // visíveis e o cliente escondia os demais em JS — além de desperdício, o
+  // estado só era semeado na montagem, então trocar o filtro na URL não
+  // atualizava os dados.
+  if (filtros.cliente) query = query.eq('cliente_id', filtros.cliente)
+  if (filtros.tipo) query = query.eq('tipo_id', filtros.tipo)
+  if (filtros.responsavel) query = query.eq('responsavel_id', filtros.responsavel)
+  // A prioridade vem da URL, então é texto livre até ser conferida contra o enum.
+  if (filtros.prioridade && ehPrioridade(filtros.prioridade)) {
+    query = query.eq('prioridade', filtros.prioridade)
+  }
 
-  type ExtraRow = { id: string; data_entrega_programada?: string | null; sla_iniciado_em?: string | null }
-  const extraMap = new Map((extraData ?? []).map((c) => [c.id, c as ExtraRow]))
+  const { data: rawCards } = await query.order('created_at', { ascending: false })
 
-  const cards = (rawCards ?? []).map((c) => {
-    const extra = extraMap.get(c.id)
-    return {
-      ...c,
-      data_entrega_programada: extra?.data_entrega_programada ?? null,
-      sla_iniciado_em: extra?.sla_iniciado_em ?? null,
-      tipo: {
-        ...c.tipo,
-        sla_ativo: (c.tipo as unknown as { sla_ativo?: boolean })?.sla_ativo ?? false,
-        sla_prazo_inicio_horas: (c.tipo as unknown as { sla_prazo_inicio_horas?: number | null })?.sla_prazo_inicio_horas ?? null,
-        sla_prazo_resposta_horas: (c.tipo as unknown as { sla_prazo_resposta_horas?: number | null })?.sla_prazo_resposta_horas ?? null,
-      },
-    }
-  }) as unknown as BoardCard[]
+  const cards = (rawCards ?? []) as unknown as BoardCard[]
 
   // ---------------------------------------------------------------------------
   // Clientes para filtro e formulário de novo card
@@ -109,7 +109,11 @@ export default async function BoardPage({
         </p>
       </div>
 
+      {/* A key remonta o board quando o filtro muda. Sem ela o estado local de
+          `cards` seria semeado só na montagem, e trocar o filtro na URL
+          re-renderizava o servidor sem nunca atualizar a lista na tela. */}
       <KanbanBoard
+        key={`${filtros.cliente ?? ''}|${filtros.tipo ?? ''}|${filtros.prioridade ?? ''}|${filtros.responsavel ?? ''}`}
         cards={cards}
         clientes={clientes ?? []}
         tipos={tipos ?? []}

@@ -23,16 +23,7 @@ import { useToast } from '@/components/shared/Toast'
 import { actionMoverCard } from '@/app/(dashboard)/board/actions'
 import type { BoardCard } from '@/app/(dashboard)/board/actions'
 import type { StatusCard, PrioridadeCard, PapelUsuario } from '@/types/database'
-
-const COLUNAS: StatusCard[] = [
-  'aguardando_info',
-  'a_fazer',
-  'em_andamento',
-  'para_aprovacao',
-  'necessita_ajustes',
-  'concluido',
-  'cancelado',
-]
+import { ORDEM_STATUS, motivoBloqueio } from '@/lib/cards/status'
 
 interface TipoBasico {
   id: string
@@ -84,6 +75,7 @@ export function KanbanBoard({
   const [cardDetalhe, setCardDetalhe] = useState<BoardCard | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
+  const temFiltroAtivo = Object.values(filtrosIniciais).some(Boolean)
   const podeSelecionarEmLote = papelAtual === 'socia' || papelAtual === 'gestao'
   const modoSelecao = selectedIds.size > 0
 
@@ -111,6 +103,21 @@ export function KanbanBoard({
     // Só roda uma vez na montagem
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Os filtros são aplicados na query do servidor (board/page.tsx); `cards` já
+  // chega filtrado. Esta função existe só para o caminho de Realtime: um card
+  // criado por outra pessoa não deve aparecer se não couber no filtro atual.
+  const correspondeAosFiltros = useCallback(
+    (c: BoardCard) => {
+      if (filtrosIniciais.cliente && c.cliente.id !== filtrosIniciais.cliente) return false
+      if (filtrosIniciais.tipo && c.tipo.id !== filtrosIniciais.tipo) return false
+      if (filtrosIniciais.prioridade && c.prioridade !== filtrosIniciais.prioridade) return false
+      if (filtrosIniciais.responsavel && c.responsavel?.id !== filtrosIniciais.responsavel)
+        return false
+      return true
+    },
+    [filtrosIniciais],
+  )
 
   // Supabase Realtime — sincroniza mudanças de outros usuários
   useEffect(() => {
@@ -156,33 +163,30 @@ export function KanbanBoard({
           const cardId = (payload.new as { id?: string })?.id
           if (!cardId) return
 
-          // Busca o card completo com joins (RLS garante acesso correto por papel)
-          const [{ data }, { data: entregaRow }] = await Promise.all([
-            supabase
-              .from('cards')
-              .select(`
-                id, titulo, status, prioridade, prazo_cliente, confidencial, created_at,
-                cliente:clientes!cliente_id(id, nome),
-                tipo:tipos_demanda!tipo_id(id, nome, categoria),
-                responsavel:profiles!responsavel_id(id, nome)
-              `)
-              .eq('id', cardId)
-              .single(),
-            supabase
-              .from('cards')
-              .select('data_entrega_programada')
-              .eq('id', cardId)
-              .single(),
-          ])
+          // Busca o card completo com joins (RLS garante acesso correto por papel).
+          // Era feito em duas queries à mesma tabela, por defesa contra schema
+          // desatualizado; com os tipos regenerados, uma basta.
+          const { data } = await supabase
+            .from('cards')
+            .select(`
+              id, titulo, status, prioridade, prazo_cliente, confidencial, created_at,
+              data_entrega_programada, sla_iniciado_em,
+              cliente:clientes!cliente_id(id, nome),
+              tipo:tipos_demanda!tipo_id(
+                id, nome, categoria,
+                sla_ativo, sla_prazo_inicio_horas, sla_prazo_resposta_horas
+              ),
+              responsavel:profiles!responsavel_id(id, nome),
+              marca:onboarding_marcas!marca_id(id, nome)
+            `)
+            .eq('id', cardId)
+            .single()
 
           if (!data) return
 
-          const cardCompleto = {
-            ...data,
-            data_entrega_programada:
-              (entregaRow as { data_entrega_programada?: string | null } | null)
-                ?.data_entrega_programada ?? null,
-          } as unknown as BoardCard
+          const cardCompleto = data as unknown as BoardCard
+
+          if (!correspondeAosFiltros(cardCompleto)) return
 
           setCards((prev) => {
             // Evita duplicata: onCardCriado pode ter adicionado antes do evento chegar
@@ -196,17 +200,7 @@ export function KanbanBoard({
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [organizationId])
-
-  // Filtros aplicados (client-side)
-  const cardsFiltrados = cards.filter((c) => {
-    if (filtrosIniciais.cliente && c.cliente.id !== filtrosIniciais.cliente) return false
-    if (filtrosIniciais.tipo && c.tipo.id !== filtrosIniciais.tipo) return false
-    if (filtrosIniciais.prioridade && c.prioridade !== filtrosIniciais.prioridade) return false
-    if (filtrosIniciais.responsavel && c.responsavel?.id !== filtrosIniciais.responsavel)
-      return false
-    return true
-  })
+  }, [organizationId, correspondeAosFiltros])
 
   // DnD sensors — requer movimento mínimo (mouse) ou toque longo (touch) para iniciar o drag.
   // O delay no toque preserva o tap simples para abrir o card no mobile.
@@ -236,6 +230,15 @@ export function KanbanBoard({
 
       if (!card || card.status === novoStatus) return
 
+      // A coluna já recusa o drop quando a transição é proibida, mas repetimos
+      // a checagem aqui: assim nada se move na tela para voltar logo depois, e
+      // a pessoa lê o motivo em vez de ver o card saltar.
+      const bloqueio = motivoBloqueio(card.status, novoStatus)
+      if (bloqueio) {
+        toastError(bloqueio)
+        return
+      }
+
       // Update otimista: aplica imediatamente na UI
       const statusAnterior = card.status
       setCards((prev) =>
@@ -249,7 +252,7 @@ export function KanbanBoard({
           setCards((prev) =>
             prev.map((c) => (c.id === cardId ? { ...c, status: statusAnterior } : c)),
           )
-          toastError('Não consegui mover a demanda. Tente novamente.')
+          toastError(result.error)
         }
       })
     },
@@ -293,9 +296,8 @@ export function KanbanBoard({
 
       {/* Contador total */}
       <p className="text-xs text-zinc-400">
-        {cardsFiltrados.length === cards.length
-          ? `${cards.length} demanda${cards.length !== 1 ? 's' : ''}`
-          : `${cardsFiltrados.length} de ${cards.length} demanda${cards.length !== 1 ? 's' : ''} (filtrado)`}
+        {`${cards.length} demanda${cards.length !== 1 ? 's' : ''}`}
+        {temFiltroAtivo && ' (filtrado)'}
       </p>
 
       {/* Board Kanban — empilha no mobile, scroll horizontal a partir de md */}
@@ -306,16 +308,17 @@ export function KanbanBoard({
           onDragEnd={handleDragEnd}
         >
           <div className="flex flex-col gap-4 md:min-w-max md:flex-row">
-            {COLUNAS.map((status) => (
+            {ORDEM_STATUS.map((status) => (
               <KanbanColumn
                 key={status}
                 status={status}
-                cards={cardsFiltrados.filter((c) => c.status === status)}
+                cards={cards.filter((c) => c.status === status)}
                 onNovaDemanada={
                   status === 'aguardando_info' && podecriarDemanda
                     ? () => setDialogAberto(true)
                     : undefined
                 }
+                statusArrastado={activeCard?.status ?? null}
                 onCardDetalhes={modoSelecao ? undefined : setCardDetalhe}
                 selectedIds={podeSelecionarEmLote ? selectedIds : undefined}
                 modoSelecao={modoSelecao}

@@ -33,7 +33,8 @@ import FeedbackButtons from '@/components/agents/FeedbackButtons'
 import type { BoardCard, ArquivoComUrl } from '@/app/(dashboard)/board/actions'
 import type { StatusCard, PapelUsuario, CampoFormulario, Comentario, TipoArquivo } from '@/types/database'
 import { PriorityBadge } from '@/components/shared/PriorityBadge'
-import { STATUS_CONFIG } from '@/components/shared/StatusChip'
+import { STATUS_CONFIG, ORDEM_STATUS, motivoBloqueio } from '@/lib/cards/status'
+import { InlineError } from '@/components/shared/InlineError'
 import { slaParaCard, slaLabel, slaChipClass, slaDescricao } from '@/lib/sla'
 import { SkeletonLines } from '@/components/shared/Skeleton'
 
@@ -43,16 +44,6 @@ interface CardDetailDrawerProps {
   onClose: () => void
   onCardUpdated: (card: BoardCard) => void
 }
-
-const ORDEM_STATUS: StatusCard[] = [
-  'aguardando_info',
-  'a_fazer',
-  'em_andamento',
-  'para_aprovacao',
-  'necessita_ajustes',
-  'concluido',
-  'cancelado',
-]
 
 /** Formata timestamp para texto relativo em pt-BR */
 function tempoRelativo(isoString: string): string {
@@ -147,6 +138,7 @@ export function CardDetailDrawer({
   const [cancelando, setCancelando] = useState(false)
   const [motivoCancelamentoInput, setMotivoCancelamentoInput] = useState('')
   const [erroCancelamento, setErroCancelamento] = useState<string | null>(null)
+  const [erroStatus, setErroStatus] = useState<string | null>(null)
   const [pendingCancelamento, setPendingCancelamento] = useState(false)
 
   // Publicação em redes sociais
@@ -251,6 +243,15 @@ export function CardDetailDrawer({
       setCancelando(true)
       return
     }
+    // Os botões proibidos já vêm desabilitados; esta guarda cobre o caso de o
+    // status do card mudar por Realtime entre o render e o clique.
+    const bloqueio = motivoBloqueio(card.status, novoStatus)
+    if (bloqueio) {
+      setErroStatus(bloqueio)
+      return
+    }
+    setErroStatus(null)
+
     const statusAnterior = card.status
     const cardAtualizado = { ...card, status: novoStatus }
     setCard(cardAtualizado)
@@ -261,6 +262,7 @@ export function CardDetailDrawer({
       if (result.error) {
         setCard((prev) => ({ ...prev, status: statusAnterior }))
         onCardUpdated({ ...card, status: statusAnterior })
+        setErroStatus(result.error)
       }
     })
   }
@@ -660,17 +662,23 @@ export function CardDetailDrawer({
               {ORDEM_STATUS.map((s) => {
                 const config = STATUS_CONFIG[s]
                 const isAtivo = card.status === s
+                // `cancelado` continua clicável: o botão abre o formulário de
+                // motivo, que é justamente a ação dedicada exigida pela regra.
+                const bloqueio =
+                  s === 'cancelado' ? null : motivoBloqueio(card.status, s)
+                const desabilitado = isPending || !ehEquipe || (!isAtivo && bloqueio !== null)
                 return (
                   <button
                     key={s}
                     onClick={() => ehEquipe && handleMoverStatus(s)}
-                    disabled={isPending || !ehEquipe}
+                    disabled={desabilitado}
                     aria-current={isAtivo ? 'true' : undefined}
+                    title={!isAtivo && bloqueio ? bloqueio : undefined}
                     className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
                       isAtivo
                         ? `${config.className} ring-2 ring-offset-1 ring-brand/25`
                         : `${config.className} opacity-50 hover:opacity-100`
-                    } disabled:cursor-not-allowed`}
+                    } disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:opacity-25`}
                   >
                     {config.label}
                   </button>
@@ -680,6 +688,8 @@ export function CardDetailDrawer({
             {isPending && (
               <p className="mt-2 text-xs text-zinc-400">Atualizando…</p>
             )}
+
+            {erroStatus && <InlineError className="mt-2">{erroStatus}</InlineError>}
 
             {/* Cancelamento inline — motivo obrigatório */}
             {cancelando && (
