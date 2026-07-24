@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import {
   actionConvidarUsuario,
   type InviteState,
@@ -14,11 +14,21 @@ const PAPEIS = [
   { value: 'socia', label: 'Sócia' },
 ] as const
 
-export function InviteForm() {
+const SUB_PAPEIS = [
+  { value: 'responsavel', label: 'Responsável — aprova entregas' },
+  { value: 'colaborador', label: 'Colaborador — comenta e acompanha' },
+  { value: 'observador', label: 'Observador — só acompanha' },
+] as const
+
+export type ClienteOpcao = { id: string; nome: string }
+
+export function InviteForm({ clientes }: { clientes: ClienteOpcao[] }) {
   const [state, dispatch, isPending] = useActionState<InviteState, FormData>(
     actionConvidarUsuario,
     null,
   )
+  const [papel, setPapel] = useState('')
+  const ehCliente = papel === 'cliente'
 
   return (
     <form action={dispatch} className="space-y-5" noValidate>
@@ -86,6 +96,7 @@ export function InviteForm() {
           required
           disabled={isPending}
           defaultValue=""
+          onChange={(e) => setPapel(e.target.value)}
           className="w-full rounded-lg border border-zinc-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
         >
           <option value="" disabled>
@@ -101,6 +112,61 @@ export function InviteForm() {
           <p className="text-xs text-red-600">{state.errors.papel[0]}</p>
         )}
       </div>
+
+      {/* Sem este vínculo o acesso do cliente abre num app vazio: as policies
+          filtram pelos clientes a que a pessoa está ligada. */}
+      {ehCliente && (
+        <div className="space-y-5 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <div className="space-y-1.5">
+            <label htmlFor="cliente_id" className="block text-sm font-medium text-zinc-700">
+              Cliente
+            </label>
+            <select
+              id="cliente_id"
+              name="cliente_id"
+              required
+              disabled={isPending}
+              defaultValue=""
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
+            >
+              <option value="" disabled>
+                Selecione o cliente…
+              </option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-zinc-500">
+              Define o que esta pessoa enxerga: apenas as demandas, relatórios e a
+              marca deste cliente.
+            </p>
+            {state?.errors?.cliente_id && (
+              <p className="text-xs text-red-600">{state.errors.cliente_id[0]}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="sub_papel" className="block text-sm font-medium text-zinc-700">
+              Nível de participação
+            </label>
+            <select
+              id="sub_papel"
+              name="sub_papel"
+              disabled={isPending}
+              defaultValue="responsavel"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
+            >
+              {SUB_PAPEIS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       <button
         type="submit"

@@ -11,18 +11,39 @@ export default async function UsuariosPage() {
   const socia = await requireSocia()
   const supabase = createServiceClient()
 
-  const [{ data: profiles }, { data: authData }] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, user_id, nome, papel, ativo, created_at')
-      .eq('organization_id', socia.organization_id)
-      .order('created_at', { ascending: false }),
-    supabase.auth.admin.listUsers({ perPage: 1000 }),
-  ])
+  const [{ data: profiles }, { data: authData }, { data: clientes }, { data: contatos }] =
+    await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, user_id, nome, papel, ativo, created_at')
+        .eq('organization_id', socia.organization_id)
+        .order('created_at', { ascending: false }),
+      supabase.auth.admin.listUsers({ perPage: 1000 }),
+      supabase
+        .from('clientes')
+        .select('id, nome')
+        .eq('organization_id', socia.organization_id)
+        .order('nome'),
+      // Vínculo usuário ↔ cliente. É o que auth_cliente_ids() lê para decidir
+      // o que um usuário de papel `cliente` enxerga; sem linha aqui, ele entra
+      // num app vazio. Exibido na tabela para que a falta seja visível.
+      supabase
+        .from('contatos_cliente')
+        .select('user_id, ativo, cliente:clientes!cliente_id(nome)')
+        .eq('organization_id', socia.organization_id),
+    ])
 
   const emailPorUserId = Object.fromEntries(
     (authData?.users ?? []).map((u) => [u.id, u.email ?? '']),
   )
+
+  const clientesPorUserId = new Map<string, string[]>()
+  for (const c of contatos ?? []) {
+    if (!c.ativo) continue
+    const nome = (c.cliente as { nome: string } | null)?.nome
+    if (!nome) continue
+    clientesPorUserId.set(c.user_id, [...(clientesPorUserId.get(c.user_id) ?? []), nome])
+  }
 
   const usuarios = (profiles ?? []).map((p) => ({
     profileId: p.id,
@@ -32,6 +53,7 @@ export default async function UsuariosPage() {
     papel: p.papel,
     ativo: p.ativo,
     createdAt: p.created_at,
+    clientesVinculados: clientesPorUserId.get(p.user_id) ?? [],
   }))
 
   return (
@@ -42,7 +64,7 @@ export default async function UsuariosPage() {
           Gerencie os acessos da equipe e dos clientes na plataforma.
         </p>
       </div>
-      <UsuariosTabela usuarios={usuarios} />
+      <UsuariosTabela usuarios={usuarios} clientes={clientes ?? []} />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { requireSocia } from '@/lib/dal'
+import { createClient } from '@/lib/supabase/server'
 import { InviteForm } from '@/components/admin/InviteForm'
 
 export const metadata: Metadata = {
@@ -10,6 +11,14 @@ export const metadata: Metadata = {
 // requireSocia() redireciona automaticamente se outro papel tentar acessar.
 export default async function ConvidarPage() {
   await requireSocia()
+
+  // Necessário para convites de papel `cliente`: a pessoa precisa ser vinculada
+  // a um cliente, senão entra num app vazio. RLS já limita à própria org.
+  const supabase = await createClient()
+  const { data: clientes } = await supabase
+    .from('clientes')
+    .select('id, nome')
+    .order('nome')
 
   return (
     <div className="max-w-lg space-y-8">
@@ -22,7 +31,7 @@ export default async function ConvidarPage() {
       </div>
 
       <div className="rounded-xl border border-zinc-200 bg-white p-6">
-        <InviteForm />
+        <InviteForm clientes={clientes ?? []} />
       </div>
     </div>
   )

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, AlertTriangle } from 'lucide-react'
 import {
   actionAtualizarPapel,
   actionAtualizarAtivo,
   actionReenviarAcesso,
 } from '@/app/(dashboard)/admin/usuarios/actions'
-import { InviteForm } from '@/components/admin/InviteForm'
+import { InviteForm, type ClienteOpcao } from '@/components/admin/InviteForm'
 import type { Database } from '@/types/database'
 
 type PapelUsuario = Database['public']['Enums']['papel_usuario']
@@ -20,6 +20,8 @@ export type UsuarioRow = {
   papel: PapelUsuario
   ativo: boolean
   createdAt: string
+  /** Nomes dos clientes a que este usuário está vinculado (contatos_cliente). */
+  clientesVinculados: string[]
 }
 
 const PAPEIS: { value: PapelUsuario; label: string }[] = [
@@ -106,7 +108,13 @@ function AcoesUsuario({ usuario }: { usuario: UsuarioRow }) {
   )
 }
 
-export function UsuariosTabela({ usuarios }: { usuarios: UsuarioRow[] }) {
+export function UsuariosTabela({
+  usuarios,
+  clientes,
+}: {
+  usuarios: UsuarioRow[]
+  clientes: ClienteOpcao[]
+}) {
   const [showConvite, setShowConvite] = useState(false)
 
   const ativos   = usuarios.filter((u) => u.ativo)
@@ -145,6 +153,23 @@ export function UsuariosTabela({ usuarios }: { usuarios: UsuarioRow[] }) {
                 <td className="px-4 py-3">
                   <p className="font-medium text-zinc-900">{u.nome}</p>
                   <p className="text-xs text-zinc-400">{u.email}</p>
+                  {u.papel === 'cliente' &&
+                    (u.clientesVinculados.length > 0 ? (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        {u.clientesVinculados.join(', ')}
+                      </p>
+                    ) : (
+                      // Estado silenciosamente quebrado: a pessoa consegue entrar,
+                      // mas todas as policies de cliente filtram pelo vínculo e
+                      // devolvem vazio. Sem este aviso, parece bug do app.
+                      <p
+                        role="alert"
+                        className="mt-1 flex items-center gap-1.5 text-xs text-amber-700"
+                      >
+                        <AlertTriangle className="h-3.5 w-3.5 flex-none" aria-hidden="true" />
+                        Sem cliente vinculado — verá o app vazio
+                      </p>
+                    ))}
                 </td>
                 <td className="px-4 py-3">
                   <PapelSelect profileId={u.profileId} papelInicial={u.papel} />
@@ -186,7 +211,7 @@ export function UsuariosTabela({ usuarios }: { usuarios: UsuarioRow[] }) {
                 ×
               </button>
             </div>
-            <InviteForm />
+            <InviteForm clientes={clientes} />
           </div>
         </div>
       )}
