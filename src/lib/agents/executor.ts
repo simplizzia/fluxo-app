@@ -106,7 +106,7 @@ async function buildContextoCliente(
       // Exclui: briefing_completo (monolítico com todas as marcas misturadas)
       const idsStr = idsRelevantes.join(',')
       query = query.or(
-        `marca_id.in.(${idsStr}),and(marca_id.is.null,subcategoria.in.(perfil_cliente,prep_reuniao))`,
+        `marca_id.in.(${idsStr}),and(marca_id.is.null,subcategoria.in.(perfil_cliente,prep_reuniao,estrutura_empresa))`,
       )
     }
 

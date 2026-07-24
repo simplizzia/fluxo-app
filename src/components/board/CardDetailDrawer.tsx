@@ -111,6 +111,7 @@ export function CardDetailDrawer({
   // Metadados extras carregados via actionBuscarCardDetalhes
   const [rodadasRevisao, setRodadasRevisao] = useState(0)
   const [motivoCancelamento, setMotivoCancelamento] = useState<string | null>(null)
+  const [marca, setMarca] = useState<{ id: string; nome: string } | null>(null)
 
   // IA — Pattern A
   const [agenteChave, setAgenteChave] = useState<string | null>(null)
@@ -194,6 +195,7 @@ export function CardDetailDrawer({
         setMotivoCancelamento(result.motivo_cancelamento ?? null)
         setAgenteChave(result.agente_chave ?? null)
         setTemPublicacao(result.tem_publicacao ?? false)
+        setMarca(result.marca ?? null)
         // Se já tem output IA salvo em campos_internos, exibe
         const ia = (result.campos_internos as Record<string, unknown> | null)?.ia_output
         if (ia && typeof ia === 'string') setIaOutput(ia)
@@ -487,9 +489,16 @@ export function CardDetailDrawer({
               )}
             </div>
             <h2 className="text-base font-semibold leading-snug text-zinc-900">{card.titulo}</h2>
-            <span className="mt-1.5 inline-block rounded-full bg-brand-light px-2.5 py-0.5 text-xs font-medium text-brand">
-              {card.cliente.nome}
-            </span>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="inline-block rounded-full bg-brand-light px-2.5 py-0.5 text-xs font-medium text-brand">
+                {card.cliente.nome}
+              </span>
+              {marca && (
+                <span className="inline-block rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600">
+                  {marca.nome}
+                </span>
+              )}
+            </div>
           </div>
           {/* Duplicar card — equipe exceto executor */}
           {['socia', 'gestao', 'atendimento'].includes(papelAtual) && (

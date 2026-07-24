@@ -18,4 +18,4 @@
 *.otf binary
 
 # Gerado por `npm run db:types` — colapsa no diff para não poluir revisões
-src/types/database.ts linguist-generated=true
+src/types/database.generated.ts linguist-generated=true

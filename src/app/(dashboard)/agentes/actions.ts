@@ -143,10 +143,10 @@ export async function actionTriggerAgenteCard(
   const profile = await getCurrentProfile()
   const service = createServiceClient()
 
-  // Get card and its cliente/org
+  // Get card and its cliente/marca/org
   const { data: card } = await service
     .from('cards')
-    .select('cliente_id, tipo:tipos_demanda!tipo_id(agente_slug)')
+    .select('cliente_id, marca_id, tipo:tipos_demanda!tipo_id(agente_slug)')
     .eq('id', cardId)
     .single()
 
@@ -164,6 +164,7 @@ export async function actionTriggerAgenteCard(
     organizationId: profile_db.organization_id as string,
     agenteChave,
     clienteId: card.cliente_id ?? undefined,
+    marcaId: card.marca_id ?? undefined,
     cardId,
     triggeredBy: profile.id,
     input: input ?? {},

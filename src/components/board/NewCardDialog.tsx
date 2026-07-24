@@ -2,8 +2,8 @@
 
 import { useState, useTransition, useEffect } from 'react'
 import { X } from 'lucide-react'
-import { actionCriarCard, actionBuscarTipo } from '@/app/(dashboard)/board/actions'
-import type { BoardCard, CriarCardInput } from '@/app/(dashboard)/board/actions'
+import { actionCriarCard, actionBuscarTipo, actionBuscarMarcasCliente } from '@/app/(dashboard)/board/actions'
+import type { BoardCard, CriarCardInput, MarcaBasica } from '@/app/(dashboard)/board/actions'
 import type { CampoFormulario, PapelUsuario } from '@/types/database'
 
 interface TipoBasico {
@@ -73,6 +73,8 @@ export function NewCardDialog({
   // Estado dos selects controlados
   const [clienteSelecionado, setClienteSelecionado] = useState('')
   const [tipoSelecionado, setTipoSelecionado] = useState('')
+  const [marcaSelecionada, setMarcaSelecionada] = useState('')
+  const [marcasDisponiveis, setMarcasDisponiveis] = useState<MarcaBasica[]>([])
 
   // Agrupar tipos por categoria para o optgroup
   const tiposPorCategoria = tipos.reduce<Record<string, TipoBasico[]>>((acc, t) => {
@@ -81,6 +83,20 @@ export function NewCardDialog({
     acc[cat].push(t)
     return acc
   }, {})
+
+  // Quando o cliente muda, busca as marcas cadastradas dele
+  useEffect(() => {
+    setMarcaSelecionada('')
+    if (!clienteSelecionado) {
+      setMarcasDisponiveis([])
+      return
+    }
+    actionBuscarMarcasCliente(clienteSelecionado)
+      .then(({ marcas }) => setMarcasDisponiveis(marcas))
+      .catch(() => setMarcasDisponiveis([]))
+  }, [clienteSelecionado])
+
+  const marcasMae = marcasDisponiveis.filter((m) => m.nivel === 'mae' || m.nivel === 'standalone')
 
   // Quando o tipo muda, busca os campos_formulario
   // Todo o setState está dentro do .then() — nunca no corpo síncrono do effect
@@ -132,6 +148,7 @@ export function NewCardDialog({
       titulo,
       cliente_id: clienteSelecionado,
       tipo_id: tipoSelecionado,
+      marca_id: marcaSelecionada || undefined,
       prioridade,
       prazo_cliente: prazoCliente || undefined,
       data_entrega_programada: entregaProgramada || undefined,
@@ -255,6 +272,38 @@ export function NewCardDialog({
                 )}
               </div>
             </div>
+
+            {/* Marca — só aparece quando o cliente tem marcas cadastradas */}
+            {marcasMae.length > 0 && (
+              <div className="space-y-1.5">
+                <label htmlFor="marca_id" className="block text-sm font-medium text-zinc-700">
+                  Marca <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="marca_id"
+                  name="marca_id"
+                  disabled={isPending}
+                  value={marcaSelecionada}
+                  onChange={(e) => setMarcaSelecionada(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
+                >
+                  <option value="">Selecione…</option>
+                  {marcasMae.map((mae) => (
+                    <optgroup key={mae.id} label={mae.nome}>
+                      <option value={mae.id}>{mae.nome}</option>
+                      {marcasDisponiveis
+                        .filter((sub) => sub.marcaPaiId === mae.id)
+                        .map((sub) => (
+                          <option key={sub.id} value={sub.id}>{'  '}{sub.nome}</option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+                {fieldErrors.marca_id && (
+                  <p className="text-xs text-red-600">{fieldErrors.marca_id[0]}</p>
+                )}
+              </div>
+            )}
 
             {/* Título */}
             <div className="space-y-1.5">

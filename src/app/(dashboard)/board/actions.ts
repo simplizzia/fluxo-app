@@ -42,6 +42,7 @@ export interface BoardCard {
     sla_prazo_resposta_horas: number | null
   }
   responsavel: { id: string; nome: string } | null
+  marca?: { id: string; nome: string } | null
 }
 
 // ---------------------------------------------------------------------------
@@ -100,6 +101,49 @@ export async function actionMoverCard(
 }
 
 // ---------------------------------------------------------------------------
+// actionBuscarMarcasCliente — marcas cadastradas de um cliente (onboarding_marcas)
+// ---------------------------------------------------------------------------
+
+export interface MarcaBasica {
+  id: string
+  nome: string
+  nivel: 'mae' | 'sub' | 'standalone'
+  marcaPaiId: string | null
+}
+
+export async function actionBuscarMarcasCliente(clienteId: string): Promise<{ marcas: MarcaBasica[]; error?: string }> {
+  await requireEquipe()
+  const supabase = await createClient()
+
+  const { data: onb } = await supabase
+    .from('onboarding_clientes')
+    .select('token')
+    .eq('cliente_id', clienteId)
+    .maybeSingle()
+
+  if (!onb) return { marcas: [] } // cliente sem onboarding = sem marcas cadastradas
+
+  const { data, error } = await supabase
+    .from('onboarding_marcas')
+    .select('id, nome, nivel, marca_pai_id')
+    .eq('token', onb.token)
+    .order('ordem')
+
+  if (error) return { marcas: [], error: 'Falha ao buscar marcas.' }
+  return {
+    marcas: (data ?? []).map((m) => ({
+      id: m.id as string,
+      nome: m.nome as string,
+      nivel: m.nivel as MarcaBasica['nivel'],
+      marcaPaiId: m.marca_pai_id as string | null,
+    })),
+  }
+}
+
+// Categorias de tipo_demanda que exigem marca quando o cliente tem marcas cadastradas
+const CATEGORIAS_EXIGEM_MARCA = ['redes_sociais', 'linkedin', 'trafego']
+
+// ---------------------------------------------------------------------------
 // actionCriarCard — cria uma nova demanda
 // ---------------------------------------------------------------------------
 
@@ -107,6 +151,7 @@ export interface CriarCardInput {
   titulo: string
   cliente_id: string
   tipo_id: string
+  marca_id?: string
   prioridade: 'urgente' | 'alta' | 'normal' | 'baixa'
   prazo_cliente?: string
   data_entrega_programada?: string
@@ -118,6 +163,7 @@ const CreateCardSchema = z.object({
   titulo: z.string().trim().min(3, { message: 'Título deve ter pelo menos 3 caracteres.' }),
   cliente_id: z.string().min(1, { message: 'Selecione um cliente.' }),
   tipo_id: z.string().min(1, { message: 'Selecione o tipo de demanda.' }),
+  marca_id: z.string().optional(),
   prioridade: z.enum(['urgente', 'alta', 'normal', 'baixa'] as const),
   prazo_cliente: z.string().optional(),
   data_entrega_programada: z.string().optional(),
@@ -137,6 +183,7 @@ export async function actionCriarCard(
     titulo: input.titulo,
     cliente_id: input.cliente_id,
     tipo_id: input.tipo_id,
+    marca_id: input.marca_id || undefined,
     prioridade: input.prioridade || 'normal',
     prazo_cliente: input.prazo_cliente || undefined,
     data_entrega_programada: input.data_entrega_programada || undefined,
@@ -148,8 +195,25 @@ export async function actionCriarCard(
     return { errors: validated.error.flatten().fieldErrors }
   }
 
-  const { titulo, cliente_id, tipo_id, prioridade, prazo_cliente, data_entrega_programada, responsavel_id, confidencial } =
+  const { titulo, cliente_id, tipo_id, marca_id, prioridade, prazo_cliente, data_entrega_programada, responsavel_id, confidencial } =
     validated.data
+
+  // Marca é obrigatória para tipos de demanda de conteúdo quando o cliente tem
+  // marcas cadastradas — evita que o contexto de IA misture marcas irmãs.
+  if (!marca_id) {
+    const { data: tipo } = await supabase
+      .from('tipos_demanda')
+      .select('categoria')
+      .eq('id', tipo_id)
+      .maybeSingle()
+
+    if (tipo && CATEGORIAS_EXIGEM_MARCA.includes(tipo.categoria as string)) {
+      const { marcas } = await actionBuscarMarcasCliente(cliente_id)
+      if (marcas.length > 0) {
+        return { errors: { marca_id: ['Selecione a marca para esta demanda.'] } }
+      }
+    }
+  }
 
   // Passo 1: inserir e pegar apenas o ID
   const { data: newRow, error: insertError } = await supabase
@@ -158,6 +222,7 @@ export async function actionCriarCard(
       organization_id: profile.organization_id,
       cliente_id,
       tipo_id,
+      marca_id: marca_id || null,
       criado_por: profile.id,
       responsavel_id: responsavel_id || null,
       titulo,
@@ -209,7 +274,8 @@ export async function actionCriarCard(
       id, titulo, status, prioridade, prazo_cliente, confidencial, created_at,
       cliente:clientes!cliente_id(id, nome),
       tipo:tipos_demanda!tipo_id(id, nome, categoria),
-      responsavel:profiles!responsavel_id(id, nome)
+      responsavel:profiles!responsavel_id(id, nome),
+      marca:onboarding_marcas!marca_id(id, nome)
     `)
     .eq('id', newRow.id)
     .single()
@@ -279,6 +345,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   motivo_cancelamento?: string | null
   agente_chave?: string | null
   tem_publicacao?: boolean
+  marca?: { id: string; nome: string } | null
   error?: string
 }> {
   const profile = await getCurrentProfile()
@@ -287,7 +354,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   const { data: card, error } = await supabase
     .from('cards')
     .select(
-      'campos_publicos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(campos_formulario, agente_slug, tem_publicacao)',
+      'campos_publicos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(campos_formulario, agente_slug, tem_publicacao), marca:onboarding_marcas!marca_id(id, nome)',
     )
     .eq('id', cardId)
     .single()
@@ -296,6 +363,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
 
   const ehEquipe = profile.papel !== 'cliente'
   const tipo = card.tipo as unknown as { campos_formulario: CampoFormulario[]; agente_slug: string | null; tem_publicacao: boolean | null } | null
+  const marca = card.marca as unknown as { id: string; nome: string } | null
 
   // campos_internos vive em tabela isolada; só a equipe lê, via service role.
   // A RLS de `cards` acima já garantiu que este usuário pode ver este card.
@@ -316,6 +384,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
     motivo_cancelamento: card.motivo_cancelamento ?? null,
     agente_chave: ehEquipe ? (tipo?.agente_slug ?? null) : null,
     tem_publicacao: ehEquipe ? (tipo?.tem_publicacao ?? false) : false,
+    marca,
   }
 }
 
