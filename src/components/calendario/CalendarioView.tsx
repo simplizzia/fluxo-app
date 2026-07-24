@@ -84,7 +84,7 @@ export function CalendarioView({ cards, anoMes, alertas, papel, organizationId }
   // Agrupa cards por data de prazo
   const cardsPorDia = new Map<string, CardCalendario[]>()
   for (const card of cards) {
-    const dia = card.prazo_cliente
+    const dia = card.data_efetiva
     if (!cardsPorDia.has(dia)) cardsPorDia.set(dia, [])
     cardsPorDia.get(dia)!.push(card)
   }
@@ -95,9 +95,9 @@ export function CalendarioView({ cards, anoMes, alertas, papel, organizationId }
     const contagem: Record<string, number> = {}
     for (const card of cards) {
       if (card.responsavel) {
-        const key = `${card.responsavel.id}|${card.prazo_cliente}`
+        const key = `${card.responsavel.id}|${card.data_efetiva}`
         contagem[key] = (contagem[key] ?? 0) + 1
-        if (contagem[key] >= 2) diasComSobreposicao.add(card.prazo_cliente)
+        if (contagem[key] >= 2) diasComSobreposicao.add(card.data_efetiva)
       }
     }
   }
@@ -310,7 +310,7 @@ function CardPill({ card }: { card: CardCalendario }) {
     <Link
       href={`/board?card=${card.id}`}
       className={`group flex min-w-0 items-start gap-1.5 rounded-lg border-l-[3px] px-1.5 py-1 text-[11px] transition hover:opacity-80 ${pilllClass}`}
-      title={`${card.titulo} — ${card.cliente.nome}`}
+      title={`${card.titulo} — ${card.marca ? card.marca.nome : card.cliente.nome}`}
     >
       <span className={`mt-[3px] h-1.5 w-1.5 flex-none rounded-full ${pontoCor}`} />
       <span className="min-w-0 flex-1 truncate font-medium leading-tight">

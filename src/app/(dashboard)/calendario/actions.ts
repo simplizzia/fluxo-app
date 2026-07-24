@@ -13,9 +13,12 @@ export interface CardCalendario {
   titulo: string
   status: StatusCard
   prioridade: PrioridadeCard
-  prazo_cliente: string
+  /** Data que posiciona o card no calendário: publicação (post) ou prazo. */
+  data_efetiva: string
+  prazo_cliente: string | null
   confidencial: boolean
   cliente: { id: string; nome: string }
+  marca: { id: string; nome: string } | null
   tipo: { id: string; nome: string }
   responsavel: { id: string; nome: string } | null
 }
@@ -48,16 +51,21 @@ export async function buscarCardsCalendario(anoMes: string): Promise<{
   const ultimoDia = new Date(ano, mes, 0).getDate()
   const ultimo = `${anoMes}-${String(ultimoDia).padStart(2, '0')}`
 
+  // Um card entra no mês pela data de publicação (posts do cronograma) OU pelo
+  // prazo do cliente (demandas em geral). Antes só o prazo contava, e os posts
+  // desmembrados — que têm data_publicacao e às vezes não têm prazo — sumiam.
   const { data, error } = await supabase
     .from('cards')
     .select(`
-      id, titulo, status, prioridade, prazo_cliente, confidencial,
+      id, titulo, status, prioridade, prazo_cliente, data_publicacao, confidencial,
       cliente:clientes!cliente_id(id, nome),
+      marca:onboarding_marcas!marca_id(id, nome),
       tipo:tipos_demanda!tipo_id(id, nome),
       responsavel:profiles!responsavel_id(id, nome)
     `)
-    .gte('prazo_cliente', primeiro)
-    .lte('prazo_cliente', ultimo)
+    .or(
+      `and(data_publicacao.gte.${primeiro},data_publicacao.lte.${ultimo}),and(prazo_cliente.gte.${primeiro},prazo_cliente.lte.${ultimo})`,
+    )
     .not('status', 'in', '(cancelado)')
     .order('prioridade', { ascending: false })
 
@@ -66,7 +74,18 @@ export async function buscarCardsCalendario(anoMes: string): Promise<{
     return { error: 'Erro ao carregar calendário.' }
   }
 
-  return { cards: data as unknown as CardCalendario[] }
+  const cards = (data ?? []).map((c) => {
+    const row = c as unknown as {
+      data_publicacao: string | null
+      prazo_cliente: string | null
+    } & Record<string, unknown>
+    return {
+      ...row,
+      data_efetiva: row.data_publicacao ?? row.prazo_cliente ?? primeiro,
+    }
+  }) as unknown as CardCalendario[]
+
+  return { cards }
 }
 
 // ---------------------------------------------------------------------------

@@ -11,6 +11,8 @@ import {
   enviarMensagemRevisao,
   aprovarCronograma,
   desmembrarCronograma,
+  gerarAprendizados,
+  salvarAprendizados,
 } from '../actions'
 import {
   ETAPAS,
@@ -55,6 +57,10 @@ export function RevisaoCronograma(props: Props) {
   const [erro, setErro] = useState<string | null>(null)
   const [chatPending, startChat] = useTransition()
   const [acaoPending, startAcao] = useTransition()
+  // Aprendizados (fechamento)
+  const [aprendizados, setAprendizados] = useState<string | null>(null)
+  const [aprendizadosSalvo, setAprendizadosSalvo] = useState(false)
+  const [aprendPending, startAprend] = useTransition()
 
   const nomeProduto = useMemo(
     () => new Map(produtos.map((p) => [p.id, p.nome])),
@@ -139,6 +145,26 @@ export function RevisaoCronograma(props: Props) {
     })
   }
 
+  function handleGerarAprendizados() {
+    setErro(null)
+    setAprendizadosSalvo(false)
+    startAprend(async () => {
+      const res = await gerarAprendizados(cronogramaId)
+      if (res.error) { setErro(res.error); return }
+      setAprendizados(res.texto ?? '')
+    })
+  }
+
+  function handleSalvarAprendizados() {
+    if (!aprendizados) return
+    setErro(null)
+    startAprend(async () => {
+      const res = await salvarAprendizados(cronogramaId, aprendizados)
+      if (res.error) { setErro(res.error); return }
+      setAprendizadosSalvo(true)
+    })
+  }
+
   return (
     <div>
       {/* Cabeçalho */}
@@ -182,8 +208,60 @@ export function RevisaoCronograma(props: Props) {
       {erro && <InlineError className="mb-3">{erro}</InlineError>}
 
       {finalizado && (
-        <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-700">
-          Cronograma desmembrado — os posts viraram cards no board. Rodar de novo não duplica.
+        <div className="mb-4 space-y-3">
+          <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-700">
+            Cronograma desmembrado — os posts viraram cards no board. Rodar de novo não duplica.
+          </div>
+
+          {/* Aprendizados do fechamento */}
+          {podeEditar && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-700">Aprendizados deste mês</p>
+                  <p className="text-[11px] text-zinc-400">
+                    Destila o que se aprendeu para calibrar os próximos cronogramas da marca.
+                  </p>
+                </div>
+                {aprendizados === null && (
+                  <button
+                    onClick={handleGerarAprendizados}
+                    disabled={aprendPending}
+                    className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:border-brand/30 hover:text-brand disabled:opacity-50"
+                  >
+                    {aprendPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    Gerar aprendizados
+                  </button>
+                )}
+              </div>
+
+              {aprendizados !== null && (
+                <div className="mt-3">
+                  <textarea
+                    value={aprendizados}
+                    onChange={(e) => { setAprendizados(e.target.value); setAprendizadosSalvo(false) }}
+                    rows={6}
+                    className="w-full resize-y rounded-lg border border-zinc-300 px-3 py-2 text-xs outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10"
+                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    {aprendizadosSalvo ? (
+                      <span className="flex items-center gap-1.5 text-xs text-green-700">
+                        <Check className="h-3.5 w-3.5" /> Salvo na aba Aprendizados da marca.
+                      </span>
+                    ) : (
+                      <button
+                        onClick={handleSalvarAprendizados}
+                        disabled={aprendPending}
+                        className="rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
+                      >
+                        {aprendPending ? 'Salvando…' : 'Aprovar e salvar na marca'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

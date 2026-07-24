@@ -442,6 +442,90 @@ export async function aprovarCronograma(cronogramaId: string): Promise<{ error?:
 }
 
 // ---------------------------------------------------------------------------
+// gerarAprendizados — roda o agente de aprendizados no fechamento. NÃO salva;
+// devolve a proposta para a equipe revisar antes de virar contexto da marca.
+// ---------------------------------------------------------------------------
+
+export async function gerarAprendizados(
+  cronogramaId: string,
+): Promise<{ texto?: string; error?: string }> {
+  const profile = await requirePapel('socia', 'gestao', 'atendimento')
+  const supabase = await createClient()
+  const service = createServiceClient()
+
+  const { data: cron } = await supabase
+    .from('cronogramas')
+    .select('organization_id, cliente_id, marca_id')
+    .eq('id', cronogramaId)
+    .single()
+  if (!cron) return { error: 'Cronograma não encontrado.' }
+
+  // Contexto: o histórico de ajustes (as rodadas) + o calendário final.
+  const { data: msgs } = await service
+    .from('cronograma_mensagens')
+    .select('papel, conteudo')
+    .eq('cronograma_id', cronogramaId)
+    .order('created_at')
+  const historico = (msgs ?? []).map((m) => `[${m.papel}] ${m.conteudo}`).join('\n')
+
+  const res = await executarAgente({
+    organizationId: cron.organization_id,
+    agenteChave: 'cronograma.aprendizados',
+    clienteId: cron.cliente_id,
+    marcaId: cron.marca_id,
+    triggeredBy: profile.id,
+    input: {
+      historico_de_ajustes: historico || 'Sem ajustes registrados nesta revisão.',
+      calendario_final: await calendarioComoTexto(cronogramaId),
+    },
+  })
+
+  if (res.error) return { error: res.error }
+  return { texto: res.output ?? '' }
+}
+
+// ---------------------------------------------------------------------------
+// salvarAprendizados — grava a proposta (após revisão humana) como documento da
+// marca no Universo de Marca, de onde volta como contexto nos próximos meses.
+// ---------------------------------------------------------------------------
+
+export async function salvarAprendizados(
+  cronogramaId: string,
+  texto: string,
+): Promise<{ error?: string }> {
+  const profile = await requirePapel('socia', 'gestao', 'atendimento')
+  const service = createServiceClient()
+
+  const conteudo = texto.trim()
+  if (!conteudo) return { error: 'Nada a salvar.' }
+
+  const { data: cron } = await service
+    .from('cronogramas')
+    .select('cliente_id, marca_id, mes_referencia')
+    .eq('id', cronogramaId)
+    .single()
+  if (!cron) return { error: 'Cronograma não encontrado.' }
+
+  const { error } = await service.from('universo_marca').insert({
+    organization_id: profile.organization_id,
+    cliente_id: cron.cliente_id,
+    marca_id: cron.marca_id,
+    categoria: 'outros',
+    subcategoria: 'aprendizados_cronograma',
+    titulo: `Aprendizados — cronograma ${cron.mes_referencia.slice(0, 7)}`,
+    conteudo: { texto: conteudo },
+    visivel_para_cliente: false,
+    gerado_por_agente: 'cronograma.aprendizados',
+  })
+
+  if (error) {
+    console.error('[salvarAprendizados]', error.message)
+    return { error: 'Erro ao salvar os aprendizados na marca.' }
+  }
+  return {}
+}
+
+// ---------------------------------------------------------------------------
 // desmembrarCronograma — cria um card por item. Idempotente: só toca itens sem
 // card_id, então rodar duas vezes não duplica.
 // ---------------------------------------------------------------------------
