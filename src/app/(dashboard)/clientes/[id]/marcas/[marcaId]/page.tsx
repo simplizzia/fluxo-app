@@ -4,8 +4,10 @@ import { ChevronLeft, ChevronRight, Tag } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { getCurrentProfile } from '@/lib/dal'
 import MarcaTabSingle from './MarcaTabSingle'
+import ProdutosSection from './ProdutosSection'
 import PipelineSequencia from '../../PipelineSequencia'
 import { buscarPipeline } from '../../onboarding-actions'
+import { listarProdutos } from './produtos-actions'
 import {
   buscarMarcaDetalhe,
   buscarSecoesDaMarca,
@@ -48,6 +50,7 @@ export default async function MarcaPage({ params }: Props) {
     { items: moodboard },
     { insights },
     pipeline,
+    { produtos },
   ] = await Promise.all([
     buscarMarcaDetalhe(marcaId),
     buscarSecoesDaMarca(clienteId, marcaId),
@@ -55,6 +58,7 @@ export default async function MarcaPage({ params }: Props) {
     buscarMoodboardDaMarca(clienteId, marcaId),
     buscarInsightsDaMarca(clienteId),
     buscarPipeline(clienteId),
+    listarProdutos(marcaId),
   ])
 
   if (error || !marca) notFound()
@@ -164,6 +168,14 @@ export default async function MarcaPage({ params }: Props) {
           />
         </div>
       )}
+
+      {/* Produtos da marca — catálogo de SKUs que alimenta os agentes de conteúdo */}
+      <ProdutosSection
+        clienteId={clienteId}
+        marcaId={marcaId}
+        produtosIniciais={produtos ?? []}
+        podeEditar={podeEditar}
+      />
 
       {/* Conteúdo da marca — estratégia, conteúdo, identidade, moodboard, aprendizados */}
       <MarcaTabSingle

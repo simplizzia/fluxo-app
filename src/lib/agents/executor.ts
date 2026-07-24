@@ -204,8 +204,7 @@ export async function executarAgente(opts: ExecucaoOpts): Promise<ExecucaoResult
       agent_id: agente.id,
       card_id: cardId ?? null,
       cliente_id: clienteId ?? null,
-      // marca_id entra após a migration 20260724000003 ser aplicada e os tipos
-      // regenerados — ver nota no fim deste arquivo.
+      marca_id: marcaId ?? null,
       triggered_by: triggeredBy ?? null,
       status: 'rodando',
       input: input as unknown as import('@/types/database').Json,

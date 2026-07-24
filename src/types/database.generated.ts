@@ -274,6 +274,7 @@ export type Database = {
           erro: string | null
           id: string
           input: Json
+          marca_id: string | null
           organization_id: string
           output: Json | null
           status: string
@@ -291,6 +292,7 @@ export type Database = {
           erro?: string | null
           id?: string
           input?: Json
+          marca_id?: string | null
           organization_id: string
           output?: Json | null
           status?: string
@@ -308,6 +310,7 @@ export type Database = {
           erro?: string | null
           id?: string
           input?: Json
+          marca_id?: string | null
           organization_id?: string
           output?: Json | null
           status?: string
@@ -335,6 +338,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_runs_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
             referencedColumns: ["id"]
           },
           {
@@ -3983,6 +3993,79 @@ export type Database = {
           },
         ]
       }
+      produtos: {
+        Row: {
+          categoria: string | null
+          claims: Json
+          cliente_id: string
+          created_at: string
+          id: string
+          marca_id: string
+          nome: string
+          observacoes: string | null
+          organization_id: string
+          publico: string | null
+          sabor: string | null
+          sku: string | null
+          status: Database["public"]["Enums"]["status_produto"]
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string | null
+          claims?: Json
+          cliente_id: string
+          created_at?: string
+          id?: string
+          marca_id: string
+          nome: string
+          observacoes?: string | null
+          organization_id: string
+          publico?: string | null
+          sabor?: string | null
+          sku?: string | null
+          status?: Database["public"]["Enums"]["status_produto"]
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string | null
+          claims?: Json
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          marca_id?: string
+          nome?: string
+          observacoes?: string | null
+          organization_id?: string
+          publico?: string | null
+          sabor?: string | null
+          sku?: string | null
+          status?: Database["public"]["Enums"]["status_produto"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_marcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -4820,6 +4903,12 @@ export type Database = {
       status_cliente: "ativo" | "inativo" | "prospecto"
       status_colaborador: "ativo" | "inativo" | "em_avaliacao"
       status_pagamento: "pago" | "pendente" | "em_atraso"
+      status_produto:
+        | "ativo"
+        | "nao_lancado"
+        | "producao_incerta"
+        | "descontinuado"
+        | "fora_de_escopo"
       status_publicacao: "rascunho" | "agendado" | "publicado" | "falhou"
       status_relatorio: "gerando" | "rascunho" | "aprovado" | "enviado"
       sub_papel_contato: "responsavel" | "colaborador" | "observador"
@@ -5088,6 +5177,13 @@ export const Constants = {
       status_cliente: ["ativo", "inativo", "prospecto"],
       status_colaborador: ["ativo", "inativo", "em_avaliacao"],
       status_pagamento: ["pago", "pendente", "em_atraso"],
+      status_produto: [
+        "ativo",
+        "nao_lancado",
+        "producao_incerta",
+        "descontinuado",
+        "fora_de_escopo",
+      ],
       status_publicacao: ["rascunho", "agendado", "publicado", "falhou"],
       status_relatorio: ["gerando", "rascunho", "aprovado", "enviado"],
       sub_papel_contato: ["responsavel", "colaborador", "observador"],
