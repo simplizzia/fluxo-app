@@ -1063,7 +1063,12 @@ export function CardDetailDrawer({
                     setIaErro(null)
                     setIaRunId(null)
                     setIaExecutando(true)
-                    const res = await actionTriggerAgenteCard(card.id, agenteChave)
+                    // Os campos do formulário do card (tema, mês de referência,
+                    // temas prioritários…) vão como input do agente. Antes a
+                    // chamada omitia este argumento e o executor recebia {} —
+                    // o agente trabalhava só com o contexto de marca, ignorando
+                    // tudo que a equipe tinha preenchido no card.
+                    const res = await actionTriggerAgenteCard(card.id, agenteChave, camposPublicos ?? {})
                     setIaExecutando(false)
                     if (res.error) setIaErro(res.error)
                     else {

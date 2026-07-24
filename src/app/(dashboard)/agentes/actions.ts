@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { requirePapel, getCurrentProfile } from '@/lib/dal'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { executarAgente } from '@/lib/agents/executor'
+import { actionBuscarMarcasCliente } from '@/app/(dashboard)/board/actions'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -103,6 +104,7 @@ export async function actionTriggerAgente(
   agenteChave: string,
   input: Record<string, unknown>,
   clienteId?: string,
+  marcaId?: string,
 ): Promise<{ runId?: string; output?: string; error?: string }> {
   await requirePapel('socia', 'gestao', 'atendimento')
   const profile = await getCurrentProfile()
@@ -119,10 +121,22 @@ export async function actionTriggerAgente(
     return { error: 'Organização não encontrada.' }
   }
 
+  // Sem marcaId, buildContextoCliente cai no fallback "traz tudo do cliente" e
+  // mistura marcas irmãs no prompt — o mesmo vazamento entre marcas que o
+  // escopo por marca existe para impedir. Quando a marca é informada, valida
+  // que ela pertence ao cliente antes de deixar o contexto ser montado.
+  if (marcaId && clienteId) {
+    const { marcas } = await actionBuscarMarcasCliente(clienteId)
+    if (!marcas.some((m) => m.id === marcaId)) {
+      return { error: 'Esta marca não pertence ao cliente selecionado.' }
+    }
+  }
+
   const result = await executarAgente({
     organizationId: profile_db.organization_id as string,
     agenteChave,
     clienteId,
+    marcaId,
     triggeredBy: profile.id,
     input,
   })

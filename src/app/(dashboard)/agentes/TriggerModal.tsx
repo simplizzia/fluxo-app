@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { X, Loader2, Sparkles, Copy, Check } from 'lucide-react'
 import { actionTriggerAgente } from './actions'
+import { actionBuscarMarcasCliente, type MarcaBasica } from '@/app/(dashboard)/board/actions'
 import type { AgenteDef } from '@/lib/agents/catalog'
 import type { ClienteSimples } from './actions'
 
@@ -15,11 +16,28 @@ interface Props {
 
 export default function TriggerModal({ agente, clientes, onClose, onSuccess }: Props) {
   const [clienteId, setClienteId] = useState<string>('')
+  const [marcaId, setMarcaId] = useState<string>('')
+  const [marcas, setMarcas] = useState<MarcaBasica[]>([])
   const [campos, setCampos] = useState<Record<string, string>>({})
   const [output, setOutput] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
   const [pending, startTransition] = useTransition()
+
+  // Ao trocar de cliente, busca as marcas dele. Sem escolher a marca, o agente
+  // recebe o contexto de todas as marcas do cliente misturadas — a causa-raiz
+  // que o escopo por marca resolve. Por isso o seletor aparece assim que há
+  // marcas cadastradas.
+  useEffect(() => {
+    setMarcaId('')
+    setMarcas([])
+    if (!clienteId) return
+    let cancelado = false
+    actionBuscarMarcasCliente(clienteId).then(({ marcas }) => {
+      if (!cancelado) setMarcas(marcas)
+    })
+    return () => { cancelado = true }
+  }, [clienteId])
 
   function handleCampo(chave: string, valor: string) {
     setCampos((prev) => ({ ...prev, [chave]: valor }))
@@ -38,11 +56,17 @@ export default function TriggerModal({ agente, clientes, onClose, onSuccess }: P
       }
     }
 
+    if (marcas.length > 0 && !marcaId) {
+      setErro('Escolha a marca para não misturar o contexto de marcas irmãs.')
+      return
+    }
+
     startTransition(async () => {
       const res = await actionTriggerAgente(
         agente.chave,
         campos,
         clienteId || undefined,
+        marcaId || undefined,
       )
       if (res.error) {
         setErro(res.error)
@@ -103,6 +127,29 @@ export default function TriggerModal({ agente, clientes, onClose, onSuccess }: P
                 <option value="">Sem cliente selecionado</option>
                 {clientes.map((c) => (
                   <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Marca — aparece só quando o cliente tem marcas cadastradas.
+              Obrigatória nesse caso, para o agente não misturar marcas irmãs. */}
+          {marcas.length > 0 && (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-700">
+                Marca <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={marcaId}
+                onChange={(e) => setMarcaId(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm outline-none transition focus:border-brand/40 focus:ring-2 focus:ring-brand/10"
+              >
+                <option value="">Selecione a marca…</option>
+                {marcas.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                    {m.nivel === 'sub' ? ' (submarca)' : m.nivel === 'mae' ? ' (marca-mãe)' : ''}
+                  </option>
                 ))}
               </select>
             </div>
