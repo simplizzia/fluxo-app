@@ -37,6 +37,19 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# entregáveis de cliente e saídas de agente — permanecem em disco, fora do git.
+# 70 MB de .md/.xlsx/imagens que não são código da aplicação.
+/clientes
+/scripts/outputs-*.json
+
+# pacote genérico de skills do superpowers — metodologia, sem conteúdo do projeto
+/.agents
+/skills-lock.json
+
+# estado local de sessão do Claude Code (launch.json é versionado)
+/.claude/scheduled_tasks.lock
+/.claude/skills
+
 # vercel
 .vercel
 

@@ -1,0 +1,21 @@
+# Normaliza fim de linha para LF no repositório.
+# O projeto nasceu no Windows (CRLF) e migrou para macOS (LF); sem isto, cada
+# troca de máquina produz diffs de milhares de linhas sem mudança de conteúdo.
+* text=auto eol=lf
+
+# Binários — nunca normalizar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+# Gerado por `npm run db:types` — colapsa no diff para não poluir revisões
+src/types/database.ts linguist-generated=true
