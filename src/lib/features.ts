@@ -65,3 +65,36 @@ export const FEATURES: Record<FeatureKey, boolean> = {
 export function isFeatureEnabled(key: FeatureKey): boolean {
   return FEATURES[key]
 }
+
+// Prefixo de rota → feature. Ordem importa: prefixos mais específicos antes dos
+// mais gerais, para /socias/financeiro casar antes de /socias.
+export const ROTAS_POR_FEATURE: readonly [string, FeatureKey][] = [
+  ['/socias/financeiro', 'financeiro'],
+  ['/socias/social', 'social'],
+  ['/socias/gamificacao', 'gamificacao'],
+  ['/socias', 'socias'],
+  ['/calendario', 'calendario'],
+  ['/imagens', 'imagens'],
+  ['/reunioes', 'reunioes'],
+  ['/cs', 'cs'],
+  ['/nps', 'nps'],
+  ['/relatorios', 'relatorios'],
+  ['/plano', 'plano'],
+  ['/automacoes', 'automacoes'],
+  ['/pipeline', 'pipeline'],
+  ['/lgpd', 'lgpd'],
+  ['/marca', 'marca_cliente'],
+]
+
+/**
+ * Se o caminho pertence a um módulo DESLIGADO, devolve a feature que o bloqueia.
+ * `null` = caminho livre (não é de módulo com flag, ou o módulo está ligado).
+ * Função pura, para o proxy e os testes usarem a mesma regra.
+ */
+export function featureBloqueando(pathname: string): FeatureKey | null {
+  const rota = ROTAS_POR_FEATURE.find(
+    ([prefixo]) => pathname === prefixo || pathname.startsWith(`${prefixo}/`),
+  )
+  if (rota && !isFeatureEnabled(rota[1])) return rota[1]
+  return null
+}
