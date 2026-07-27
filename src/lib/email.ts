@@ -10,7 +10,14 @@ import 'server-only'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Instanciação preguiçosa: o cliente só nasce na primeira chamada de envio, não
+// no import do módulo. Assim o build/CI não precisa de uma RESEND_API_KEY real
+// só porque algum código importou email.ts em uma rota que nem envia e-mail.
+let _resend: Resend | null = null
+function getResend(): Resend {
+  _resend ??= new Resend(process.env.RESEND_API_KEY)
+  return _resend
+}
 
 const FROM_NAME = process.env.RESEND_FROM_NAME ?? 'Izzi da Simplizzia'
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'falecomaizzi@simplizzia.com.br'
@@ -153,7 +160,7 @@ export async function enviarEmail(
     const toArray = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean)
     if (!toArray.length) return
 
-    await resend.emails.send({ from: FROM, to: toArray, subject, html })
+    await getResend().emails.send({ from: FROM, to: toArray, subject, html })
   } catch (err) {
     console.error('[email] Falha ao enviar:', subject, err)
   }

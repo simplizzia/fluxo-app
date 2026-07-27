@@ -66,3 +66,49 @@ export interface CronogramaResumo {
   marca_nome: string
   cliente_nome: string
 }
+
+// ---------------------------------------------------------------------------
+// Parse do calendário devolvido pelo agente — o ponto mais frágil do fluxo.
+// O modelo às vezes embrulha o JSON em prosa ou em ```json … ```; extraímos o
+// array e validamos. Pura, para ser testável fora do servidor.
+// ---------------------------------------------------------------------------
+
+export interface ItemBruto {
+  data_publicacao?: string
+  horario?: string
+  pilar?: string
+  sub_marca?: string
+  produto?: string
+  formato?: string
+  tema?: string
+  legenda?: string
+  viabilidade?: string
+  pendencia?: string
+  detalhamento?: string
+  ordem?: number
+}
+
+export function parseCalendario(output: string): ItemBruto[] | null {
+  // Pega do primeiro '[' ao último ']' — tolera prosa e cercas de código à volta.
+  const inicio = output.indexOf('[')
+  const fim = output.lastIndexOf(']')
+  if (inicio === -1 || fim === -1 || fim < inicio) return null
+  try {
+    const arr = JSON.parse(output.slice(inicio, fim + 1))
+    return Array.isArray(arr) ? (arr as ItemBruto[]) : null
+  } catch {
+    return null
+  }
+}
+
+const VIABILIDADES_VALIDAS = new Set<ViabilidadeItem>([
+  'proposta',
+  'roteiro_a_fechar',
+  'so_ia',
+  'depende_registro',
+])
+
+/** Normaliza a viabilidade vinda do modelo; desconhecida vira 'proposta'. */
+export function normalizarViabilidade(v: string | undefined): ViabilidadeItem {
+  return v && VIABILIDADES_VALIDAS.has(v as ViabilidadeItem) ? (v as ViabilidadeItem) : 'proposta'
+}

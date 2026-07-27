@@ -16,9 +16,12 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+// Preguiçoso: nasce na execução do cron, não no import (build/CI sem chave real).
+let _anthropic: Anthropic | null = null
+function getAnthropic(): Anthropic {
+  _anthropic ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  return _anthropic
+}
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET
@@ -298,7 +301,7 @@ FORMATO (retorne exatamente neste formato markdown, sem blocos de código):
 2. [sugestão 2]
 3. [sugestão 3 — opcional]`
 
-  const message = await anthropic.messages.create({
+  const message = await getAnthropic().messages.create({
     model: 'claude-opus-4-5',
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],

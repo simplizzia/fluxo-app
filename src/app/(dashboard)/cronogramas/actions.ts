@@ -8,7 +8,10 @@ import { actionBuscarMarcasCliente } from '@/app/(dashboard)/board/actions'
 import {
   ETAPAS,
   FORMATO_PARA_TIPO_SLUG,
+  parseCalendario,
+  normalizarViabilidade,
   type EtapaChave,
+  type ItemBruto,
   type CronogramaItem,
   type CronogramaMensagem,
   type CronogramaResumo,
@@ -209,37 +212,9 @@ export async function rodarEtapa(
 }
 
 // ---------------------------------------------------------------------------
-// Parsing e materialização do calendário
+// Materialização do calendário (parseCalendario e normalizarViabilidade vêm de
+// ./shared, onde são testados)
 // ---------------------------------------------------------------------------
-
-interface ItemBruto {
-  data_publicacao?: string
-  horario?: string
-  pilar?: string
-  sub_marca?: string
-  produto?: string
-  formato?: string
-  tema?: string
-  legenda?: string
-  viabilidade?: string
-  pendencia?: string
-  detalhamento?: string
-  ordem?: number
-}
-
-function parseCalendario(output: string): ItemBruto[] | null {
-  // O modelo às vezes embrulha o JSON em ```json … ```; extrai o array.
-  const match = output.match(/\[[\s\S]*\]/)
-  if (!match) return null
-  try {
-    const arr = JSON.parse(match[0])
-    return Array.isArray(arr) ? arr : null
-  } catch {
-    return null
-  }
-}
-
-const VIABILIDADES = new Set(['proposta', 'roteiro_a_fechar', 'so_ia', 'depende_registro'])
 
 async function materializarItens(
   cronogramaId: string,
@@ -282,7 +257,7 @@ async function materializarItens(
     formato: it.formato ?? null,
     tema: it.tema ?? null,
     legenda: it.legenda ?? null,
-    viabilidade: (it.viabilidade && VIABILIDADES.has(it.viabilidade) ? it.viabilidade : 'proposta') as CronogramaItem['viabilidade'],
+    viabilidade: normalizarViabilidade(it.viabilidade),
     pendencia: it.pendencia || null,
     detalhamento: it.detalhamento ?? null,
     ordem: typeof it.ordem === 'number' ? it.ordem : i + 1,

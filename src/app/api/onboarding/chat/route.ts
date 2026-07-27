@@ -17,7 +17,12 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 export const maxDuration = 60
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+// Preguiçoso: nasce na primeira mensagem, não no import (build/CI sem chave real).
+let _anthropic: Anthropic | null = null
+function getAnthropic(): Anthropic {
+  _anthropic ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+  return _anthropic
+}
 
 // Cache simples em memória para evitar buscar o banco a cada mensagem
 const sessionCache = new Map<string, { data: SessionData; ts: number }>()
@@ -226,7 +231,7 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       let acumulado = ''
       try {
-        const stream = anthropic.messages.stream({
+        const stream = getAnthropic().messages.stream({
           model:      'claude-opus-4-5',
           max_tokens: 4096,
           system:     systemPrompt,

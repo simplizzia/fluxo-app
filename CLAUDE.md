@@ -5,7 +5,8 @@
 Plataforma operacional da Simplizzia. Substitui Notion + Trello + Reportei + WhatsApp.
 Domínio: `app.simplizzia.com.br` | Repositório: `fluxo-app`
 
-Spec completo: `D:\Claude\Claude Code\Simplizzia\docs\superpowers\specs\2026-05-26-simplizzia-os-design.md`
+Specs em `docs/superpowers/specs/`. O fluxo de cronograma está em
+`docs/superpowers/specs/2026-07-24-fluxo-cronograma-design.md`.
 
 ---
 
@@ -53,28 +54,35 @@ src/
 ├── app/
 │   ├── (auth)/           # Login, callback, sem sidebar
 │   ├── (dashboard)/      # App principal, com layout + sidebar
-│   │   ├── board/        # Kanban
+│   │   ├── board/        # Kanban (+ actions.ts com as regras de card)
+│   │   ├── cronogramas/  # Fluxo de cronograma → conteúdo
 │   │   ├── calendario/
-│   │   ├── clientes/
+│   │   ├── clientes/     # inclui marcas/[marcaId] (universo + produtos)
 │   │   ├── pipeline/     # CRM (só sócias)
 │   │   ├── reunioes/
 │   │   └── socias/       # Área das sócias (só sócias)
+│   ├── (aprovacao)/      # Aprovação de card (deep-link de e-mail/WhatsApp)
 │   └── avaliacoes/       # NPS público (sem login, token único)
 ├── components/
-│   ├── ui/               # shadcn/ui components
 │   ├── board/            # Componentes do Kanban
-│   ├── cards/            # Card detail, formulário dinâmico
-│   └── shared/           # Avatar, badges, status chip, etc.
+│   └── shared/           # StatusChip, Toast, Skeleton, InlineError, etc.
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts     # Browser client (Client Components)
-│   │   ├── server.ts     # Server client + service client
-│   │   └── middleware.ts # helpers de auth
+│   │   └── server.ts     # Server client + service client
+│   ├── cards/status.ts   # fonte única: config + regras de transição de status
+│   ├── features.ts       # feature flags (o que está ligado nesta fase de uso)
+│   ├── dal.ts            # verifySession, getCurrentProfile, requirePapel/Feature
+│   ├── agents/           # executor + catalog (65+ agentes de IA)
 │   └── utils.ts          # cn(), formatDate(), etc.
-├── proxy.ts               # Auth guard global (Next.js 16: "middleware" → "proxy")
+├── proxy.ts              # Auth guard global + gate de feature (ex-"middleware")
 └── types/
-    └── database.ts       # Gerado por: npm run db:types
+    ├── database.ts           # barril escrito à mão: reexporta o gerado + apelidos
+    └── database.generated.ts # gerado por: npm run db:types (NÃO editar)
 ```
+
+Componentes de UI hoje são feitos à mão (`components/ui/` não existe). Há um
+design system mínimo por consolidar — ver Fase 5 do plano v2.
 
 ---
 
@@ -180,11 +188,22 @@ Ver `.env.example` para a lista completa. Mínimo para rodar localmente:
 
 ---
 
-## Sprints e status
+## Estado (v2, 2026-07)
 
-| Sprint | Status | O que entrega |
+Consolidação para uso com equipe e clientes. Plano em
+`~/.claude/plans/podemos-come-ar-uma-nova-shimmying-sloth.md`.
+
+| Fase | Estado | O que entrega |
 |---|---|---|
-| **0.1** | ✅ Em andamento | Setup Next.js, schema SQL completo, CLAUDE.md |
-| **0.2** | ⏳ Próximo | Auth + RBAC + RLS policies granulares por papel |
-| **1.1** | ⏳ | Kanban + formulário dinâmico |
-| ... | | Ver spec completo |
+| 0 — Destravar o repo | ✅ | migrations reconciliadas, EOL, código morto removido |
+| 1 — Acesso | ✅ | vazamentos de RLS fechados, papel `cliente` utilizável |
+| 2 — Kanban | ✅ | regra de transição no servidor, fonte única de status, marca no card |
+| 3 — Produtos e marca | ✅ | tabela `produtos`, escopo por marca nos agentes |
+| 4 — Cronograma | ✅ | 6 agentes, tela de revisão com chat, desmembramento, aprendizados |
+| 5 — Fundação | 🚧 | testes, SDKs preguiçosos, docs; design system por consolidar |
+
+**Lançamento:** só o núcleo + Calendário + Cronograma visíveis. Os demais
+módulos ficam ocultos via `src/lib/features.ts` (trocar `false`→`true` religa).
+
+**Exceção à Regra #1:** `agent_catalog` é um catálogo global de agentes e não
+tem `organization_id` — é o único caso legítimo. Todo o resto segue a regra.
