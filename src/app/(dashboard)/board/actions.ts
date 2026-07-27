@@ -15,6 +15,7 @@ import {
   emailCardCancelado,
 } from '@/lib/email'
 import { motivoBloqueio } from '@/lib/cards/status'
+import { SLUG_DEMANDA_CRONOGRAMA } from '@/app/(dashboard)/cronogramas/shared'
 import { avaliarBadges } from '@/lib/gamificacao'
 import { calcCreditosCard } from '@/lib/uso'
 import { notificarClienteParaAprovacao } from '@/lib/whatsapp'
@@ -209,15 +210,22 @@ export async function actionCriarCard(
     validated.data
 
   // Marca é obrigatória para tipos de demanda de conteúdo quando o cliente tem
-  // marcas cadastradas — evita que o contexto de IA misture marcas irmãs.
+  // marcas cadastradas — evita que o contexto de IA misture marcas irmãs. O
+  // Calendário Editorial entra na regra: ele é o gatilho do cronograma, que
+  // exige marca.
   if (!marca_id) {
     const { data: tipo } = await supabase
       .from('tipos_demanda')
-      .select('categoria')
+      .select('categoria, slug')
       .eq('id', tipo_id)
       .maybeSingle()
 
-    if (tipo && CATEGORIAS_EXIGEM_MARCA.includes(tipo.categoria as string)) {
+    const exigeMarca =
+      tipo &&
+      (CATEGORIAS_EXIGEM_MARCA.includes(tipo.categoria as string) ||
+        tipo.slug === SLUG_DEMANDA_CRONOGRAMA)
+
+    if (exigeMarca) {
       const { marcas } = await actionBuscarMarcasCliente(cliente_id)
       if (marcas.length > 0) {
         return { errors: { marca_id: ['Selecione a marca para esta demanda.'] } }
@@ -362,6 +370,8 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   rodadas_revisao?: number
   motivo_cancelamento?: string | null
   agente_chave?: string | null
+  /** slug do tipo de demanda — usado para rotear o card de Calendário ao cronograma. */
+  tipo_slug?: string | null
   tem_publicacao?: boolean
   marca?: { id: string; nome: string } | null
   /** Tipo exige conferência técnica interna antes de ir ao cliente. */
@@ -376,7 +386,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   const { data: card, error } = await supabase
     .from('cards')
     .select(
-      'campos_publicos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(campos_formulario, agente_slug, tem_publicacao, fluxo_aprovacao_duplo), marca:onboarding_marcas!marca_id(id, nome)',
+      'campos_publicos, rodadas_revisao, motivo_cancelamento, tipo:tipos_demanda!tipo_id(slug, campos_formulario, agente_slug, tem_publicacao, fluxo_aprovacao_duplo), marca:onboarding_marcas!marca_id(id, nome)',
     )
     .eq('id', cardId)
     .single()
@@ -384,7 +394,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
   if (error || !card) return { error: 'Card não encontrado.' }
 
   const ehEquipe = profile.papel !== 'cliente'
-  const tipo = card.tipo as unknown as { campos_formulario: CampoFormulario[]; agente_slug: string | null; tem_publicacao: boolean | null; fluxo_aprovacao_duplo: boolean | null } | null
+  const tipo = card.tipo as unknown as { slug: string | null; campos_formulario: CampoFormulario[]; agente_slug: string | null; tem_publicacao: boolean | null; fluxo_aprovacao_duplo: boolean | null } | null
   const marca = card.marca as unknown as { id: string; nome: string } | null
 
   // campos_internos vive em tabela isolada; só a equipe lê, via service role.
@@ -424,6 +434,7 @@ export async function actionBuscarCardDetalhes(cardId: string): Promise<{
     rodadas_revisao: card.rodadas_revisao ?? 0,
     motivo_cancelamento: card.motivo_cancelamento ?? null,
     agente_chave: ehEquipe ? (tipo?.agente_slug ?? null) : null,
+    tipo_slug: tipo?.slug ?? null,
     tem_publicacao: ehEquipe ? (tipo?.tem_publicacao ?? false) : false,
     marca,
     fluxo_aprovacao_duplo: fluxoDuplo,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCalendario, normalizarViabilidade, FORMATO_PARA_TIPO_SLUG } from './shared'
+import { parseCalendario, normalizarViabilidade, FORMATO_PARA_TIPO_SLUG, mesReferenciaParaData } from './shared'
 
 describe('parseCalendario — o ponto frágil do fluxo', () => {
   it('parseia um array JSON puro', () => {
@@ -47,6 +47,26 @@ describe('normalizarViabilidade', () => {
   it('cai para proposta em valor desconhecido ou vazio', () => {
     expect(normalizarViabilidade('inventado')).toBe('proposta')
     expect(normalizarViabilidade(undefined)).toBe('proposta')
+  })
+})
+
+describe('mesReferenciaParaData — do card ("AAAA-MM") ao cronograma ("AAAA-MM-01")', () => {
+  it('converte um mês válido', () => {
+    expect(mesReferenciaParaData('2026-08')).toBe('2026-08-01')
+    expect(mesReferenciaParaData('2026-12')).toBe('2026-12-01')
+  })
+
+  it('rejeita mês fora de 01–12', () => {
+    expect(mesReferenciaParaData('2026-13')).toBeNull()
+    expect(mesReferenciaParaData('2026-00')).toBeNull()
+  })
+
+  it('rejeita formato inválido, vazio ou nulo', () => {
+    expect(mesReferenciaParaData('agosto 2026')).toBeNull()
+    expect(mesReferenciaParaData('2026/08')).toBeNull()
+    expect(mesReferenciaParaData('')).toBeNull()
+    expect(mesReferenciaParaData(null)).toBeNull()
+    expect(mesReferenciaParaData(undefined)).toBeNull()
   })
 })
 

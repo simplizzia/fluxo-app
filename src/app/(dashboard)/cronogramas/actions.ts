@@ -8,8 +8,10 @@ import { actionBuscarMarcasCliente } from '@/app/(dashboard)/board/actions'
 import {
   ETAPAS,
   FORMATO_PARA_TIPO_SLUG,
+  SLUG_DEMANDA_CRONOGRAMA,
   parseCalendario,
   normalizarViabilidade,
+  mesReferenciaParaData,
   type EtapaChave,
   type ItemBruto,
   type CronogramaItem,
@@ -102,6 +104,88 @@ export async function criarCronograma(input: {
 }
 
 // ---------------------------------------------------------------------------
+// abrirCronogramaDoCard — o card de "Calendário Editorial" é o gatilho.
+// Deriva cliente, marca e mês do próprio card e cria (ou reabre) o cronograma
+// vinculado. Um card ↔ um cronograma, pelo card_origem_id.
+// ---------------------------------------------------------------------------
+
+export async function abrirCronogramaDoCard(
+  cardId: string,
+): Promise<{ id?: string; error?: string }> {
+  const profile = await requirePapel('socia', 'gestao', 'atendimento')
+  const service = createServiceClient()
+
+  const { data: card } = await service
+    .from('cards')
+    .select('id, organization_id, cliente_id, marca_id, campos_publicos, tipo:tipos_demanda!tipo_id(slug)')
+    .eq('id', cardId)
+    .single()
+
+  if (!card) return { error: 'Card não encontrado.' }
+
+  const slug = (card.tipo as { slug: string } | null)?.slug
+  if (slug !== SLUG_DEMANDA_CRONOGRAMA) {
+    return { error: 'Este card não é uma demanda de Calendário Editorial.' }
+  }
+  if (!card.marca_id) {
+    return { error: 'Defina a marca deste card antes de abrir o cronograma.' }
+  }
+  if (!card.cliente_id) {
+    return { error: 'Este card não tem cliente associado.' }
+  }
+
+  const mes = (card.campos_publicos as { mes_referencia?: string } | null)?.mes_referencia
+  const mesData = mesReferenciaParaData(mes)
+  if (!mesData) {
+    return { error: 'Preencha o mês de referência do card antes de abrir o cronograma.' }
+  }
+
+  // Um card → um cronograma: se este card já abriu um, reabre o mesmo.
+  const { data: existentePorCard } = await service
+    .from('cronogramas')
+    .select('id')
+    .eq('card_origem_id', cardId)
+    .maybeSingle()
+  if (existentePorCard) return { id: existentePorCard.id }
+
+  // Senão, se já existe um cronograma desta marca/mês (criado avulso), vincula
+  // este card a ele em vez de duplicar.
+  const { data: existentePorMes } = await service
+    .from('cronogramas')
+    .select('id, card_origem_id')
+    .eq('organization_id', card.organization_id)
+    .eq('marca_id', card.marca_id)
+    .eq('mes_referencia', mesData)
+    .maybeSingle()
+  if (existentePorMes) {
+    if (!existentePorMes.card_origem_id) {
+      await service.from('cronogramas').update({ card_origem_id: cardId }).eq('id', existentePorMes.id)
+    }
+    return { id: existentePorMes.id }
+  }
+
+  const { data: novo, error } = await service
+    .from('cronogramas')
+    .insert({
+      organization_id: card.organization_id,
+      cliente_id: card.cliente_id,
+      marca_id: card.marca_id,
+      mes_referencia: mesData,
+      status: 'rascunho',
+      card_origem_id: cardId,
+      criado_por: profile.id,
+    })
+    .select('id')
+    .single()
+
+  if (error || !novo) {
+    console.error('[abrirCronogramaDoCard]', error?.message)
+    return { error: 'Erro ao abrir o cronograma.' }
+  }
+  return { id: novo.id }
+}
+
+// ---------------------------------------------------------------------------
 // listarCronogramas — todos da org, mais recentes primeiro
 // ---------------------------------------------------------------------------
 
@@ -111,7 +195,7 @@ export async function listarCronogramas(): Promise<{ cronogramas: CronogramaResu
 
   const { data } = await supabase
     .from('cronogramas')
-    .select('id, cliente_id, marca_id, mes_referencia, status, cliente:clientes!cliente_id(nome), marca:onboarding_marcas!marca_id(nome)')
+    .select('id, cliente_id, marca_id, mes_referencia, status, card_origem_id, cliente:clientes!cliente_id(nome), marca:onboarding_marcas!marca_id(nome)')
     .order('mes_referencia', { ascending: false })
 
   const cronogramas: CronogramaResumo[] = (data ?? []).map((c) => ({
@@ -122,6 +206,7 @@ export async function listarCronogramas(): Promise<{ cronogramas: CronogramaResu
     status: c.status,
     marca_nome: (c.marca as { nome: string } | null)?.nome ?? '',
     cliente_nome: (c.cliente as { nome: string } | null)?.nome ?? '',
+    card_origem_id: c.card_origem_id,
   }))
   return { cronogramas }
 }
@@ -303,7 +388,7 @@ export async function buscarCronograma(cronogramaId: string): Promise<{
   const { data: cron, error } = await supabase
     .from('cronogramas')
     .select(
-      'id, cliente_id, marca_id, mes_referencia, status, briefing, temas_pilares, analise_coerencia, cliente:clientes!cliente_id(nome), marca:onboarding_marcas!marca_id(nome)',
+      'id, cliente_id, marca_id, mes_referencia, status, card_origem_id, briefing, temas_pilares, analise_coerencia, cliente:clientes!cliente_id(nome), marca:onboarding_marcas!marca_id(nome)',
     )
     .eq('id', cronogramaId)
     .single()
@@ -335,6 +420,7 @@ export async function buscarCronograma(cronogramaId: string): Promise<{
       status: cron.status,
       marca_nome: marcaNome,
       cliente_nome: clienteNome,
+      card_origem_id: cron.card_origem_id,
     },
     briefing: (cron.briefing as { texto?: string })?.texto,
     temasPilares: (cron.temas_pilares as { texto?: string })?.texto,

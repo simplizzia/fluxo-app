@@ -179,6 +179,14 @@ export function RevisaoCronograma(props: Props) {
           <p className="text-sm capitalize text-zinc-500">
             {resumo.cliente_nome} · {mesLabel(resumo.mes_referencia)}
           </p>
+          {resumo.card_origem_id && (
+            <a
+              href={`/board?card=${resumo.card_origem_id}`}
+              className="mt-0.5 inline-block text-xs text-brand hover:underline"
+            >
+              ← aberto a partir de um card de demanda
+            </a>
+          )}
         </div>
 
         {podeEditar && !finalizado && (

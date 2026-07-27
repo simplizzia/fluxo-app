@@ -65,6 +65,7 @@ export interface CronogramaResumo {
   status: StatusCronograma
   marca_nome: string
   cliente_nome: string
+  card_origem_id: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -111,4 +112,21 @@ const VIABILIDADES_VALIDAS = new Set<ViabilidadeItem>([
 /** Normaliza a viabilidade vinda do modelo; desconhecida vira 'proposta'. */
 export function normalizarViabilidade(v: string | undefined): ViabilidadeItem {
   return v && VIABILIDADES_VALIDAS.has(v as ViabilidadeItem) ? (v as ViabilidadeItem) : 'proposta'
+}
+
+// A demanda "Calendário Editorial" é o gatilho do cronograma: o card guarda o
+// mês no campo mes_referencia (input tipo month, formato "AAAA-MM").
+export const SLUG_DEMANDA_CRONOGRAMA = 'calendario-editorial'
+
+/**
+ * Converte o mês do card ("AAAA-MM") para a data de referência do cronograma
+ * ("AAAA-MM-01"). Devolve null se não for um mês válido. Pura, para testar.
+ */
+export function mesReferenciaParaData(mesYYYYMM: string | null | undefined): string | null {
+  if (!mesYYYYMM) return null
+  const m = mesYYYYMM.trim().match(/^(\d{4})-(\d{2})$/)
+  if (!m) return null
+  const mes = Number(m[2])
+  if (mes < 1 || mes > 12) return null
+  return `${m[1]}-${m[2]}-01`
 }

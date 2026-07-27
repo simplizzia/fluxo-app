@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useTransition, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { abrirCronogramaDoCard } from '@/app/(dashboard)/cronogramas/actions'
+import { SLUG_DEMANDA_CRONOGRAMA } from '@/app/(dashboard)/cronogramas/shared'
 import {
   X, Calendar, User, Tag, Clock, Lock, Send, Timer,
   Paperclip, Download, FileImage, Film, FileText, Archive, File,
@@ -111,7 +114,11 @@ export function CardDetailDrawer({
   const [erroAprovacaoInterna, setErroAprovacaoInterna] = useState<string | null>(null)
 
   // IA — Pattern A
+  const router = useRouter()
   const [agenteChave, setAgenteChave] = useState<string | null>(null)
+  const [tipoSlug, setTipoSlug] = useState<string | null>(null)
+  const [abrindoCronograma, setAbrindoCronograma] = useState(false)
+  const [erroCronograma, setErroCronograma] = useState<string | null>(null)
   const [iaOutput, setIaOutput] = useState<string | null>(null)
   const [iaRunId, setIaRunId] = useState<string | null>(null)
   const [iaExecutando, setIaExecutando] = useState(false)
@@ -192,6 +199,7 @@ export function CardDetailDrawer({
         setRodadasRevisao(result.rodadas_revisao ?? 0)
         setMotivoCancelamento(result.motivo_cancelamento ?? null)
         setAgenteChave(result.agente_chave ?? null)
+        setTipoSlug(result.tipo_slug ?? null)
         setTemPublicacao(result.tem_publicacao ?? false)
         setMarca(result.marca ?? null)
         setFluxoDuplo(result.fluxo_aprovacao_duplo ?? false)
@@ -1051,8 +1059,42 @@ export function CardDetailDrawer({
             )}
           </div>
 
-          {/* IA — Pattern A: exibe se o tipo de demanda tem agente associado */}
-          {ehEquipe && agenteChave && (
+          {/* Calendário Editorial é o gatilho do cronograma: em vez de gerar um
+              texto no card (agente antigo), abre o fluxo de cronograma da marca. */}
+          {ehEquipe && tipoSlug === SLUG_DEMANDA_CRONOGRAMA && (
+            <div className="border-b border-zinc-100 px-6 py-5">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                Cronograma
+              </p>
+              <p className="mb-3 text-xs text-zinc-500">
+                Esta demanda abre o fluxo de cronograma da marca — briefing, calendário,
+                revisão e desmembramento em cards.
+              </p>
+              <button
+                onClick={async () => {
+                  setErroCronograma(null)
+                  setAbrindoCronograma(true)
+                  const res = await abrirCronogramaDoCard(card.id)
+                  setAbrindoCronograma(false)
+                  if (res.error) setErroCronograma(res.error)
+                  else if (res.id) router.push(`/cronogramas/${res.id}`)
+                }}
+                disabled={abrindoCronograma}
+                className="flex items-center gap-1.5 rounded-lg bg-gradient-brand px-3.5 py-2 text-xs font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+              >
+                {abrindoCronograma ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" />Abrindo…</>
+                ) : (
+                  <><Calendar className="h-3.5 w-3.5" />Abrir cronograma</>
+                )}
+              </button>
+              {erroCronograma && <InlineError className="mt-2">{erroCronograma}</InlineError>}
+            </div>
+          )}
+
+          {/* IA — Pattern A: exibe se o tipo tem agente e NÃO é o Calendário
+              Editorial (esse roteia para o cronograma, acima). */}
+          {ehEquipe && agenteChave && tipoSlug !== SLUG_DEMANDA_CRONOGRAMA && (
             <div className="border-b border-zinc-100 px-6 py-5">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
