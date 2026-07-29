@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>Simplizzia · Trevo — Recrutamento de Distribuidores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --estrategia: #A046C6;
+    --criacao:    #F9267C;
+    --tecnologia: #2285FC;
+    --tinta:      #1E1E1E;
+    --tinta-2:    #444444;
+    --tinta-3:    #555555;
+    --superficie: #FFFFFF;
+    --neutra:     #F4F4F4;
+    --claro:      #F4F4F4;
+    --claro-2:    #C9C9C9;
+    --borda-clara:rgba(255,255,255,0.14);
+    --espectro:   linear-gradient(135deg, #A046C6 0%, #F9267C 52%, #2285FC 100%);
+    --display:    'Baloo Bhai 2', system-ui, sans-serif;
+    --corpo:      'DM Sans', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; font-family: var(--corpo); background: var(--tinta); color: var(--claro); -webkit-font-smoothing: antialiased; }
+
+  #presentation {
+    height: 100vh; height: 100dvh;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none; scrollbar-width: none;
+  }
+  #presentation::-webkit-scrollbar { display: none; }
+
+  .slide {
+    height: 100vh; height: 100dvh;
+    scroll-snap-align: start;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 7vh 9vw;
+    position: relative; overflow: hidden;
+  }
+  .slide--tinta    { background: var(--tinta); color: var(--claro); }
+  .slide--branco   { background: var(--superficie); color: var(--tinta); }
+  .slide--espectro { background: var(--espectro); color: var(--superficie); }
+  .slide--criacao  { background: var(--criacao); color: var(--superficie); }
+
+  /* Marca do cliente (Trevo) */
+  .cliente-corner {
+    position: absolute; top: 2.4rem; right: 9vw;
+    height: 26px; width: auto; opacity: 0.88; z-index: 5;
+  }
+  .slide--branco .cliente-corner { opacity: 1; }
+
+  /* Marca Simplizzia */
+  .simplizzia-mark {
+    position: absolute; bottom: 2.4rem; right: 9vw;
+    z-index: 5; display: flex; align-items: center; gap: 0.9rem;
+  }
+  .simplizzia-mark p {
+    font-family: var(--corpo);
+    font-size: 0.7rem; font-weight: 500;
+    line-height: 1.3; text-align: right;
+    color: var(--claro-2); margin: 0;
+    white-space: nowrap; letter-spacing: 0.02em;
+  }
+  .slide--branco .simplizzia-mark p { color: var(--tinta-3); }
+  .slide--espectro .simplizzia-mark p,
+  .slide--criacao .simplizzia-mark p { color: rgba(255,255,255,0.75); }
+  .simplizzia-mark img { height: 22px; width: auto; }
+  .simplizzia-mark .logo-clara { display: none; }
+  .slide--tinta .simplizzia-mark .logo-clara,
+  .slide--espectro .simplizzia-mark .logo-clara,
+  .slide--criacao .simplizzia-mark .logo-clara { display: block; }
+  .slide--tinta .simplizzia-mark .logo-escura,
+  .slide--espectro .simplizzia-mark .logo-escura,
+  .slide--criacao .simplizzia-mark .logo-escura { display: none; }
+
+  /* Label / eyebrow */
+  .label {
+    font-family: var(--display); font-weight: 700;
+    font-size: 0.82rem; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--claro-2);
+    margin-bottom: 1.6rem;
+  }
+  .slide--branco .label { color: var(--tinta-2); }
+  .slide--espectro .label,
+  .slide--criacao .label { color: rgba(255,255,255,0.85); }
+
+  /* Tipografia display */
+  .mega {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(3rem, 7vw, 5.2rem);
+    line-height: 0.98; letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--claro);
+  }
+  .slide--branco .mega { color: var(--tinta); }
+  .display {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+    line-height: 1.05; letter-spacing: -0.01em;
+    color: var(--claro);
+    max-width: 22ch;
+  }
+  .slide--branco .display { color: var(--tinta); }
+  .headline {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    line-height: 1.1; letter-spacing: -0.01em;
+    color: var(--claro);
+  }
+  .slide--branco .headline { color: var(--tinta); }
+
+  .grifo-roxo { color: var(--estrategia); }
+  .grifo-rosa { color: var(--criacao); }
+  .grifo-azul { color: var(--tecnologia); }
+
+  /* Body */
+  .lead {
+    font-family: var(--corpo); font-weight: 500;
+    font-size: clamp(1rem, 1.4vw, 1.18rem);
+    line-height: 1.55; color: var(--claro-2);
+    max-width: 64ch;
+    margin-top: 1.2rem;
+  }
+  .slide--branco .lead { color: var(--tinta-3); }
+  .slide--espectro .lead,
+  .slide--criacao .lead { color: rgba(255,255,255,0.92); }
+  .lead strong { color: var(--claro); font-weight: 700; }
+  .slide--branco .lead strong { color: var(--tinta); }
+
+  /* Bullets */
+  .bullets {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 0.9rem;
+    margin-top: 1.4rem; max-width: 64ch;
+  }
+  .bullets li {
+    font-family: var(--corpo);
+    font-size: clamp(0.95rem, 1.25vw, 1.08rem);
+    font-weight: 500; line-height: 1.5;
+    color: var(--claro); padding-left: 1.6rem;
+    position: relative;
+  }
+  .bullets li::before {
+    content: ''; position: absolute; left: 0; top: 0.55rem;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--criacao);
+  }
+  .slide--branco .bullets li { color: var(--tinta); }
+  .bullets li strong { font-weight: 700; }
+  .bullets-arrow li::before {
+    content: '→'; background: transparent; width: auto; height: auto;
+    color: var(--criacao); font-weight: 700; font-size: 1.1rem;
+    top: 0.05rem;
+  }
+  .slide--criacao .bullets li::before,
+  .slide--criacao .bullets-arrow li::before { background: var(--superficie); color: var(--superficie); }
+
+  /* Fonte pequena com atribuição */
+  .fonte {
+    font-family: var(--corpo); font-weight: 500;
+    font-size: 0.78rem; color: var(--claro-2);
+    margin-top: 0.9rem; font-style: italic;
+    opacity: 0.75;
+  }
+  .slide--branco .fonte { color: var(--tinta-3); }
+
+  /* Cards genéricos */
+  .cards {
+    display: grid; gap: 1.1rem; width: 100%;
+    margin-top: 1.6rem; max-width: 1050px;
+  }
+  .cards--2col { grid-template-columns: repeat(2, 1fr); }
+  .cards--4col { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--superficie); color: var(--tinta);
+    border-radius: 24px;
+    padding: 24px 22px;
+  }
+  .card-label {
+    font-family: var(--display); font-weight: 700;
+    font-size: 0.7rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--tinta-2);
+    margin-bottom: 0.7rem;
+  }
+  .card-title {
+    font-family: var(--display); font-weight: 700;
+    font-size: 1.2rem; line-height: 1.18;
+    color: var(--tinta); margin-bottom: 0.55rem;
+  }
+  .card-text {
+    font-family: var(--corpo); font-weight: 400;
+    font-size: 0.92rem; line-height: 1.5;
+    color: var(--tinta-3);
+  }
+  .card-text strong { color: var(--tinta); font-weight: 700; }
+
+  .card--roxo { background: var(--estrategia); color: var(--superficie); }
+  .card--rosa { background: var(--criacao); color: var(--superficie); }
+  .card--roxo .card-label, .card--rosa .card-label { color: rgba(255,255,255,0.85); }
+  .card--roxo .card-title, .card--rosa .card-title { color: var(--superficie); }
+  .card--roxo .card-text, .card--rosa .card-text { color: rgba(255,255,255,0.92); }
+  .card--roxo .card-text strong, .card--rosa .card-text strong { color: var(--superficie); }
+
+  /* Praças-estado */
+  .pracas {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1rem; margin-top: 1.4rem; width: 100%; max-width: 1050px;
+  }
+  .praca {
+    background: var(--superficie); color: var(--tinta);
+    border-radius: 24px; padding: 1.2rem 1.15rem;
+  }
+  .praca-uf {
+    font-family: var(--display); font-weight: 800;
+    font-size: 1.5rem; margin-bottom: 0.35rem;
+  }
+  .praca:nth-child(1) .praca-uf { color: var(--estrategia); }
+  .praca:nth-child(2) .praca-uf { color: var(--criacao); }
+  .praca:nth-child(3) .praca-uf { color: var(--tecnologia); }
+  .praca:nth-child(4) .praca-uf { color: var(--tinta); }
+  .praca-cidades {
+    font-family: var(--corpo); font-weight: 500;
+    font-size: 0.9rem; line-height: 1.55;
+    color: var(--tinta-3);
+  }
+
+  /* Canais compactos abaixo das praças */
+  .canais {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1rem; margin-top: 1rem; width: 100%; max-width: 1050px;
+  }
+  .canal {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--borda-clara);
+    border-radius: 24px; padding: 1.1rem 1.2rem;
+  }
+  .canal-titulo {
+    font-family: var(--display); font-weight: 700;
+    font-size: 1rem; color: var(--claro);
+    margin-bottom: 0.25rem;
+  }
+  .canal-desc {
+    font-family: var(--corpo); font-weight: 400;
+    font-size: 0.85rem; line-height: 1.5;
+    color: var(--claro-2);
+  }
+  .destino {
+    margin-top: 1rem; padding: 0.9rem 1.2rem;
+    background: rgba(249,38,124,0.12);
+    border-radius: 24px;
+    font-family: var(--corpo); font-weight: 500;
+    font-size: 0.92rem; color: var(--claro);
+    max-width: 1050px;
+  }
+  .destino strong { color: var(--criacao); font-weight: 700; }
+
+  /* Investimento */
+  .invest {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem; margin-top: 1.4rem; width: 100%; max-width: 900px;
+  }
+  .invest-card {
+    background: var(--superficie); color: var(--tinta);
+    border-radius: 24px; padding: 1.6rem 1.5rem;
+  }
+  .invest-card--rec { background: var(--criacao); color: var(--superficie); }
+  .invest-tag {
+    font-family: var(--display); font-weight: 700;
+    font-size: 0.68rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--tinta-2);
+    margin-bottom: 0.6rem;
+  }
+  .invest-card--rec .invest-tag { color: var(--superficie); }
+  .invest-valor {
+    font-family: var(--display); font-weight: 800;
+    font-size: 2.3rem; line-height: 1;
+    color: var(--tinta); margin-bottom: 0.2rem;
+  }
+  .invest-card--rec .invest-valor { color: var(--superficie); }
+  .invest-por {
+    font-family: var(--corpo); font-weight: 500;
+    font-size: 0.82rem; color: var(--tinta-3);
+    margin-bottom: 1rem;
+  }
+  .invest-card--rec .invest-por { color: rgba(255,255,255,0.88); }
+  .invest-lista {
+    list-style: none; display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .invest-lista li {
+    font-family: var(--corpo); font-weight: 400;
+    font-size: 0.88rem; line-height: 1.45;
+    color: var(--tinta-2); padding-left: 1.1rem;
+    position: relative;
+  }
+  .invest-lista li::before {
+    content: '✓'; position: absolute; left: 0; top: 0;
+    color: var(--tinta); font-weight: 700;
+  }
+  .invest-lista li.no::before { content: '✕'; color: var(--tinta-3); }
+  .invest-lista li strong { font-weight: 700; color: var(--tinta); }
+  .invest-card--rec .invest-lista li { color: rgba(255,255,255,0.95); }
+  .invest-card--rec .invest-lista li::before { color: var(--superficie); }
+  .invest-card--rec .invest-lista li.no::before { color: rgba(255,255,255,0.7); }
+  .invest-card--rec .invest-lista li strong { color: var(--superficie); }
+
+  .projecao {
+    margin-top: 1.2rem;
+    font-family: var(--corpo); font-weight: 500;
+    font-size: 0.9rem; color: var(--tinta-3);
+    max-width: 62ch;
+  }
+  .slide--branco .projecao { color: var(--tinta-3); }
+  .projecao strong { color: var(--tinta); font-weight: 700; }
+
+  /* Conceitos + teste (slide 5) */
+  .conceitos-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem; width: 100%; max-width: 1050px;
+    margin-top: 1.4rem;
+  }
+  .conceito-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--borda-clara);
+    border-radius: 24px; padding: 1.6rem 1.5rem;
+  }
+  .conceito-num {
+    font-family: var(--display); font-weight: 800;
+    font-size: 0.72rem; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.9rem;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .conceito-num.a { color: var(--estrategia); }
+  .conceito-num.b { color: var(--criacao); }
+  .conceito-num::before {
+    content: ''; width: 10px; height: 10px; border-radius: 50%;
+    background: currentColor;
+  }
+  .conceito-nome {
+    font-family: var(--display); font-weight: 800;
+    font-size: 1.4rem; line-height: 1.1;
+    color: var(--claro); margin-bottom: 0.5rem;
+  }
+  .conceito-copy {
+    font-family: var(--display); font-weight: 700;
+    font-size: 1.05rem; line-height: 1.25;
+    color: var(--claro); font-style: italic;
+    margin-bottom: 0.8rem;
+  }
+  .conceito-desc {
+    font-family: var(--corpo); font-weight: 400;
+    font-size: 0.9rem; line-height: 1.55;
+    color: var(--claro-2);
+  }
+  .conceito-desc strong { color: var(--claro); font-weight: 700; }
+
+  .teste-nota {
+    margin-top: 1.2rem; padding: 0.9rem 1.2rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 24px;
+    font-family: var(--corpo); font-weight: 500;
+    font-size: 0.88rem; line-height: 1.5;
+    color: var(--claro-2); max-width: 1050px;
+  }
+  .teste-nota strong { color: var(--claro); font-weight: 700; }
+
+  /* Slide-nav (dots) */
+  #slide-nav {
+    position: fixed; right: 1.4rem; top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 200;
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(244,244,244,0.28);
+    border: none; cursor: pointer; padding: 0;
+    transition: background 0.25s, transform 0.25s;
+  }
+  .dot.active { background: var(--criacao); transform: scale(1.4); }
+
+  .capa-logo { height: 42px; width: auto; margin-bottom: 2rem; }
+  .capa-cliente {
+    display: flex; align-items: center; gap: 1rem;
+    margin-top: 2.4rem; padding-top: 1.8rem;
+    border-top: 1px solid rgba(255,255,255,0.2);
+  }
+  .capa-cliente span {
+    font-family: var(--corpo); font-weight: 500;
+    font-size: 0.85rem; letter-spacing: 0.06em;
+    text-transform: uppercase; color: rgba(255,255,255,0.75);
+  }
+  .capa-cliente img { height: 32px; width: auto; }
+
+  @media (max-width: 900px) {
+    .slide { padding: 5vh 6vw; }
+    .cards--4col, .pracas { grid-template-columns: 1fr 1fr; }
+    .cards--2col, .canais, .invest, .conceitos-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="presentation">
+
+  <!-- 1. CAPA -->
+  <section class="slide slide--espectro" data-index="0">
+    <img class="capa-logo" src="clientes/trevo/assets/logo-simplizzia-branca.png" alt="Simplizzia">
+    <div class="label">Proposta de Campanha · 2026</div>
+    <h1 class="mega">Recrutamento<br>de distribuidores.</h1>
+    <p class="lead">Campanha digital geolocalizada de captação de leads B2B para expandir a rede de distribuidores da Trevo Lácteos + Ehrmann.</p>
+    <div class="capa-cliente">
+      <span>Para</span>
+      <img src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo Lácteos + Ehrmann">
+    </div>
+    <div class="simplizzia-mark">
+      <p>simplizzia.com.br</p>
+    </div>
+  </section>
+
+  <!-- 2. CONTEXTO — panorama honesto -->
+  <section class="slide slide--tinta" data-index="1">
+    <img class="cliente-corner" src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo">
+    <div class="label">Antes de tudo · O que esperar dessa campanha</div>
+    <h2 class="display">É uma campanha de <span class="grifo-rosa">conversão</span>, não de alcance.</h2>
+    <ul class="bullets">
+      <li><strong>Público pequeno e específico:</strong> dono de distribuidora com estrutura de carga refrigerada, numa cidade específica. Não é um público de milhões — são milhares.</li>
+      <li><strong>Poucos leads é o normal.</strong> A gente não mede a campanha em impressão, e sim em parceiro que assina contrato.</li>
+      <li><strong>Precisa de tempo pra aprender.</strong> Só depois de ~30 dias no ar temos dado suficiente pra propor ajustes na campanha.</li>
+      <li><strong>É a primeira campanha desse tipo pra Trevo.</strong> Não existe histórico próprio ou benchmark público brasileiro auditado pra recrutamento de distribuidores de laticínios. Vamos calibrar com os dados que a campanha for gerando.</li>
+      <li><strong>O sucesso depende também do fluxo interno da Trevo.</strong> No setor de expansão (franquias), <strong>85,7% dos contratos fechados são de leads atendidos em até 4 horas</strong>. Se a resposta demora, a verba de mídia vira desperdício.</li>
+    </ul>
+    <p class="fonte">Fonte: ABF Benchmark Expansão 2024 · Associação Brasileira de Franchising. Recrutamento de distribuidores é diferente de franquia, mas é o proxy nacional publicamente auditado mais próximo.</p>
+    <div class="simplizzia-mark">
+      <img class="logo-clara" src="clientes/trevo/assets/logo-simplizzia-branca.png" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- 3. A CAMPANHA (praças + canais + destino) -->
+  <section class="slide slide--tinta" data-index="2">
+    <img class="cliente-corner" src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo">
+    <div class="label">A campanha em uma tela</div>
+    <h2 class="display">4 praças, <span class="grifo-rosa">2 canais</span>, um funil.</h2>
+
+    <div class="pracas">
+      <div class="praca">
+        <div class="praca-uf">MG</div>
+        <div class="praca-cidades">Belo Horizonte<br>Uberlândia<br>Divinópolis<br>Montes Claros</div>
+      </div>
+      <div class="praca">
+        <div class="praca-uf">ES</div>
+        <div class="praca-cidades">Serra<br>Vitória</div>
+      </div>
+      <div class="praca">
+        <div class="praca-uf">RJ</div>
+        <div class="praca-cidades">Município do Rio<br>Região dos Lagos</div>
+      </div>
+      <div class="praca">
+        <div class="praca-uf">SP</div>
+        <div class="praca-cidades">ABC<br>Santos<br>Ribeirão Preto</div>
+      </div>
+    </div>
+
+    <div class="canais">
+      <div class="canal">
+        <div class="canal-titulo">Google Search</div>
+        <div class="canal-desc">Captura quem <strong>já está buscando</strong> ("seja distribuidor de laticínios", "representação Trevo").</div>
+      </div>
+      <div class="canal">
+        <div class="canal-titulo">Meta Ads · Facebook + Instagram</div>
+        <div class="canal-desc">Alcança quem <strong>tem o perfil</strong> mas não está buscando. Formulário instantâneo dentro do app.</div>
+      </div>
+    </div>
+
+    <div class="destino">
+      Cada praça é um conjunto de anúncios com as cidades específicas pinadas — sem vazar pra cidades onde a Trevo não tem distribuição. <strong>Do formulário, o lead vai para a equipe comercial da Trevo</strong> (canal e SLA de resposta a definir por vocês).
+    </div>
+
+    <div class="simplizzia-mark">
+      <img class="logo-clara" src="clientes/trevo/assets/logo-simplizzia-branca.png" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- 4. AS 4 PERGUNTAS DO FORMULÁRIO -->
+  <section class="slide slide--branco" data-index="3">
+    <img class="cliente-corner" src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo">
+    <div class="label">O filtro antes do lead chegar em vocês</div>
+    <h2 class="display">4 perguntas <span class="grifo-rosa">obrigatórias</span> no formulário.</h2>
+    <p class="lead">Para o comercial não perder tempo com lead frio, o próprio anúncio já filtra.</p>
+    <ul class="bullets bullets-arrow" style="margin-top: 1.6rem;">
+      <li><strong>Cidade de atuação</strong> — confirma que está numa das praças ativas.</li>
+      <li><strong>Tem transporte com carga refrigerada?</strong> — pré-requisito duro. "Não" é descartado automaticamente.</li>
+      <li>Já atua com distribuição / food service / atacado?</li>
+      <li>CNPJ / registro Core?</li>
+    </ul>
+    <div class="simplizzia-mark">
+      <img class="logo-escura" src="clientes/trevo/assets/logo-simplizzia-colorida.png" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- 5. CONCEITOS + TESTE -->
+  <section class="slide slide--tinta" data-index="4">
+    <img class="cliente-corner" src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo">
+    <div class="label">Os 2 conceitos em teste</div>
+    <h2 class="display">A pergunta que o <span class="grifo-rosa">A/B responde</span>.</h2>
+    <div class="conceitos-grid">
+      <div class="conceito-card">
+        <div class="conceito-num a">Conceito A</div>
+        <div class="conceito-nome">Prova de Mercado</div>
+        <div class="conceito-copy">"marcas que a família brasileira já pede."</div>
+        <div class="conceito-desc">Aposta que o distribuidor se move por <strong>demanda pronta</strong>: a marca já vende sozinha no PDV, o consumidor já procura.</div>
+      </div>
+      <div class="conceito-card">
+        <div class="conceito-num b">Conceito B</div>
+        <div class="conceito-nome">Portfólio Completo</div>
+        <div class="conceito-copy">"uma parceria, cinco marcas."</div>
+        <div class="conceito-desc">Aposta que o distribuidor se move por <strong>eficiência</strong>: uma parceria só cobre a geladeira inteira, do popular ao premium.</div>
+      </div>
+    </div>
+    <div class="teste-nota">
+      <strong>Como o teste roda depende do cenário de investimento.</strong> No mínimo viável, os dois conceitos ficam no mesmo conjunto e o Meta escolhe qual entrega mais. No sugerido, ficam em conjuntos separados com A/B controlado — dá pra medir com clareza qual funciona melhor.
+    </div>
+    <div class="simplizzia-mark">
+      <img class="logo-clara" src="clientes/trevo/assets/logo-simplizzia-branca.png" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- 6. INVESTIMENTO -->
+  <section class="slide slide--branco" data-index="5">
+    <img class="cliente-corner" src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo">
+    <div class="label">Investimento · por praça, mensal</div>
+    <h2 class="display">Dois cenários de <span class="grifo-rosa">entrada</span>.</h2>
+    <div class="invest">
+      <div class="invest-card">
+        <div class="invest-tag">Mínimo viável</div>
+        <div class="invest-valor">R$ 1.500</div>
+        <div class="invest-por">por praça, por mês</div>
+        <ul class="invest-lista">
+          <li>Meta Ads no ar, gerando algum lead</li>
+          <li>2 conceitos criativos <strong>no mesmo conjunto</strong> (Meta escolhe)</li>
+          <li class="no">Sem Google Search</li>
+          <li class="no">Sem A/B controlado — teste enviesado</li>
+        </ul>
+      </div>
+      <div class="invest-card invest-card--rec">
+        <div class="invest-tag">Sugerido</div>
+        <div class="invest-valor">R$ 3.500</div>
+        <div class="invest-por">por praça, por mês</div>
+        <ul class="invest-lista">
+          <li>Meta + Google Search</li>
+          <li>2 conceitos em <strong>conjuntos separados</strong> (A/B controlado)</li>
+          <li>Reserva de otimização mid-mês</li>
+          <li>Dados sólidos para decisão em 30 dias</li>
+        </ul>
+      </div>
+    </div>
+    <p class="projecao">
+      <strong>Piloto:</strong> começa em <strong>1 praça (MG)</strong> por 30 dias. Só depois de dado real na mesa é que expandimos.
+      <br><strong>Ordem de grandeza no rollout completo (4 praças):</strong> R$ 6.000/mês no mínimo viável ou R$ 14.000/mês no sugerido. Rollout acontece se e quando cada praça for validada — reunião mensal decide.
+    </p>
+    <div class="simplizzia-mark">
+      <img class="logo-escura" src="clientes/trevo/assets/logo-simplizzia-colorida.png" alt="Simplizzia">
+    </div>
+  </section>
+
+  <!-- 7. O QUE PRECISAMOS DE VOCÊS -->
+  <section class="slide slide--criacao" data-index="6">
+    <img class="cliente-corner" src="clientes/trevo/assets/logo-trevo-ehrmann.png" alt="Trevo" style="filter: brightness(0) invert(1); opacity: 0.85;">
+    <div class="label">Para começar</div>
+    <h2 class="display" style="color: var(--superficie);">O que precisamos <span style="color: var(--tinta);">de vocês</span>.</h2>
+    <ul class="bullets bullets-arrow" style="margin-top: 1.6rem;">
+      <li><strong>Escolher o cenário de investimento:</strong> mínimo viável (R$ 1.500/praça) ou sugerido (R$ 3.500/praça).</li>
+      <li><strong>Definir o canal de resposta ao lead</strong> (WhatsApp, e-mail, telefone) e o SLA que a equipe consegue manter.</li>
+      <li><strong>Confirmar quem responde</strong> os leads que chegarem.</li>
+      <li>Aprovar os <strong>2 conceitos criativos</strong> para a Simplizzia produzir a arte final.</li>
+    </ul>
+    <div class="simplizzia-mark">
+      <img class="logo-clara" src="clientes/trevo/assets/logo-simplizzia-branca.png" alt="Simplizzia">
+    </div>
+  </section>
+
+</div>
+
+<nav id="slide-nav" aria-label="Navegação"></nav>
+
+<script>
+  (function(){
+    var slides = document.querySelectorAll('.slide');
+    var nav = document.getElementById('slide-nav');
+    slides.forEach(function(_, i){
+      var b = document.createElement('button');
+      b.className = 'dot' + (i === 0 ? ' active' : '');
+      b.setAttribute('aria-label', 'Ir para slide ' + (i+1));
+      b.onclick = function(){ slides[i].scrollIntoView({behavior:'smooth'}); };
+      nav.appendChild(b);
+    });
+    var dots = document.querySelectorAll('.dot');
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          var idx = parseInt(e.target.dataset.index, 10);
+          dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
+        }
+      });
+    }, { threshold: 0.55 });
+    slides.forEach(function(s){ observer.observe(s); });
+    document.addEventListener('keydown', function(e){
+      var current = 0;
+      dots.forEach(function(d, i){ if(d.classList.contains('active')) current = i; });
+      if(e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' '){
+        e.preventDefault();
+        if(current < slides.length - 1) slides[current+1].scrollIntoView({behavior:'smooth'});
+      }
+      if(e.key === 'ArrowUp' || e.key === 'PageUp'){
+        e.preventDefault();
+        if(current > 0) slides[current-1].scrollIntoView({behavior:'smooth'});
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>
