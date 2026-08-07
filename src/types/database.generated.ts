@@ -1179,6 +1179,7 @@ export type Database = {
           criado_por: string | null
           data_entrega_programada: string | null
           data_publicacao: string | null
+          fluxo_etapa_id: string | null
           horas_estimadas: number | null
           horas_realizadas: number | null
           id: string
@@ -1208,6 +1209,7 @@ export type Database = {
           criado_por?: string | null
           data_entrega_programada?: string | null
           data_publicacao?: string | null
+          fluxo_etapa_id?: string | null
           horas_estimadas?: number | null
           horas_realizadas?: number | null
           id?: string
@@ -1237,6 +1239,7 @@ export type Database = {
           criado_por?: string | null
           data_entrega_programada?: string | null
           data_publicacao?: string | null
+          fluxo_etapa_id?: string | null
           horas_estimadas?: number | null
           horas_realizadas?: number | null
           id?: string
@@ -1269,6 +1272,13 @@ export type Database = {
             columns: ["criado_por"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cards_fluxo_etapa_id_fkey"
+            columns: ["fluxo_etapa_id"]
+            isOneToOne: false
+            referencedRelation: "fluxo_etapas"
             referencedColumns: ["id"]
           },
           {
@@ -2117,6 +2127,119 @@ export type Database = {
           },
           {
             foreignKeyName: "financeiro_receitas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fluxo_etapas: {
+        Row: {
+          agente_slug: string | null
+          ativo: boolean
+          avanca_por: Database["public"]["Enums"]["gatilho_avanco"]
+          created_at: string
+          fluxo_id: string
+          id: string
+          kind: Database["public"]["Enums"]["kind_etapa"]
+          label: string
+          ordem: number
+          organization_id: string
+          slug: string
+          status_canonico: Database["public"]["Enums"]["status_card"]
+          updated_at: string
+          visivel_cliente: boolean
+        }
+        Insert: {
+          agente_slug?: string | null
+          ativo?: boolean
+          avanca_por?: Database["public"]["Enums"]["gatilho_avanco"]
+          created_at?: string
+          fluxo_id: string
+          id?: string
+          kind: Database["public"]["Enums"]["kind_etapa"]
+          label: string
+          ordem: number
+          organization_id: string
+          slug: string
+          status_canonico: Database["public"]["Enums"]["status_card"]
+          updated_at?: string
+          visivel_cliente?: boolean
+        }
+        Update: {
+          agente_slug?: string | null
+          ativo?: boolean
+          avanca_por?: Database["public"]["Enums"]["gatilho_avanco"]
+          created_at?: string
+          fluxo_id?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["kind_etapa"]
+          label?: string
+          ordem?: number
+          organization_id?: string
+          slug?: string
+          status_canonico?: Database["public"]["Enums"]["status_card"]
+          updated_at?: string
+          visivel_cliente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fluxo_etapas_fluxo_id_fkey"
+            columns: ["fluxo_id"]
+            isOneToOne: false
+            referencedRelation: "fluxos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluxo_etapas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fluxos: {
+        Row: {
+          aprovacao_dupla: boolean
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          esforco_tipico: string
+          id: string
+          nome: string
+          organization_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          aprovacao_dupla?: boolean
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          esforco_tipico?: string
+          id?: string
+          nome: string
+          organization_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          aprovacao_dupla?: boolean
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          esforco_tipico?: string
+          id?: string
+          nome?: string
+          organization_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fluxos_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizacoes"
@@ -4843,6 +4966,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           fluxo_aprovacao_duplo: boolean
+          fluxo_id: string | null
           id: string
           nome: string
           organization_id: string
@@ -4861,6 +4985,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           fluxo_aprovacao_duplo?: boolean
+          fluxo_id?: string | null
           id?: string
           nome: string
           organization_id: string
@@ -4879,6 +5004,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           fluxo_aprovacao_duplo?: boolean
+          fluxo_id?: string | null
           id?: string
           nome?: string
           organization_id?: string
@@ -4890,6 +5016,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tipos_demanda_fluxo_id_fkey"
+            columns: ["fluxo_id"]
+            isOneToOne: false
+            referencedRelation: "fluxos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tipos_demanda_organization_id_fkey"
             columns: ["organization_id"]
@@ -5101,6 +5234,14 @@ export type Database = {
         | "projeto"
       decisao_aprovacao: "aprovado" | "reprovado"
       entidade_pii: "card" | "arquivo" | "reuniao" | "proposta" | "contrato"
+      gatilho_avanco:
+        | "checklist"
+        | "arquivo_entrega"
+        | "agente_ok"
+        | "cron_data_cliente"
+        | "manual"
+        | "nenhum"
+      kind_etapa: "execucao" | "agente" | "portao_humano" | "terminal"
       origem_prospect: "indicacao" | "prospeccao_ativa" | "inbound" | "evento"
       papel_usuario: "socia" | "gestao" | "atendimento" | "executor" | "cliente"
       plano_saas: "interno" | "starter" | "pro" | "enterprise"
@@ -5377,6 +5518,15 @@ export const Constants = {
       ciclo_cobranca: ["mensal", "trimestral", "semestral", "anual", "projeto"],
       decisao_aprovacao: ["aprovado", "reprovado"],
       entidade_pii: ["card", "arquivo", "reuniao", "proposta", "contrato"],
+      gatilho_avanco: [
+        "checklist",
+        "arquivo_entrega",
+        "agente_ok",
+        "cron_data_cliente",
+        "manual",
+        "nenhum",
+      ],
+      kind_etapa: ["execucao", "agente", "portao_humano", "terminal"],
       origem_prospect: ["indicacao", "prospeccao_ativa", "inbound", "evento"],
       papel_usuario: ["socia", "gestao", "atendimento", "executor", "cliente"],
       plano_saas: ["interno", "starter", "pro", "enterprise"],
