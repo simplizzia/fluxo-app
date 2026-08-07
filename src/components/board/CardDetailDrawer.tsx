@@ -13,8 +13,6 @@ import {
 import {
   actionMoverCard,
   actionBuscarCardDetalhes,
-  actionBuscarComentarios,
-  actionCriarComentario,
   actionBuscarArquivos,
   actionUploadArquivo,
   actionEnviarParaAprovacao,
@@ -35,11 +33,12 @@ import {
 import { actionTriggerAgenteCard } from '@/app/(dashboard)/agentes/actions'
 import FeedbackButtons from '@/components/agents/FeedbackButtons'
 import type { BoardCard, ArquivoComUrl } from '@/app/(dashboard)/board/actions'
-import type { StatusCard, PapelUsuario, CampoFormulario, Comentario, TipoArquivo } from '@/types/database'
+import type { StatusCard, PapelUsuario, CampoFormulario, TipoArquivo } from '@/types/database'
 import { PriorityBadge } from '@/components/shared/PriorityBadge'
 import { STATUS_CONFIG, ORDEM_STATUS, motivoBloqueio } from '@/lib/cards/status'
 import { InlineError } from '@/components/shared/InlineError'
 import { FluxoTrack } from './FluxoTrack'
+import { CardComentarios } from './CardComentarios'
 import { slaParaCard, slaLabel, slaChipClass, slaDescricao } from '@/lib/sla'
 import { SkeletonLines } from '@/components/shared/Skeleton'
 
@@ -87,13 +86,10 @@ export function CardDetailDrawer({
   const [camposFormulario, setCamposFormulario] = useState<CampoFormulario[]>([])
   const [loadingDetalhes, setLoadingDetalhes] = useState(true)
 
-  // Comentários
-  const [comentarios, setComentarios] = useState<Comentario[]>([])
-  const [loadingComentarios, setLoadingComentarios] = useState(true)
-  const [novoComentario, setNovoComentario] = useState('')
-  const [comentarioVisivel, setComentarioVisivel] = useState(false) // false = interno
-  const [pendingComentario, setPendingComentario] = useState(false)
-  const [erroComentario, setErroComentario] = useState<string | null>(null)
+  // Comentários vivem no componente CardComentarios (coluna da direita). Aqui só
+  // um contador para forçar recarga quando algo fora dele muda (ex.: reprovar
+  // card adiciona um comentário ao cliente).
+  const [comentariosRefresh, setComentariosRefresh] = useState(0)
 
   // Arquivos
   const [arquivos, setArquivos] = useState<ArquivoComUrl[]>([])
@@ -209,17 +205,6 @@ export function CardDetailDrawer({
         const ia = (result.campos_internos as Record<string, unknown> | null)?.ia_output
         if (ia && typeof ia === 'string') setIaOutput(ia)
       }
-    })
-    return () => { cancelled = true }
-  }, [card.id])
-
-  // Busca comentários
-  useEffect(() => {
-    let cancelled = false
-    actionBuscarComentarios(card.id).then((result) => {
-      if (cancelled) return
-      setLoadingComentarios(false)
-      if (!result.error) setComentarios(result.comentarios ?? [])
     })
     return () => { cancelled = true }
   }, [card.id])
@@ -370,27 +355,7 @@ export function CardDetailDrawer({
       setMostrandoReprova(false)
       setMotivoReprova('')
       // Recarrega comentários para exibir o feedback automático criado pelo servidor
-      actionBuscarComentarios(card.id).then((r) => {
-        if (!r.error) setComentarios(r.comentarios ?? [])
-      })
-    }
-  }
-
-  async function handleCriarComentario(e: React.FormEvent) {
-    e.preventDefault()
-    const texto = novoComentario.trim()
-    if (!texto) return
-    setErroComentario(null)
-    setPendingComentario(true)
-
-    const result = await actionCriarComentario(card.id, texto, comentarioVisivel)
-    setPendingComentario(false)
-
-    if (result.error) {
-      setErroComentario(result.error)
-    } else if (result.comentario) {
-      setComentarios((prev) => [...prev, result.comentario!])
-      setNovoComentario('')
+      setComentariosRefresh((v) => v + 1)
     }
   }
 
@@ -499,7 +464,7 @@ export function CardDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={`Detalhes da demanda: ${card.titulo}`}
-        className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
         {/* Tira de identidade de marca no topo */}
         <div
@@ -553,7 +518,10 @@ export function CardDetailDrawer({
           </button>
         </div>
 
-        {/* Body com scroll */}
+        {/* Conteúdo em duas colunas: info (esquerda) + comentários (direita) */}
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+
+        {/* Coluna esquerda: fluxo + info + status + arquivos */}
         <div className="flex-1 overflow-y-auto">
 
           {/* Fluxo: trilha de etapas + próximo passo */}
@@ -1358,93 +1326,6 @@ export function CardDetailDrawer({
             </div>
           )}
 
-          {/* Comentários */}
-          <div className="border-b border-zinc-100 px-6 py-5">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              Comentários
-            </p>
-
-            {/* Lista */}
-            {loadingComentarios ? (
-              <SkeletonLines lines={3} className="mb-4" />
-            ) : comentarios.length === 0 ? (
-              <p className="mb-4 text-center text-sm text-zinc-400">
-                <span className="font-medium text-brand">Izzi</span>
-                {' · '}
-                Nenhum comentário ainda.
-              </p>
-            ) : (
-              <div className="mb-4 space-y-4">
-                {comentarios.map((c) => (
-                  <ComentarioItem
-                    key={c.id}
-                    comentario={c}
-                    ehEquipe={ehEquipe}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Formulário de novo comentário */}
-            <form onSubmit={handleCriarComentario} className="space-y-2">
-              <textarea
-                value={novoComentario}
-                onChange={(e) => setNovoComentario(e.target.value)}
-                placeholder="Adicionar comentário…"
-                rows={2}
-                disabled={pendingComentario}
-                onKeyDown={(e) => {
-                  // Ctrl/Cmd + Enter submete
-                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault()
-                    if (novoComentario.trim()) handleCriarComentario(e as unknown as React.FormEvent)
-                  }
-                }}
-                className="w-full resize-none rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-brand/40 focus:ring-2 focus:ring-brand/10 disabled:opacity-50"
-              />
-              {erroComentario && (
-                <p className="text-xs text-red-600">{erroComentario}</p>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                {/* Toggle interno (equipe não-executor) */}
-                {ehEquipe && papelAtual !== 'executor' ? (
-                  <label className="flex cursor-pointer items-center gap-2">
-                    <div
-                      onClick={() => setComentarioVisivel(!comentarioVisivel)}
-                      className={`relative h-4 w-7 flex-none cursor-pointer rounded-full transition-colors ${
-                        comentarioVisivel ? 'bg-brand' : 'bg-zinc-300'
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
-                          comentarioVisivel ? 'translate-x-3' : 'translate-x-0.5'
-                        }`}
-                      />
-                    </div>
-                    <span className="text-xs text-zinc-500">
-                      {comentarioVisivel ? 'Visível ao cliente' : 'Apenas interno'}
-                    </span>
-                  </label>
-                ) : (
-                  <span className="text-xs text-zinc-400">
-                    {papelAtual === 'executor' ? 'Sempre interno' : ''}
-                  </span>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={!novoComentario.trim() || pendingComentario}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-brand px-3.5 py-1.5 text-xs font-medium text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Send className="h-3 w-3" />
-                  {pendingComentario ? 'Enviando…' : 'Comentar'}
-                </button>
-              </div>
-              <p className="text-[10px] text-zinc-400">
-                Ctrl+Enter para enviar rapidamente
-              </p>
-            </form>
-          </div>
 
           {/* Campos dinâmicos */}
           {loadingDetalhes ? (
@@ -1500,6 +1381,13 @@ export function CardDetailDrawer({
           )}
         </div>
 
+        {/* Coluna direita: comentários */}
+        <div className="h-[60vh] flex-none overflow-hidden border-t border-zinc-100 lg:h-auto lg:w-96 lg:border-l lg:border-t-0">
+          <CardComentarios cardId={card.id} papelAtual={papelAtual} refreshKey={comentariosRefresh} />
+        </div>
+
+        </div>
+
         {/* Footer */}
         <div className="border-t border-zinc-100 px-6 py-3">
           <p className="text-center text-xs text-zinc-400">
@@ -1514,57 +1402,6 @@ export function CardDetailDrawer({
 // ---------------------------------------------------------------------------
 // Subcomponentes
 // ---------------------------------------------------------------------------
-
-function ComentarioItem({
-  comentario,
-  ehEquipe,
-}: {
-  comentario: Comentario
-  ehEquipe: boolean
-}) {
-  return (
-    <div className="flex gap-3">
-      {/* Avatar do autor */}
-      <div
-        className="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[10px] font-bold"
-        style={
-          comentario.autor?.papel === 'cliente'
-            ? { background: '#E5E7EB', color: '#6B7280' }
-            : { background: 'linear-gradient(135deg, #F3E8FF 0%, #FFF0F7 100%)', color: '#A046C6' }
-        }
-      >
-        {iniciais(comentario.autor?.nome ?? '?')}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        {/* Cabeçalho do comentário */}
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-xs font-semibold text-zinc-900">
-            {(comentario.autor?.nome ?? 'Usuário').split(' ')[0]}
-          </span>
-          <span className="text-[10px] text-zinc-400">
-            {tempoRelativo(comentario.created_at)}
-          </span>
-          {/* Badge de visibilidade — só para equipe */}
-          {ehEquipe && !comentario.visivel_para_cliente && (
-            <span className="rounded-full bg-zinc-100 px-1.5 py-px text-[9px] font-medium text-zinc-500">
-              Interno
-            </span>
-          )}
-          {ehEquipe && comentario.visivel_para_cliente && (
-            <span className="rounded-full bg-brand-light px-1.5 py-px text-[9px] font-medium text-brand">
-              Visível ao cliente
-            </span>
-          )}
-        </div>
-        {/* Texto */}
-        <p className="mt-0.5 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap break-words">
-          {comentario.texto}
-        </p>
-      </div>
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Utilitários de arquivo

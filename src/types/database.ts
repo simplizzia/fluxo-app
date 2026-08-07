@@ -46,6 +46,8 @@ export interface Comentario {
   organization_id: string
   texto: string
   visivel_para_cliente: boolean
+  /** Profiles a quem o comentário interno é direcionado (vazio = geral). */
+  direcionado_a?: string[]
   created_at: string
   autor?: {
     nome: string

@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { getCurrentProfile, requireEquipe, requirePapel } from '@/lib/dal'
-import type { StatusCard, PrioridadeCard, CampoFormulario, Comentario, TipoArquivo } from '@/types/database'
+import type { StatusCard, PrioridadeCard, CampoFormulario, Comentario, TipoArquivo, PapelUsuario } from '@/types/database'
 import {
   buscarInfoResponsaveis,
   buscarInfoPerfilPorId,
@@ -506,7 +506,7 @@ export async function actionBuscarComentarios(cardId: string): Promise<{
   const { data, error } = await supabase
     .from('comentarios')
     .select(`
-      id, organization_id, card_id, autor_id, texto, visivel_para_cliente, created_at,
+      id, organization_id, card_id, autor_id, texto, visivel_para_cliente, direcionado_a, created_at,
       autor:profiles!autor_id(id, nome, papel)
     `)
     .eq('card_id', cardId)
@@ -521,6 +521,22 @@ export async function actionBuscarComentarios(cardId: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
+// actionBuscarEquipe — lista os membros da equipe (para direcionar comentários)
+// ---------------------------------------------------------------------------
+
+export async function actionBuscarEquipe(): Promise<{
+  membros: { id: string; nome: string; papel: PapelUsuario }[]
+}> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, nome, papel')
+    .in('papel', ['socia', 'gestao', 'atendimento', 'executor'])
+    .order('nome', { ascending: true })
+  return { membros: (data ?? []) as { id: string; nome: string; papel: PapelUsuario }[] }
+}
+
+// ---------------------------------------------------------------------------
 // actionCriarComentario — cria um comentário em um card
 // ---------------------------------------------------------------------------
 
@@ -528,6 +544,7 @@ export async function actionCriarComentario(
   cardId: string,
   texto: string,
   visivelParaCliente: boolean,
+  direcionadoA: string[] = [],
 ): Promise<{ comentario?: Comentario; error?: string }> {
   const profile = await getCurrentProfile()
   const supabase = await createClient()
@@ -537,6 +554,10 @@ export async function actionCriarComentario(
   let visivelFinal = visivelParaCliente
   if (profile.papel === 'executor') visivelFinal = false
   if (profile.papel === 'cliente') visivelFinal = true
+
+  // Direcionamento só faz sentido em comentário interno (o thread do cliente é
+  // visto por cliente + líderes; não se "direciona" cliente).
+  const direcionadoFinal = visivelFinal ? [] : direcionadoA
 
   const textoTrimado = texto.trim()
   if (!textoTrimado) return { error: 'Comentário não pode ser vazio.' }
@@ -558,9 +579,10 @@ export async function actionCriarComentario(
       autor_id: profile.id,
       texto: textoTrimado,
       visivel_para_cliente: visivelFinal,
+      direcionado_a: direcionadoFinal,
     })
     .select(`
-      id, organization_id, card_id, autor_id, texto, visivel_para_cliente, created_at,
+      id, organization_id, card_id, autor_id, texto, visivel_para_cliente, direcionado_a, created_at,
       autor:profiles!autor_id(id, nome, papel)
     `)
     .single()

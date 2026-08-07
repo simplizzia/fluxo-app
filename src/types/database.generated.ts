@@ -1453,6 +1453,7 @@ export type Database = {
           autor_id: string
           card_id: string
           created_at: string
+          direcionado_a: string[]
           id: string
           organization_id: string
           texto: string
@@ -1462,6 +1463,7 @@ export type Database = {
           autor_id: string
           card_id: string
           created_at?: string
+          direcionado_a?: string[]
           id?: string
           organization_id: string
           texto: string
@@ -1471,6 +1473,7 @@ export type Database = {
           autor_id?: string
           card_id?: string
           created_at?: string
+          direcionado_a?: string[]
           id?: string
           organization_id?: string
           texto?: string
