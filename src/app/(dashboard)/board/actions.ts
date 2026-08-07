@@ -15,6 +15,7 @@ import {
   emailCardCancelado,
 } from '@/lib/email'
 import { motivoBloqueio } from '@/lib/cards/status'
+import { etapaInicialDoTipo, aplicarAvancoAutomatico } from '@/lib/cards/fluxo-engine'
 import { SLUG_DEMANDA_CRONOGRAMA } from '@/app/(dashboard)/cronogramas/shared'
 import { avaliarBadges } from '@/lib/gamificacao'
 import { calcCreditosCard } from '@/lib/uso'
@@ -242,6 +243,11 @@ export async function actionCriarCard(
     }
   }
 
+  // Posiciona o card na primeira etapa do fluxo do tipo (se houver). O status
+  // canonico inicial vem dessa etapa; sem fluxo, mantem o padrao aguardando_info.
+  const etapaInicial = await etapaInicialDoTipo(supabase, tipo_id)
+  const statusInicial: StatusCard = etapaInicial?.status_canonico ?? 'aguardando_info'
+
   // Passo 1: inserir e pegar apenas o ID
   const { data: newRow, error: insertError } = await supabase
     .from('cards')
@@ -257,7 +263,8 @@ export async function actionCriarCard(
       prazo_cliente: prazo_cliente || null,
       data_entrega_programada: data_entrega_programada || null,
       confidencial,
-      status: 'aguardando_info',
+      status: statusInicial,
+      fluxo_etapa_id: etapaInicial?.id ?? null,
       campos_publicos: camposPublicos,
     })
     .select('id')
@@ -316,7 +323,7 @@ export async function actionCriarCard(
     organization_id: profile.organization_id,
     card_id: card.id,
     status_anterior: null,
-    status_novo: 'aguardando_info',
+    status_novo: statusInicial,
     alterado_por: profile.id,
   })
 
@@ -717,6 +724,14 @@ export async function actionUploadArquivo(
       .from('cards')
       .update({ versao_entrega_atual: versao })
       .eq('id', cardId)
+  }
+
+  // Auto-avanco do fluxo: anexar uma ENTREGA e o sinal que conclui uma etapa de
+  // execucao. A logica pura so avanca se a etapa atual espera 'arquivo_entrega'
+  // e nunca cruza portao humano nem status protegido — cards sem fluxo ficam
+  // inalterados.
+  if (tipo === 'entrega') {
+    await aplicarAvancoAutomatico(supabase, cardId, profile.id, { arquivoEntregue: true })
   }
 
   // Audit log
