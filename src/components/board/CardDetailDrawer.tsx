@@ -39,6 +39,7 @@ import type { StatusCard, PapelUsuario, CampoFormulario, Comentario, TipoArquivo
 import { PriorityBadge } from '@/components/shared/PriorityBadge'
 import { STATUS_CONFIG, ORDEM_STATUS, motivoBloqueio } from '@/lib/cards/status'
 import { InlineError } from '@/components/shared/InlineError'
+import { FluxoTrack } from './FluxoTrack'
 import { slaParaCard, slaLabel, slaChipClass, slaDescricao } from '@/lib/sla'
 import { SkeletonLines } from '@/components/shared/Skeleton'
 
@@ -488,17 +489,17 @@ export function CardDetailDrawer({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Drawer lateral */}
+      {/* Modal centralizado */}
       <aside
         role="dialog"
         aria-modal="true"
         aria-label={`Detalhes da demanda: ${card.titulo}`}
-        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+        className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
         {/* Tira de identidade de marca no topo */}
         <div
@@ -554,6 +555,9 @@ export function CardDetailDrawer({
 
         {/* Body com scroll */}
         <div className="flex-1 overflow-y-auto">
+
+          {/* Fluxo: trilha de etapas + próximo passo */}
+          <FluxoTrack cardId={card.id} />
 
           {/* Metadados */}
           <div className="divide-y divide-zinc-50 border-b border-zinc-100 px-6 py-2">

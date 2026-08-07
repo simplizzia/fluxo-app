@@ -15,7 +15,8 @@ import {
   emailCardCancelado,
 } from '@/lib/email'
 import { motivoBloqueio } from '@/lib/cards/status'
-import { etapaInicialDoTipo, aplicarAvancoAutomatico } from '@/lib/cards/fluxo-engine'
+import { etapaInicialDoTipo, aplicarAvancoAutomatico, carregarEtapas } from '@/lib/cards/fluxo-engine'
+import type { FluxoEtapa } from '@/lib/cards/fluxos'
 import { SLUG_DEMANDA_CRONOGRAMA } from '@/app/(dashboard)/cronogramas/shared'
 import { avaliarBadges } from '@/lib/gamificacao'
 import { calcCreditosCard } from '@/lib/uso'
@@ -338,6 +339,34 @@ export async function actionCriarCard(
   })
 
   return { card: { ...card, data_entrega_programada } as unknown as BoardCard }
+}
+
+// ---------------------------------------------------------------------------
+// actionBuscarFluxoCard — etapas do fluxo do card + em qual ele está agora.
+// Usado pelo card (modal) para mostrar a trilha e o "próximo passo".
+// ---------------------------------------------------------------------------
+
+export async function actionBuscarFluxoCard(cardId: string): Promise<{
+  etapas: FluxoEtapa[]
+  etapaAtualId: string | null
+}> {
+  const supabase = await createClient()
+  const { data: card } = await supabase
+    .from('cards')
+    .select('fluxo_etapa_id, tipo_id')
+    .eq('id', cardId)
+    .maybeSingle()
+  if (!card?.tipo_id) return { etapas: [], etapaAtualId: null }
+
+  const { data: tipo } = await supabase
+    .from('tipos_demanda')
+    .select('fluxo_id')
+    .eq('id', card.tipo_id)
+    .maybeSingle()
+  if (!tipo?.fluxo_id) return { etapas: [], etapaAtualId: null }
+
+  const etapas = await carregarEtapas(supabase, tipo.fluxo_id)
+  return { etapas, etapaAtualId: card.fluxo_etapa_id ?? null }
 }
 
 // ---------------------------------------------------------------------------
