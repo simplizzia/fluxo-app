@@ -349,24 +349,38 @@ export async function actionCriarCard(
 export async function actionBuscarFluxoCard(cardId: string): Promise<{
   etapas: FluxoEtapa[]
   etapaAtualId: string | null
+  fluxoNome: string | null
+  fluxoDescricao: string | null
 }> {
+  const vazio = { etapas: [] as FluxoEtapa[], etapaAtualId: null, fluxoNome: null, fluxoDescricao: null }
   const supabase = await createClient()
   const { data: card } = await supabase
     .from('cards')
     .select('fluxo_etapa_id, tipo_id')
     .eq('id', cardId)
     .maybeSingle()
-  if (!card?.tipo_id) return { etapas: [], etapaAtualId: null }
+  if (!card?.tipo_id) return vazio
 
   const { data: tipo } = await supabase
     .from('tipos_demanda')
     .select('fluxo_id')
     .eq('id', card.tipo_id)
     .maybeSingle()
-  if (!tipo?.fluxo_id) return { etapas: [], etapaAtualId: null }
+  if (!tipo?.fluxo_id) return vazio
+
+  const { data: fluxo } = await supabase
+    .from('fluxos')
+    .select('nome, descricao')
+    .eq('id', tipo.fluxo_id)
+    .maybeSingle()
 
   const etapas = await carregarEtapas(supabase, tipo.fluxo_id)
-  return { etapas, etapaAtualId: card.fluxo_etapa_id ?? null }
+  return {
+    etapas,
+    etapaAtualId: card.fluxo_etapa_id ?? null,
+    fluxoNome: fluxo?.nome ?? null,
+    fluxoDescricao: fluxo?.descricao ?? null,
+  }
 }
 
 // ---------------------------------------------------------------------------
